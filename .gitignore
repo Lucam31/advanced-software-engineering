@@ -1,0 +1,52 @@
+# Allgemeine Ignorierungen
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.sln.ide
+
+# Build-Ausgaben
+*.exe
+*.dll
+*.pdb
+*.cache
+*.log
+*.msi
+*.appx
+*.appxbundle
+*.builds
+
+# Paket-Manager
+packages/
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+
+# IDE-spezifische Dateien
+.vscode/
+.idea/
+.DS_Store
+
+# Veröffentlichen
+.publish/
+*.pubxml
+*.publishproj
+
+# Temporäre Dateien
+*.tmp
+*.bak
+*.swp
+*.orig
+*.rej
+
+# Testresultate
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# Benutzerdefinierte Konfigurationen
+appsettings.*.json
+secrets.json
