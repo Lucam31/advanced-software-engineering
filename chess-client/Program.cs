@@ -1,7 +1,12 @@
 ﻿using Shared.Pieces;
 
+Console.OutputEncoding = System.Text.Encoding.UTF8;
+
 Bishop bishop = new Bishop("A3", true, false);
+Console.WriteLine(bishop);
+
 bishop.IsCaptured = true;
+
 if (!bishop.Move("B4"))
 {
     Console.WriteLine("Invalid Move");
