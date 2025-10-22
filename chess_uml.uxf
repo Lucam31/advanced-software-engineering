@@ -1,0 +1,114 @@
+<diagram program="umletino" version="15.1"><zoom_level>6</zoom_level><help_text>Space for diagram notes</help_text><element><id>UMLClass</id><coordinates><x>162</x><y>168</y><w>156</w><h>102</h></coordinates><panel_attributes>Piece
+--
++Name: String
++Position: String
++IsWhite: Bool
++IsCaptures: Bool
++Moved: Bool
+--
+&lt;&lt;Constructor&gt;&gt;
+#Piece(position: string, name: string, 
+		 isWhite: bool, isCaptured: bool)
++Move(newPosition: String): Bool</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>360</x><y>258</y><w>120</w><h>54</h></coordinates><panel_attributes>Bishop
+--
+
+--
+&lt;&lt;Constructor&gt;&gt;
++Bishop(position: string, 
+		isWhite: bool, isCaptured: bool)</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>234</x><y>264</y><w>198</w><h>90</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;130;310;130;310;80</additional_attributes></element><element><id>Relation</id><coordinates><x>234</x><y>264</y><w>78</w><h>120</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;130;110;130;110;180</additional_attributes></element><element><id>UMLClass</id><coordinates><x>240</x><y>372</y><w>120</w><h>54</h></coordinates><panel_attributes>King
+--
+
+--
+&lt;&lt;Constructor&gt;&gt;
++King(position: string, 
+		isWhite: bool, isCaptured: bool)</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>54</x><y>264</y><w>198</w><h>120</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>310;10;310;130;10;130;10;180</additional_attributes></element><element><id>UMLClass</id><coordinates><x>0</x><y>372</y><w>120</w><h>54</h></coordinates><panel_attributes>Rook
+--
+
+--
+&lt;&lt;Constructor&gt;&gt;
++Rook(position: string, 
+		isWhite: bool, isCaptured: bool)</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>174</x><y>264</y><w>78</w><h>120</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>110;10;110;130;10;130;10;180</additional_attributes></element><element><id>UMLClass</id><coordinates><x>120</x><y>372</y><w>120</w><h>54</h></coordinates><panel_attributes>Knight
+--
+
+--
+&lt;&lt;Constructor&gt;&gt;
++Knight(position: string, 
+		isWhite: bool, isCaptured: bool)</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>234</x><y>264</y><w>198</w><h>120</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>10;10;10;130;310;130;310;180</additional_attributes></element><element><id>UMLClass</id><coordinates><x>360</x><y>372</y><w>120</w><h>54</h></coordinates><panel_attributes>Queen
+--
+
+--
+&lt;&lt;Constructor&gt;&gt;
++Queen(position: string, 
+		isWhite: bool, isCaptured: bool)</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>54</x><y>264</y><w>198</w><h>90</h></coordinates><panel_attributes>lt=&lt;&lt;-</panel_attributes><additional_attributes>310;10;310;130;10;130;10;80</additional_attributes></element><element><id>UMLClass</id><coordinates><x>0</x><y>258</y><w>120</w><h>54</h></coordinates><panel_attributes>Pawn
+--
+
+--
+&lt;&lt;Constructor&gt;&gt;
++Pawn(position: string, 
+		isWhite: bool, isCaptured: bool)</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>408</x><y>18</y><w>156</w><h>102</h></coordinates><panel_attributes>Gameboard
+--
++Name: String
++Position: String
++IsWhite: Bool
++IsCaptures: Bool
++Moved: Bool
+--
+&lt;&lt;Constructor&gt;&gt;
+#Piece(position: string, name: string, 
+		 isWhite: bool, isCaptured: bool)
++Move(newPosition: String): Bool</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>630</x><y>30</y><w>156</w><h>102</h></coordinates><panel_attributes>Player
+--
++Name: String
++Position: String
++IsWhite: Bool
++IsCaptures: Bool
++Moved: Bool
+--
+&lt;&lt;Constructor&gt;&gt;
+#Piece(position: string, name: string, 
+		 isWhite: bool, isCaptured: bool)
++Move(newPosition: String): Bool</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>198</x><y>18</y><w>156</w><h>102</h></coordinates><panel_attributes>Move
+--
++Name: String
++Position: String
++IsWhite: Bool
++IsCaptures: Bool
++Moved: Bool
+--
+&lt;&lt;Constructor&gt;&gt;
+#Piece(position: string, name: string, 
+		 isWhite: bool, isCaptured: bool)
++Move(newPosition: String): Bool</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>858</x><y>48</y><w>156</w><h>102</h></coordinates><panel_attributes>MoveValidator
+--
++Name: String
++Position: String
++IsWhite: Bool
++IsCaptures: Bool
++Moved: Bool
+--
+&lt;&lt;Constructor&gt;&gt;
+#Piece(position: string, name: string, 
+		 isWhite: bool, isCaptured: bool)
++Move(newPosition: String): Bool</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>888</x><y>198</y><w>156</w><h>102</h></coordinates><panel_attributes>GameState
+--
++Name: String
++Position: String
++IsWhite: Bool
++IsCaptures: Bool
++Moved: Bool
+--
+&lt;&lt;Constructor&gt;&gt;
+#Piece(position: string, name: string, 
+		 isWhite: bool, isCaptured: bool)
++Move(newPosition: String): Bool</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>618</x><y>240</y><w>156</w><h>102</h></coordinates><panel_attributes>MoveValidator
+--
++Name: String
++Position: String
++IsWhite: Bool
++IsCaptures: Bool
++Moved: Bool
+--
+&lt;&lt;Constructor&gt;&gt;
+#Piece(position: string, name: string, 
+		 isWhite: bool, isCaptured: bool)
++Move(newPosition: String): Bool</panel_attributes><additional_attributes></additional_attributes></element></diagram>
