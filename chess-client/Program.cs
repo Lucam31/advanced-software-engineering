@@ -1,24 +1,20 @@
-﻿using Shared.Pieces;
+﻿using chess_client;
+using Shared;
+using Shared.Pieces;
+using System.Timers;
 
-Bishop bishop = new Bishop("A3", true, false);
-bishop.IsCaptured = true;
-if (!bishop.Move("B4"))
-{
-    Console.WriteLine("Invalid Move");
-}
-else
-{
-    Console.WriteLine(bishop.Name + " moved to " + bishop.Position);
-}
+Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-if (!bishop.Move("A8"))
+GameMenu gameMenu = new GameMenu();
+GameLogic gameLogic = new GameLogic();
+Gameboard gameBoard = new Gameboard();
+
+bool start = gameMenu.DisplayMainMenu();
+
+if (start)
 {
-    Console.WriteLine("Invalid Move");
-}
-else
-{
-    Console.WriteLine(bishop.Name + " moved to " + bishop.Position);
+    CLIOutput.PrintConsole("Starting a new game...");
+    gameLogic.StartNewGame(gameBoard);
 }
 
-
-Console.WriteLine("Hello World!");
+CLIOutput.PrintConsoleNewline("Closing Application...");

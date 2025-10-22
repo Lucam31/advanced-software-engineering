@@ -7,4 +7,5 @@ public class Queen : Pieces.Piece
     {
     }
     
+    public override string UnicodeSymbol => IsWhite ? "\u2655" : "\u265B";
 }

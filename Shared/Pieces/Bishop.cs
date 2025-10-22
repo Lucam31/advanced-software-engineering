@@ -7,5 +7,5 @@ public class Bishop : Pieces.Piece
     {
         
     }
-    
+    public override string UnicodeSymbol => IsWhite ? "♗" : "♝";
 }
