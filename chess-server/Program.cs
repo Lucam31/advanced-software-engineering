@@ -1,45 +1,38 @@
-﻿using System;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+﻿using chess_server.API;
+using chess_server.API.Controller;
+using chess_server.Data;
+using chess_server.Models;
+using chess_server.Repositories;
+using chess_server.Services;
 
 namespace chess_server;
 class Program
 {
     static async Task Main()
     {
-        // 1. Listener erstellen
-        var listener = new HttpListener();
-        listener.Prefixes.Add("http://localhost:8080/"); // URL-Prefix
-        listener.Start();
+        
+        string? connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ?? "fallback_connection_string";
+        
+        if (string.IsNullOrEmpty(connectionString))
+            throw new Exception("Umgebungsvariable 'DB_CONNECTION_STRING' nicht gesetzt.");
+        
+        var database = new Database(connectionString);
+        var userRepo = new UserRepository(database);
+        var userService = new UserService(userRepo);
 
-        Console.WriteLine("Server läuft auf http://localhost:8080/");
-
-        // 2. Endlos-Loop für eingehende Requests
-        while (true)
+        var router = new Router();
+        
+        
+        router.Register("/hello", async (context) =>
         {
-            var context = await listener.GetContextAsync(); // wartet auf Anfrage
-            var request = context.Request;
-            var response = context.Response;
+            Console.WriteLine("Route handler called");
+            var controller = new UserController(userService);
+            await controller.Hello(context);
+        });
 
-            Console.WriteLine($"{request.HttpMethod} {request.Url.AbsolutePath}");
-
-            // 3. Routing (z. B. /hello)
-            if (request.HttpMethod == "GET" && request.Url.AbsolutePath == "/hello")
-            {
-                var message = "Hallo Welt!";
-                var buffer = Encoding.UTF8.GetBytes(message);
-                response.ContentLength64 = buffer.Length;
-                response.StatusCode = 200;
-                await response.OutputStream.WriteAsync(buffer);
-            }
-            else
-            {
-                response.StatusCode = 404;
-            }
-
-            // 4. Antwort schließen
-            response.Close();
-        }
+        Console.WriteLine("Routes registered");
+    
+        var api = new Api(router);
+        await api.Run();
     }
 }

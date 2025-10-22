@@ -18,4 +18,5 @@ RUN dotnet publish "./chess-server.csproj" -c $BUILD_CONFIGURATION -o /app/publi
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+EXPOSE 8080
 ENTRYPOINT ["dotnet", "chess-server.dll"]

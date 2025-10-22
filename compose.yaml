@@ -5,7 +5,7 @@
       context: .
       dockerfile: chess-server/Dockerfile
     ports:
-      - "8000:8000"
+      - "8080:8080"
     environment:
         DATABASE_URL: postgres://chessuser:chesspassword@db:5432/chessdb
     depends_on:
