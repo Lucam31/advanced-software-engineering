@@ -22,13 +22,7 @@ class Program
 
         var router = new Router();
         
-        
-        router.Register("/hello", async (context) =>
-        {
-            Console.WriteLine("Route handler called");
-            var controller = new UserController(userService);
-            await controller.Hello(context);
-        });
+        router.RegisterController<UserController>(() => new UserController(userService));
 
         Console.WriteLine("Routes registered");
     
