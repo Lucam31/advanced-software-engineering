@@ -1,16 +1,20 @@
 using System.Net;
-using System.Text;
 using chess_server.Services;
 using Shared.InputDto;
 
 namespace chess_server.API.Controller;
 
+public interface IUserController
+{
+    Task Hello(HttpListenerContext context, Test input);
+}
+
 [Route("/api/user")]
-public class UserController
+public class UserController : IUserController
 {
     private readonly IUserService _userService;
     
-    public UserController(UserService userService)
+    public UserController(IUserService userService)
     {
         _userService = userService;
     }
@@ -20,6 +24,6 @@ public class UserController
     {
         Console.WriteLine($"Received request: {context.Request.Url}");
         var response = new Response(context);
-        await response.Send("Hello" + input.Name + "!");
+        await response.Send("Hello " + input.Name + "!");
     }
 }

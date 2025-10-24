@@ -10,9 +10,9 @@ public interface IUserRepository
 
 public class UserRepository : IUserRepository
 {
-    private readonly Database _db;
+    private readonly IDatabase _db;
     
-    public UserRepository(Database db)
+    public UserRepository(IDatabase db)
     {
         _db = db;
     }

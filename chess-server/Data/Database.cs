@@ -9,7 +9,7 @@ public interface IDatabase
     Task<int> ExecuteNonQueryWithTransactionAsync(string sql, Dictionary<string, object>? parameters = null);
 }
 
-public class Database
+public class Database : IDatabase
 {
     private readonly string _connectionString;
     

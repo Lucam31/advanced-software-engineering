@@ -8,7 +8,7 @@ namespace chess_server.API;
 
 public interface IRouter
 {
-    void RegisterController<T>(Func<T> factory) where T : class;
+    void RegisterController<T>() where T : class;
     Task HandleRequest(HttpListenerContext context);
 }
 
@@ -17,15 +17,23 @@ public delegate Task RouteHandler(HttpListenerContext context);
 public class Router : IRouter
 {
     private readonly Dictionary<string, RouteHandler> _routes = new();
-
-    public void RegisterController<T>(Func<T> factory) where T : class
-    {
-        var controllerType = typeof(T);
+    private readonly IDiContainer _diContainer;
     
-        var controllerRoute = controllerType.GetCustomAttribute<RouteAttribute>();
+    public Router(IDiContainer diContainer)
+    {
+        _diContainer = diContainer;
+    }
+
+    public void RegisterController<T>() where T : class
+    {
+        var controller = typeof(T);
+        
+        Console.WriteLine($"Registering controller: {controller}");
+    
+        var controllerRoute = controller.GetCustomAttribute<RouteAttribute>();
         var basePath = controllerRoute?.Path ?? "";
     
-        var methods = controllerType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+        var methods = controller.GetMethods(BindingFlags.Public | BindingFlags.Instance)
             .Where(m => m.GetCustomAttribute<RouteAttribute>() != null);
 
         foreach (var method in methods)
@@ -35,7 +43,7 @@ public class Router : IRouter
 
             RouteHandler handler = async (context) =>
             {
-                var instance = factory();
+                var instance = _diContainer.Resolve<T>();
                 var parameters = await GetMethodParameters(method, context);
                 var result = method.Invoke(instance, parameters);
             

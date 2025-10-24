@@ -15,14 +15,17 @@ class Program
         
         if (string.IsNullOrEmpty(connectionString))
             throw new Exception("Umgebungsvariable 'DB_CONNECTION_STRING' nicht gesetzt.");
-        
-        var database = new Database(connectionString);
-        var userRepo = new UserRepository(database);
-        var userService = new UserService(userRepo);
 
-        var router = new Router();
+        var container = new DiContainer();
         
-        router.RegisterController<UserController>(() => new UserController(userService));
+        container.Register<IDatabase,Database>(() => new Database(connectionString));
+        container.Register<IUserRepository,UserRepository>(() => new UserRepository(container.Resolve<IDatabase>()));
+        container.Register<IUserService,UserService>(() => new UserService(container.Resolve<IUserRepository>()));
+        container.Register<UserController>(() => new UserController(container.Resolve<IUserService>()));
+
+        var router = new Router(container);
+        
+        router.RegisterController<UserController>();
 
         Console.WriteLine("Routes registered");
     
