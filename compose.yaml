@@ -1,0 +1,39 @@
+﻿services:
+  chess-server:
+    image: chess-server
+    build:
+      context: .
+      dockerfile: chess-server/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+        DATABASE_URL: Host=db;Database=chessdb;Username=chessuser;Password=chesspassword
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - shared-network
+      
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: chessuser
+      POSTGRES_PASSWORD: chesspassword
+      POSTGRES_DB: chessdb
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./chess-server/Migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - shared-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U chessuser -d chessdb" ]
+      interval: 5s
+      retries: 10
+
+volumes:
+  db-data:
+
+networks:
+  shared-network:
