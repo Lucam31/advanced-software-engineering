@@ -1,3 +1,4 @@
+using chess_server.Models;
 using chess_server.Repositories;
 using Shared.InputDto;
 
@@ -6,6 +7,7 @@ namespace chess_server.Services;
 public interface IUserService
 {
     public Task RegisterAsync(UserDto dto);
+    public Task<Guid> LoginAsync(UserDto dto);
 }
 
 public class UserService : IUserService
@@ -21,7 +23,7 @@ public class UserService : IUserService
     {
         CreatePasswordHash(dto.Password, out var hash, out var salt);
         
-        var user = new Models.User
+        var user = new User
         {
             Id = Guid.NewGuid(),
             Username = dto.Username,
@@ -31,6 +33,22 @@ public class UserService : IUserService
         };
         
         await _repository.InsertUserAsync(user);
+    }
+    
+    public async Task<Guid> LoginAsync(UserDto dto)
+    {
+        var user = await _repository.GetUserByUsernameAsync(dto.Username);
+        if (user == null)
+        {
+            throw new Exception("User not found");
+        }
+
+        if (!VerifyPasswordHash(dto.Password, user.PasswordHash, user.PasswordSalt))
+        {
+            throw new Exception("Invalid password");
+        }
+        
+        return user.Id;
     }
     
     private void CreatePasswordHash(string password, out byte[] hash, out byte[] salt)

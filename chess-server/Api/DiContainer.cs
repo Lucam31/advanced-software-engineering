@@ -1,4 +1,4 @@
-namespace chess_server.API;
+namespace chess_server.Api;
 
 public interface IDiContainer
 {

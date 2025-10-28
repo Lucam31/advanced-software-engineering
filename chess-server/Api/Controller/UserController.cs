@@ -1,12 +1,14 @@
-using System.Net;
+using chess_server.Api.ActionResults;
+using chess_server.Api.Attributes;
 using chess_server.Services;
 using Shared.InputDto;
 
-namespace chess_server.API.Controller;
+namespace chess_server.Api.Controller;
 
 public interface IUserController
 {
-    Task Hello(HttpListenerContext context, Test input);
+    Task<IActionResult> Register(UserDto input);
+    Task<IActionResult> Login(UserDto input);
 }
 
 [Route("/api/user")]
@@ -19,11 +21,19 @@ public class UserController : IUserController
         _userService = userService;
     }
     
-    [Route("/hello")]
-    public async Task Hello(HttpListenerContext context, [FromBody] Test input)
+    [Route("/register")]
+    public async Task<IActionResult> Register([FromBody] UserDto dto)
     {
-        Console.WriteLine($"Received request: {context.Request.Url}");
-        var response = new Response(context);
-        await response.Send("Hello " + input.Name + "!");
+        await _userService.RegisterAsync(dto);
+        
+        return Results.Ok();
+    }
+    
+    [Route("/login")]
+    public async Task<IActionResult> Login([FromBody] UserDto dto)
+    {
+        var userId = await _userService.LoginAsync(dto);
+        
+        return Results.Ok(new { userId });
     }
 }

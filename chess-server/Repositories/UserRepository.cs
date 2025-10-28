@@ -6,6 +6,7 @@ namespace chess_server.Repositories;
 public interface IUserRepository
 {
     public Task InsertUserAsync(User user);
+    public Task<User?> GetUserByUsernameAsync(string username);
 }
 
 public class UserRepository : IUserRepository
@@ -36,4 +37,30 @@ public class UserRepository : IUserRepository
         Console.WriteLine("Affected: " + aff);
     } 
     
+    public async Task<User?> GetUserByUsernameAsync(string username)
+    {
+        var parameters = new Dictionary<string, object>
+        {
+            {"@Username", username}
+        };
+        
+        var sql = "SELECT * FROM Users WHERE username = @Username";
+        
+        var reader = await _db.ExecuteQueryAsync(sql, parameters);
+        
+        if (reader.Rows.Count > 0)
+        {
+            var row = reader.Rows[0];
+            return new User
+            {
+                Id = (Guid)row["id"],
+                Username = (string)row["username"],
+                PasswordHash = (byte[])row["password_hash"],
+                PasswordSalt = (byte[])row["password_salt"],
+                Rating = (int)row["rating"]
+            };
+        }
+
+        return null;
+    }
 }

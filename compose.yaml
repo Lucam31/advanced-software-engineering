@@ -7,7 +7,7 @@
     ports:
       - "8080:8080"
     environment:
-        DATABASE_URL: postgres://chessuser:chesspassword@db:5432/chessdb
+        DATABASE_URL: Host=db;Database=chessdb;Username=chessuser;Password=chesspassword
     depends_on:
       db:
         condition: service_healthy

@@ -2,9 +2,11 @@ using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using chess_server.API.Controller;
+using chess_server.Api.ActionResults;
+using chess_server.Api.Attributes;
+using chess_server.Api.Middlewares;
 
-namespace chess_server.API;
+namespace chess_server.Api;
 
 public interface IRouter
 {
@@ -18,21 +20,23 @@ public class Router : IRouter
 {
     private readonly Dictionary<string, RouteHandler> _routes = new();
     private readonly IDiContainer _diContainer;
-    
+    private readonly ExceptionMiddleware _exceptionMiddleware;
+
     public Router(IDiContainer diContainer)
     {
         _diContainer = diContainer;
+        _exceptionMiddleware = new ExceptionMiddleware();
     }
 
     public void RegisterController<T>() where T : class
     {
         var controller = typeof(T);
-        
+
         Console.WriteLine($"Registering controller: {controller}");
-    
+
         var controllerRoute = controller.GetCustomAttribute<RouteAttribute>();
         var basePath = controllerRoute?.Path ?? "";
-    
+
         var methods = controller.GetMethods(BindingFlags.Public | BindingFlags.Instance)
             .Where(m => m.GetCustomAttribute<RouteAttribute>() != null);
 
@@ -46,9 +50,18 @@ public class Router : IRouter
                 var instance = _diContainer.Resolve<T>();
                 var parameters = await GetMethodParameters(method, context);
                 var result = method.Invoke(instance, parameters);
-            
+
                 if (result is Task task)
+                {
                     await task;
+
+                    if (task.GetType().IsGenericType &&
+                        task.GetType().GetGenericArguments()[0].IsAssignableTo(typeof(IActionResult)))
+                    {
+                        var actionResult = (IActionResult)task.GetType().GetProperty("Result")?.GetValue(task);
+                        await actionResult?.ExecuteResultAsync(context);
+                    }
+                }
             };
 
             _routes.Add(fullPath, handler);
@@ -68,6 +81,10 @@ public class Router : IRouter
             {
                 args[i] = context;
             }
+            else if (param.ParameterType == typeof(Response))
+            {
+                args[i] = new Response(context);
+            }
             else if (param.GetCustomAttribute<FromBodyAttribute>() != null)
             {
                 using var reader = new StreamReader(context.Request.InputStream, Encoding.UTF8);
@@ -81,15 +98,17 @@ public class Router : IRouter
 
     public async Task HandleRequest(HttpListenerContext context)
     {
-        var path = context.Request.Url?.AbsolutePath;
-        if (path != null && _routes.TryGetValue(path, out var handler))
+        await _exceptionMiddleware.HandleWithExceptionCatch(context, async () =>
         {
-            await handler(context);
-        }
-        else
-        {
-            context.Response.StatusCode = (int)HttpStatusCode.NotFound;
-            context.Response.Close();
-        }
+            var path = context.Request.Url?.AbsolutePath;
+            if (path != null && _routes.TryGetValue(path, out var handler))
+            {
+                await handler(context);
+            }
+            else
+            {
+                throw new KeyNotFoundException($"Route '{path}' nicht gefunden");
+            }
+        });
     }
 }

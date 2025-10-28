@@ -1,4 +1,4 @@
-namespace chess_server.API.Controller;
+namespace chess_server.Api.Attributes;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
 public class RouteAttribute : Attribute

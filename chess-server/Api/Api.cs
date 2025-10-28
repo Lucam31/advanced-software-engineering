@@ -1,7 +1,6 @@
 using System.Net;
-using System.Text;
 
-namespace chess_server.API;
+namespace chess_server.Api;
 
 public class Api
 {

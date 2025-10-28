@@ -1,7 +1,6 @@
-﻿using chess_server.API;
-using chess_server.API.Controller;
+﻿using chess_server.Api;
+using chess_server.Api.Controller;
 using chess_server.Data;
-using chess_server.Models;
 using chess_server.Repositories;
 using chess_server.Services;
 
@@ -14,7 +13,7 @@ class Program
         string? connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ?? "fallback_connection_string";
         
         if (string.IsNullOrEmpty(connectionString))
-            throw new Exception("Umgebungsvariable 'DB_CONNECTION_STRING' nicht gesetzt.");
+            throw new Exception("'DB_CONNECTION_STRING' is not set");
 
         var container = new DiContainer();
         
@@ -29,7 +28,7 @@ class Program
 
         Console.WriteLine("Routes registered");
     
-        var api = new Api(router);
+        var api = new Api.Api(router);
         await api.Run();
     }
 }

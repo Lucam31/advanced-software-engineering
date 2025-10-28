@@ -1,5 +1,5 @@
 using System.Data;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 
 namespace chess_server.Data;
 
@@ -12,16 +12,16 @@ public interface IDatabase
 public class Database : IDatabase
 {
     private readonly string _connectionString;
-    
+
     public Database(string connectionString)
     {
         _connectionString = connectionString;
     }
-    
+
     public async Task<DataTable> ExecuteQueryAsync(string sql, Dictionary<string, object>? parameters = null)
-    { 
-        var connection = new SqlConnection(_connectionString);
-        var command = new SqlCommand(sql, connection);
+    {
+        await using var connection = new NpgsqlConnection(_connectionString);
+        await using var command = new NpgsqlCommand(sql, connection);
 
         if (parameters != null)
         {
@@ -31,20 +31,19 @@ public class Database : IDatabase
 
         await connection.OpenAsync();
 
-        var reader = await command.ExecuteReaderAsync();
+        await using var reader = await command.ExecuteReaderAsync();
         var table = new DataTable();
         table.Load(reader);
         return table;
     }
-    
+
     public async Task<int> ExecuteNonQueryWithTransactionAsync(string sql, Dictionary<string, object>? parameters = null)
     {
-        var connection = new SqlConnection(_connectionString);
+        await using var connection = new NpgsqlConnection(_connectionString);
         await connection.OpenAsync();
 
-        var transaction = connection.BeginTransaction();
-        
-        var command = new SqlCommand(sql, connection, transaction);
+        await using var transaction = await connection.BeginTransactionAsync();
+        await using var command = new NpgsqlCommand(sql, connection, transaction);
 
         if (parameters != null)
         {
