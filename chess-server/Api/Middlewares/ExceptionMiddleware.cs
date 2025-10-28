@@ -1,4 +1,5 @@
 using System.Net;
+using Shared.Exceptions;
 
 namespace chess_server.Api.Middlewares;
 
@@ -20,6 +21,11 @@ public class ExceptionMiddleware
     {
         var statusCode = e switch
         {
+            UserNotFound => HttpStatusCode.NotFound,
+            
+            InvalidCredentials => HttpStatusCode.Unauthorized,
+            
+            UserAlreadyExists => HttpStatusCode.Conflict,
             
             _ => HttpStatusCode.InternalServerError
         };

@@ -1,5 +1,6 @@
 using chess_server.Models;
 using chess_server.Repositories;
+using Shared.Exceptions;
 using Shared.InputDto;
 
 namespace chess_server.Services;
@@ -21,6 +22,12 @@ public class UserService : IUserService
 
     public async Task RegisterAsync(UserDto dto)
     {
+        var existingUser = await _repository.GetUserByUsernameAsync(dto.Username);
+        if (existingUser != null)
+        {
+            throw new UserAlreadyExists();
+        }
+        
         CreatePasswordHash(dto.Password, out var hash, out var salt);
         
         var user = new User
@@ -40,12 +47,12 @@ public class UserService : IUserService
         var user = await _repository.GetUserByUsernameAsync(dto.Username);
         if (user == null)
         {
-            throw new Exception("User not found");
+            throw new UserNotFound();
         }
 
         if (!VerifyPasswordHash(dto.Password, user.PasswordHash, user.PasswordSalt))
         {
-            throw new Exception("Invalid password");
+            throw new InvalidCredentials();
         }
         
         return user.Id;
