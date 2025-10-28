@@ -5,11 +5,10 @@ using Shared;
 
 public abstract class Piece
 {
-    private readonly MoveValidator _mv = new MoveValidator();
     
     public string Name { get; private set; }
     public string Position { get; private set; }
-    protected bool IsWhite { get; private set; }
+    public bool IsWhite { get; private set; }
     public bool IsCaptured { get; set; }
     public bool Moved { get; private set; }
 
@@ -26,14 +25,9 @@ public abstract class Piece
     
     public override string ToString() => UnicodeSymbol;
 
-    public bool Move(string newPosition)
+    public void Move(string newPosition)
     {
-        if (_mv.ValidateMove(this, newPosition))
-        {
-            this.Position = newPosition;
-            Moved = true;
-            return true;
-        }
-        return false;
+        this.Position = newPosition;
+        Moved = true;
     }
 }
