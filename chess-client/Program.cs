@@ -1,34 +1,29 @@
-﻿using Shared;
-using Shared.Pieces;
+﻿using Shared.Pieces;
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-var bishopWhite = new Bishop("A3", true);
+Bishop bishop = new Bishop("A3", true);
+Console.WriteLine(bishop);
 
-Gameboard gameboard = new Gameboard();
-gameboard.PrintBoard();
-//
-// Bishop bishopBlack = new Bishop("A3", false);
-//
+bishop.IsCaptured = true;
 
-// bishopWhite.IsCaptured = true;
-// if (!bishopWhite.Move("B4"))
-// {
-//     Console.WriteLine("Invalid Move");
-// }
-// else
-// {
-//     Console.WriteLine(bishopWhite.Name + " moved to " + bishopWhite.Position);
-// }
-//
-// if (!bishopWhite.Move("A8"))
-// {
-//     Console.WriteLine("Invalid Move");
-// }
-// else
-// {
-//     Console.WriteLine(bishopWhite.Name + " moved to " + bishopWhite.Position);
-// }
-//
-//
-// Console.WriteLine("Hello World!");
+if (!bishop.Move("B4"))
+{
+    Console.WriteLine("Invalid Move");
+}
+else
+{
+    Console.WriteLine(bishop.Name + " moved to " + bishop.Position);
+}
+
+if (!bishop.Move("A8"))
+{
+    Console.WriteLine("Invalid Move");
+}
+else
+{
+    Console.WriteLine(bishop.Name + " moved to " + bishop.Position);
+}
+
+
+Console.WriteLine("Hello World!");
