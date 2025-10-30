@@ -6,11 +6,11 @@ using Shared;
 public abstract class Piece
 {
     
-    public string Name { get; private set; }
-    public string Position { get; private set; }
-    public bool IsWhite { get; private set; }
+    public string Name { get; protected set; }
+    public string Position { get; protected set; }
+    public bool IsWhite { get; protected set; }
     public bool IsCaptured { get; set; }
-    public bool Moved { get; private set; }
+    public bool Moved { get; protected set; }
 
     protected Piece(string position, string name, bool isWhite, bool isCaptured)
     {
@@ -25,7 +25,7 @@ public abstract class Piece
     
     public override string ToString() => UnicodeSymbol;
 
-    public void Move(string newPosition)
+    public virtual void Move(string newPosition)
     {
         this.Position = newPosition;
         Moved = true;

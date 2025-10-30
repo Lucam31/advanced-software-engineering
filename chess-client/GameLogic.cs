@@ -3,11 +3,11 @@ using Shared;
 
 public class GameLogic
 {
-    private Gameboard gameboard;
+    private Gameboard _gameboard;
 
     public GameLogic(Gameboard gameboard)
     {
-        this.gameboard = gameboard;
+        _gameboard = gameboard;
     }
     public void StartNewGame()
     {
@@ -32,8 +32,10 @@ public class GameLogic
         while (true)
         {
             move = InputParser.ReadMove();
-            MoveValidator.ValidateMove(move, gameboard);
+            MoveValidator.ValidateMove(move, _gameboard);
+            _gameboard.Move(move);
             return;
         }
+         
     }
 }

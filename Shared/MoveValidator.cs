@@ -20,11 +20,12 @@ public static class MoveValidator
 
         if (movePiece is Pawn)
         {
+            // Pawn Promotion
             if (colDiff > 1 || (colDiff == 1 && rowDiff > 1)) return false;
             if (colDiff == 1 && rawRowDiff == 1) // Pawns can't move sideways unless capturing
             {
-                if (targetPiece is null) return false;
-                return true;
+                if (targetPiece is not null || CheckEnPassant()) return true;
+                return false;
             }
             if (movePiece.Moved)
             {
@@ -48,6 +49,7 @@ public static class MoveValidator
 
         if (movePiece is Knight)
         {
+            // check for castling
             return (colDiff == 2 && rowDiff == 1) || (colDiff == 1 && rowDiff == 2);
         }
 
@@ -202,6 +204,11 @@ public static class MoveValidator
             return true;
         }
 
+        return false;
+    }
+    private static bool CheckEnPassant()
+    {
+        // Placeholder for en passant logic
         return false;
     }
 }
