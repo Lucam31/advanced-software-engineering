@@ -1,7 +1,6 @@
 namespace Shared;
 
 using System;
-using System.Text;
 using Pieces;
 
 public class Gameboard
@@ -10,6 +9,13 @@ public class Gameboard
 
     private int Rows => _tiles.GetLength(0);
     private int Cols => _tiles.GetLength(1);
+
+    private readonly List<Piece> _capturedBlackPieces = [];
+    private readonly List<Piece> _capturedWhitePieces = [];
+
+    public List<Piece> CapturedWhitePieces => [.._capturedWhitePieces];
+    public List<Piece> CapturedBlackPieces => [.._capturedBlackPieces];
+
 
     public Gameboard()
     {
@@ -61,7 +67,7 @@ public class Gameboard
     public Tile this[int row, int col]
     {
         get => _tiles[row, col];
-        set => _tiles[row, col] = value ?? throw new System.ArgumentNullException(nameof(value));
+        set => _tiles[row, col] = value ?? throw new ArgumentNullException(nameof(value));
     }
 
     public void PrintBoard()
@@ -87,7 +93,7 @@ public class Gameboard
                 var isDark = (file + rank) % 2 == 0;
 
                 Console.BackgroundColor = isDark ? ConsoleColor.Gray : ConsoleColor.DarkGray;
-                
+
 
                 var tile = _tiles[rank - 1, file];
                 if (tile.CurrentPiece != null)
@@ -113,5 +119,38 @@ public class Gameboard
         }
 
         Console.WriteLine();
+    }
+
+    public Piece? GetPiece(string position)
+    {
+        return _tiles[position[1] - '1', position[0] - 'A'].CurrentPiece;
+    }
+
+    public bool Move(Move move)
+    {
+        var fromIndexLetter = move.From[0] - 'A';
+        var fromIndexNumber = move.From[1] - '1';
+        var toIndexLetter = move.To[0] - 'A';
+        var toIndexNumber = move.To[1] - '1';
+
+        // If the tile is occupied, the piece must be captured
+        if (_tiles[toIndexNumber, toIndexLetter].CurrentPiece != null)
+        {
+            _tiles[toIndexNumber, toIndexLetter].CurrentPiece!.IsCaptured = true;
+
+            // Add the captured piece to the captured pieces array
+            if (_tiles[toIndexNumber, toIndexLetter].CurrentPiece!.IsWhite)
+            {
+                _capturedWhitePieces.Add(_tiles[toIndexNumber, toIndexLetter].CurrentPiece!);
+            }
+            else
+            {
+                _capturedBlackPieces.Add(_tiles[toIndexNumber, toIndexLetter].CurrentPiece!);
+            }
+        }
+
+        _tiles[toIndexNumber, toIndexLetter].CurrentPiece = _tiles[fromIndexNumber, fromIndexLetter].CurrentPiece;
+        _tiles[fromIndexNumber, fromIndexLetter].CurrentPiece = null;
+        return true;
     }
 }
