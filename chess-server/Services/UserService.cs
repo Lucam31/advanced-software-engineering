@@ -9,6 +9,7 @@ public interface IUserService
 {
     public Task RegisterAsync(UserDto dto);
     public Task<Guid> LoginAsync(UserDto dto);
+    public Task<List<string>> SearchUsersAsync(string query);
 }
 
 public class UserService : IUserService
@@ -56,6 +57,13 @@ public class UserService : IUserService
         }
         
         return user.Id;
+    }
+    
+    public async Task<List<string>> SearchUsersAsync(string query)
+    {
+        var users = await _repository.SearchUsersByUsernameAsync(query);
+        
+        return users.Select(u => u.Username).ToList();
     }
     
     private void CreatePasswordHash(string password, out byte[] hash, out byte[] salt)

@@ -21,6 +21,7 @@ public class UserController : IUserController
         _userService = userService;
     }
     
+    [HttpMethod("POST")]
     [Route("/register")]
     public async Task<IActionResult> Register([FromBody] UserDto dto)
     {
@@ -29,11 +30,21 @@ public class UserController : IUserController
         return Results.Ok();
     }
     
+    [HttpMethod("POST")]
     [Route("/login")]
     public async Task<IActionResult> Login([FromBody] UserDto dto)
     {
         var userId = await _userService.LoginAsync(dto);
         
         return Results.Ok(new { userId });
+    }
+
+    [HttpMethod("GET")]
+    [Route("/search")]
+    public async Task<IActionResult> SearchUsers([FromQuery] string query)
+    {
+        var usernames = await _userService.SearchUsersAsync(query);
+        
+        return Results.Ok(new { usernames });
     }
 }

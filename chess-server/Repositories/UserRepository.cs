@@ -1,3 +1,4 @@
+using System.Data;
 using chess_server.Data;
 using chess_server.Models;
 
@@ -7,6 +8,7 @@ public interface IUserRepository
 {
     public Task InsertUserAsync(User user);
     public Task<User?> GetUserByUsernameAsync(string username);
+    public Task<List<User>> SearchUsersByUsernameAsync(string username);
 }
 
 public class UserRepository : IUserRepository
@@ -62,5 +64,38 @@ public class UserRepository : IUserRepository
         }
 
         return null;
+    }
+    
+    public async Task<List<User>> SearchUsersByUsernameAsync(string username)
+    {
+        var parameters = new Dictionary<string, object>
+        {
+            {"@Username", "%" + username + "%"}
+        };
+        
+        var sql = "SELECT * FROM Users WHERE username LIKE @Username";
+        
+        var reader = await _db.ExecuteQueryAsync(sql, parameters);
+        
+        if (reader.Rows.Count > 0)
+        {
+            var users = new List<User>();
+
+            foreach (DataRow row in reader.Rows)
+            {
+                users.Add(new User
+                {
+                    Id = (Guid)row["id"],
+                    Username = (string)row["username"],
+                    PasswordHash = (byte[])row["password_hash"],
+                    PasswordSalt = (byte[])row["password_salt"],
+                    Rating = (int)row["rating"]
+                });
+            }
+
+            return users;
+        }
+
+        return new List<User>();
     }
 }

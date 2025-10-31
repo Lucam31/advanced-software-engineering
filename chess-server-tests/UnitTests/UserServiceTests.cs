@@ -12,6 +12,7 @@ public sealed class UserServiceTests
     private class MockUserRepository : IUserRepository
     {
         public User? InsertedUser { get; private set; }
+        public User? UserToSearch { get; set; }
         public User? UserToReturn { get; set; }
 
         public Task InsertUserAsync(User user)
@@ -23,6 +24,16 @@ public sealed class UserServiceTests
         public Task<User?> GetUserByUsernameAsync(string username)
         {
             return Task.FromResult(UserToReturn);
+        }
+        
+        public Task<List<User>> SearchUsersByUsernameAsync(string username)
+        {
+            var result = new List<User>();
+            if (UserToSearch != null && UserToSearch.Username.Contains(username))
+            {
+                result.Add(UserToSearch);
+            }
+            return Task.FromResult(result);
         }
     }
 
@@ -144,5 +155,28 @@ public sealed class UserServiceTests
         {
             await service.LoginAsync(invalidDto);
         });
+    }
+
+    [TestMethod]
+    public async Task SearchUsersAsync_ReturnsMatchingUsernames_WithMatchingUsername()
+    {
+        var mockRepository = new MockUserRepository();
+        var service = new UserService(mockRepository);
+        
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = "searchuser",
+            PasswordHash = new byte[] { },
+            PasswordSalt = new byte[] { },
+            Rating = 1200
+        };
+        
+        mockRepository.UserToSearch = user;
+        
+        var result = await service.SearchUsersAsync("search");
+        
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual("searchuser", result[0]);
     }
 }
