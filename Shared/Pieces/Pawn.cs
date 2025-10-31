@@ -1,10 +1,6 @@
 namespace Shared.Pieces;
-using Pieces;
 
-public class Pawn : Pieces.Piece
+public class Pawn(string position, bool isWhite) : Piece(position, "Pawn", isWhite)
 {
-    public Pawn(string position, bool isWhite, bool isCaptured) : base(position, "Pawn", isWhite, isCaptured)
-    {
-    }
-    public override string UnicodeSymbol => IsWhite ? "\u2659" : "\u265F";
+    public override string UnicodeSymbol => "♟";
 }

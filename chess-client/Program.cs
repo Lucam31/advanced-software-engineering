@@ -2,7 +2,7 @@
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-Bishop bishop = new Bishop("A3", true, false);
+Bishop bishop = new Bishop("A3", true);
 Console.WriteLine(bishop);
 
 bishop.IsCaptured = true;

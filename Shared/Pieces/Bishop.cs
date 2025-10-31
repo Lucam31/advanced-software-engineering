@@ -1,11 +1,6 @@
 namespace Shared.Pieces;
-using Pieces;
 
-public class Bishop : Pieces.Piece
+public class Bishop(string position, bool isWhite) : Piece(position, "Bishop", isWhite)
 {
-    public Bishop(string position, bool isWhite, bool isCaptured) : base(position, "Bishop", isWhite, isCaptured)
-    {
-        
-    }
-    public override string UnicodeSymbol => IsWhite ? "♗" : "♝";
+    public override string UnicodeSymbol => "♝";
 }
