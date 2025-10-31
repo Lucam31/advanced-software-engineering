@@ -1,7 +1,7 @@
 using chess_server.Api.ActionResults;
 using chess_server.Api.Attributes;
 using chess_server.Services;
-using Shared.InputDto;
+using Shared.InputDtos;
 
 namespace chess_server.Api.Controller;
 
@@ -9,6 +9,8 @@ public interface IUserController
 {
     Task<IActionResult> Register(UserDto input);
     Task<IActionResult> Login(UserDto input);
+    Task<IActionResult> SearchUsers(string query);
+
 }
 
 [Route("/api/user")]

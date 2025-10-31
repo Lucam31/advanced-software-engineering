@@ -6,9 +6,9 @@ namespace chess_server.Repositories;
 
 public interface IUserRepository
 {
-    public Task InsertUserAsync(User user);
-    public Task<User?> GetUserByUsernameAsync(string username);
-    public Task<List<User>> SearchUsersByUsernameAsync(string username);
+    Task InsertUserAsync(User user);
+    Task<User?> GetUserByUsernameAsync(string username);
+    Task<List<User>> SearchUsersByUsernameAsync(string username);
 }
 
 public class UserRepository : IUserRepository
@@ -31,8 +31,8 @@ public class UserRepository : IUserRepository
             {"@Rating", user.Rating}
         };
         
-        var sql = "INSERT INTO Users (id, username, password_hash, password_salt, rating) " +
-                  "VALUES (@Id, @Username, @PasswordHash, @PasswordSalt, @Rating)";
+        var sql = @"INSERT INTO Users (id, username, password_hash, password_salt, rating) 
+                    VALUES (@Id, @Username, @PasswordHash, @PasswordSalt, @Rating)";
         
         var aff = await _db.ExecuteNonQueryWithTransactionAsync(sql, parameters);
         
@@ -46,7 +46,9 @@ public class UserRepository : IUserRepository
             {"@Username", username}
         };
         
-        var sql = "SELECT * FROM Users WHERE username = @Username";
+        var sql = @"SELECT * 
+                    FROM Users 
+                    WHERE username = @Username";
         
         var reader = await _db.ExecuteQueryAsync(sql, parameters);
         
@@ -73,7 +75,9 @@ public class UserRepository : IUserRepository
             {"@Username", "%" + username + "%"}
         };
         
-        var sql = "SELECT * FROM Users WHERE username LIKE @Username";
+        var sql = @"SELECT * 
+                    FROM Users 
+                    WHERE username = @Username";
         
         var reader = await _db.ExecuteQueryAsync(sql, parameters);
         

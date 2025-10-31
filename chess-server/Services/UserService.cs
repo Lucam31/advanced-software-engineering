@@ -1,15 +1,15 @@
 using chess_server.Models;
 using chess_server.Repositories;
 using Shared.Exceptions;
-using Shared.InputDto;
+using Shared.InputDtos;
 
 namespace chess_server.Services;
 
 public interface IUserService
 {
-    public Task RegisterAsync(UserDto dto);
-    public Task<Guid> LoginAsync(UserDto dto);
-    public Task<List<string>> SearchUsersAsync(string query);
+    Task RegisterAsync(UserDto dto);
+    Task<Guid> LoginAsync(UserDto dto);
+    Task<List<string>> SearchUsersAsync(string query);
 }
 
 public class UserService : IUserService

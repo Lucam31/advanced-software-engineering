@@ -1,49 +1,21 @@
+using chess_server_tests.Mocks;
 using chess_server.Models;
-using chess_server.Repositories;
 using chess_server.Services;
 using Shared.Exceptions;
-using Shared.InputDto;
+using Shared.InputDtos;
 
 namespace chess_server_tests.UnitTests;
 
 [TestClass]
 public sealed class UserServiceTests
 {
-    private class MockUserRepository : IUserRepository
-    {
-        public User? InsertedUser { get; private set; }
-        public User? UserToSearch { get; set; }
-        public User? UserToReturn { get; set; }
-
-        public Task InsertUserAsync(User user)
-        {
-            InsertedUser = user;
-            return Task.CompletedTask;
-        }
-
-        public Task<User?> GetUserByUsernameAsync(string username)
-        {
-            return Task.FromResult(UserToReturn);
-        }
-        
-        public Task<List<User>> SearchUsersByUsernameAsync(string username)
-        {
-            var result = new List<User>();
-            if (UserToSearch != null && UserToSearch.Username.Contains(username))
-            {
-                result.Add(UserToSearch);
-            }
-            return Task.FromResult(result);
-        }
-    }
-
     [TestMethod]
     public async Task RegisterAsync_InsertsUserWithHashedPassword()
     {
         var mockRepository = new MockUserRepository();
         var service = new UserService(mockRepository);
         
-        var dto = new Shared.InputDto.UserDto
+        var dto = new UserDto
         {
             Username = "testuser",
             Password = "password123"
