@@ -1,10 +1,6 @@
 namespace Shared.Pieces;
-using Pieces;
 
-public class Knight : Pieces.Piece
+public class Knight(string position, bool isWhite) : Piece(position, "Knight", isWhite)
 {
-    public Knight(string position, bool isWhite, bool isCaptured) : base(position, "Knight", isWhite, isCaptured)
-    {
-    }
-    public override string UnicodeSymbol => IsWhite ? "\u2658" : "\u265E";
+    public override string UnicodeSymbol => "♞";
 }

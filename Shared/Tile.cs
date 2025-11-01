@@ -1,10 +1,14 @@
 namespace Shared;
+
 using Shared.Pieces;
 
-public class Tile
+public class Tile(int row, int col, bool isWhite, Piece? piece = null)
 {
-    public Piece? currentPiece { get; set; }
-    public string Position { get; set; }
-    public bool IsOccupied => currentPiece != null;
-    
+    public int Row { get; } = row;
+    public int Col { get; } = col;
+    public bool IsWhite { get; } = isWhite;
+
+    public Piece? CurrentPiece { get; set; } = piece;
+
+    public bool IsOccupied => CurrentPiece != null;
 }

@@ -1,28 +1,20 @@
 using System.Text.RegularExpressions;
 
 namespace Shared.Pieces;
+
 using Shared;
 
-public abstract class Piece
+public abstract class Piece(string position, string name, bool isWhite, bool isCaptured = false)
 {
-    
-    public string Name { get; protected set; }
-    public string Position { get; protected set; }
-    public bool IsWhite { get; protected set; }
-    public bool IsCaptured { get; set; }
-    public bool Moved { get; protected set; }
+    public string Name { get; private set; } = name;
+    public string Position { get; private set; } = position;
+    public bool IsWhite { get; private set; } = isWhite;
 
-    protected Piece(string position, string name, bool isWhite, bool isCaptured)
-    {
-        Name = name;
-        Position = position;
-        IsWhite = isWhite;
-        IsCaptured = isCaptured;
-        Moved = false;
-    }
-    
+    public bool IsCaptured { get; set; } = isCaptured;
+    public bool Moved { get; private set; } = false;
+
     public abstract string UnicodeSymbol { get; }
-    
+
     public override string ToString() => UnicodeSymbol;
 
     public virtual void Move(string newPosition)

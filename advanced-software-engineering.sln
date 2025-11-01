@@ -1,0 +1,36 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "chess-client", "chess-client\chess-client.csproj", "{2FB36034-C23B-8892-0477-DFE94DCD1C03}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "Shared\Shared.csproj", "{22F72E50-B86A-48A6-4252-6FDC98C636E8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "chess-server", "chess-server\chess-server.csproj", "{2997B7E8-B7F5-31B8-2C40-C077B91DBD29}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2FB36034-C23B-8892-0477-DFE94DCD1C03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2FB36034-C23B-8892-0477-DFE94DCD1C03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2FB36034-C23B-8892-0477-DFE94DCD1C03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2FB36034-C23B-8892-0477-DFE94DCD1C03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22F72E50-B86A-48A6-4252-6FDC98C636E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22F72E50-B86A-48A6-4252-6FDC98C636E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22F72E50-B86A-48A6-4252-6FDC98C636E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22F72E50-B86A-48A6-4252-6FDC98C636E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2997B7E8-B7F5-31B8-2C40-C077B91DBD29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2997B7E8-B7F5-31B8-2C40-C077B91DBD29}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2997B7E8-B7F5-31B8-2C40-C077B91DBD29}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2997B7E8-B7F5-31B8-2C40-C077B91DBD29}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2D17DEA5-A35B-4019-971A-F11CF0516B12}
+	EndGlobalSection
+EndGlobal
