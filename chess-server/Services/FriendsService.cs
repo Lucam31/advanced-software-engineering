@@ -37,14 +37,47 @@ public class FriendsService : IFriendsService
     
     public async Task<List<Friend>> GetFriendsAsync(Guid userId)
     {
-        var friends = await _friendsRepository.GetFriendsAsync(userId);
+        var friendships = await _friendsRepository.GetFriendsAsync(userId);
+
+        var friends = new List<Friend>();
+        
+        foreach (var f in friendships)
+        {
+            friends.Add(new Friend
+            {
+                FriendshipId = f.Id,
+                Name = f.UserId1 == userId ? 
+                    (await _userRepository.GetUserByIdAsync(f.UserId2))!.Username : 
+                    (await _userRepository.GetUserByIdAsync(f.UserId1))!.Username
+            });
+        }
         
         return friends;
     }
 
     public async Task<List<PendingFriendRequest>> GetPendingFriendRequestsAsync(Guid userId)
     {
-        return await _friendsRepository.GetPendingFriendRequestsAsync(userId);
+        var pendingRequests = await _friendsRepository.GetPendingFriendRequestsAsync(userId);
+        
+        var result = new List<PendingFriendRequest>();
+        
+        foreach (var pr in pendingRequests)
+        {
+            var requesterId = pr.InitiatedBy == userId ? pr.UserId2 : pr.UserId1;
+            var requester = await _userRepository.GetUserByIdAsync(requesterId);
+            
+            if (requester != null)
+            {
+                result.Add(new PendingFriendRequest
+                {
+                    RequestId = pr.Id,
+                    FromUsername = requester.Username,
+                    Status = pr.Status
+                });
+            }
+        }
+        
+        return result;
     }
 
     public async Task UpdateFriendRequestAsync(UpdateFriendship dto)

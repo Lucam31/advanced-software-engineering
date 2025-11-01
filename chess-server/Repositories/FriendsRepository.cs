@@ -1,15 +1,17 @@
 using System.Data;
 using chess_server.Data;
+using chess_server.Models;
 using chess_server.OutputDtos;
 using Shared.InputDtos;
+using Shared.Models;
 
 namespace chess_server.Repositories;
 
 public interface IFriendsRepository
 {
-    Task<Guid> AddFriendshipAsync(Guid fromUserId, Guid toUserId);
-    Task<List<Friend>> GetFriendsAsync(Guid userId);
-    Task<List<PendingFriendRequest>> GetPendingFriendRequestsAsync(Guid userId);
+    Task AddFriendshipAsync(Guid fromUserId, Guid toUserId);
+    Task<List<Friendship>> GetFriendsAsync(Guid userId);
+    Task<List<Friendship>> GetPendingFriendRequestsAsync(Guid userId);
     Task UpdateFriendshipStatusAsync(UpdateFriendship dto);
 }
 
@@ -22,32 +24,32 @@ public class FriendsRepository : IFriendsRepository
         _database = database;
     }
 
-    public async Task<Guid> AddFriendshipAsync(Guid fromUserId, Guid toUserId)
+    public async Task AddFriendshipAsync(Guid fromUserId, Guid toUserId)
     {
-        var friendshipId = Guid.NewGuid();
-        
         var sql = @"
             INSERT INTO friendships (id, user_id_1, user_id_2, initiated_by, status, created_at)
             VALUES (@FriendshipId, @UserId1, @UserId2, @InitiatedBy, 'pending', NOW())";
 
         var parameters = new Dictionary<string, object>
         {
-            { "@FriendshipId", friendshipId },
             { "@UserId1", fromUserId < toUserId ? fromUserId : toUserId },
             { "@UserId2", fromUserId < toUserId ? toUserId : fromUserId },
             { "@InitiatedBy", fromUserId }
         };
 
         await _database.ExecuteNonQueryWithTransactionAsync(sql, parameters);
-        return friendshipId;
     }
 
-    public async Task<List<Friend>> GetFriendsAsync(Guid userId)
+    public async Task<List<Friendship>> GetFriendsAsync(Guid userId)
     {
         var sql = @"
             SELECT 
-                u.username as user_username, 
-                f.id as friendship_id
+                f.id as friendship_id,
+                f.user_id_1 as user_id_1,
+                f.user_id_2 as user_id_2,
+                f.status as status,
+                f.initiated_by as initiated_by,
+                f.created_at as created_at
             FROM users u
             JOIN friendships f ON (
                 (f.user_id_1 = u.id AND f.user_id_2 = @UserId) OR
@@ -61,21 +63,25 @@ public class FriendsRepository : IFriendsRepository
         };
 
         var dataTable = await _database.ExecuteQueryAsync(sql, parameters);
-        return ConvertDataTableToFriends(dataTable);
+        return ConvertDataTableToFriendships(dataTable);
     }
-
-    public async Task<List<PendingFriendRequest>> GetPendingFriendRequestsAsync(Guid userId)
+    
+    public async Task<List<Friendship>> GetPendingFriendRequestsAsync(Guid userId)
     {
         var sql = @"
             SELECT 
-                f.id as friendship_id, 
-                u.username as user_username, 
-                f.created_at as friendship_created_at
-            FROM friendships f
-            JOIN users u ON u.id = f.initiated_by
-            WHERE (f.user_id_1 = @UserId OR f.user_id_2 = @UserId)
-              AND f.status = 'pending'
-              AND f.initiated_by != @UserId";
+                f.id as friendship_id,
+                f.user_id_1 as user_id_1,
+                f.user_id_2 as user_id_2,
+                f.status as status,
+                f.initiated_by as initiated_by,
+                f.created_at as created_at
+            FROM users u
+            JOIN friendships f ON (
+                (f.user_id_1 = u.id AND f.user_id_2 = @UserId) OR
+                (f.user_id_2 = u.id AND f.user_id_1 = @UserId)
+            )
+            WHERE f.status = 'pending' AND f.initiated_by != @UserId";
 
         var parameters = new Dictionary<string, object>
         {
@@ -83,7 +89,7 @@ public class FriendsRepository : IFriendsRepository
         };
 
         var dataTable = await _database.ExecuteQueryAsync(sql, parameters);
-        return ConvertDataTableToPendingRequests(dataTable);
+        return ConvertDataTableToFriendships(dataTable);
     }
 
     public async Task UpdateFriendshipStatusAsync(UpdateFriendship dto)
@@ -95,39 +101,28 @@ public class FriendsRepository : IFriendsRepository
 
         var parameters = new Dictionary<string, object>
         {
-            { "@Status", dto.Status },
+            { "@Status", dto.Status.ToString().ToLower() },
             { "@FriendshipId", dto.FriendshipId }
         };
 
         await _database.ExecuteNonQueryWithTransactionAsync(sql, parameters);
     }
     
-    private List<Friend> ConvertDataTableToFriends(DataTable dataTable)
+    private List<Friendship> ConvertDataTableToFriendships(DataTable dataTable)
     {
-        var friends = new List<Friend>();
+        var friendships = new List<Friendship>();
         foreach (DataRow row in dataTable.Rows)
         {
-            friends.Add(new Friend
+            friendships.Add(new Friendship
             {
-                Name = row["user_username"].ToString() ?? "",
-                FriendshipId = (Guid)row["friendship_id"]
+                Id = (Guid)row["friendship_id"],
+                UserId1 = (Guid)row["user_id_1"],
+                UserId2 = (Guid)row["user_id_2"],
+                Status = row["status"].ToString() ?? "",
+                InitiatedBy = (Guid)row["initiated_by"],
+                CreatedAt = (DateTime)row["created_at"]
             });
         }
-        return friends;
-    }
-
-    private List<PendingFriendRequest> ConvertDataTableToPendingRequests(DataTable dataTable)
-    {
-        var requests = new List<PendingFriendRequest>();
-        foreach (DataRow row in dataTable.Rows)
-        {
-            requests.Add(new PendingFriendRequest
-            {
-                RequestId = (Guid)row["friendship_id"],
-                FromUsername = row["user_username"].ToString() ?? "",
-                CreatedAt = (DateTime)row["friendship_created_at"]
-            });
-        }
-        return requests;
+        return friendships;
     }
 }

@@ -8,6 +8,7 @@ public interface IUserRepository
 {
     Task InsertUserAsync(User user);
     Task<User?> GetUserByUsernameAsync(string username);
+    Task<User?> GetUserByIdAsync(Guid id);
     Task<List<User>> SearchUsersByUsernameAsync(string username);
 }
 
@@ -24,7 +25,6 @@ public class UserRepository : IUserRepository
     {
         var parameters = new Dictionary<string, object>
         {
-            {"@Id", user.Id},
             {"@Username", user.Username},
             {"@PasswordHash", user.PasswordHash},
             {"@PasswordSalt", user.PasswordSalt},
@@ -49,6 +49,35 @@ public class UserRepository : IUserRepository
         var sql = @"SELECT * 
                     FROM Users 
                     WHERE username = @Username";
+        
+        var reader = await _db.ExecuteQueryAsync(sql, parameters);
+        
+        if (reader.Rows.Count > 0)
+        {
+            var row = reader.Rows[0];
+            return new User
+            {
+                Id = (Guid)row["id"],
+                Username = (string)row["username"],
+                PasswordHash = (byte[])row["password_hash"],
+                PasswordSalt = (byte[])row["password_salt"],
+                Rating = (int)row["rating"]
+            };
+        }
+
+        return null;
+    }
+    
+    public async Task<User?> GetUserByIdAsync(Guid id)
+    {
+        var parameters = new Dictionary<string, object>
+        {
+            {"@Id", id}
+        };
+        
+        var sql = @"SELECT * 
+                    FROM Users 
+                    WHERE id = @Id";
         
         var reader = await _db.ExecuteQueryAsync(sql, parameters);
         
