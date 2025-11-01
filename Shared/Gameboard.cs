@@ -1,4 +1,5 @@
 namespace Shared;
+using Pieces;
 
 using System;
 using Pieces;
@@ -121,7 +122,7 @@ public class Gameboard
         Console.WriteLine();
     }
 
-    public Piece? GetPiece(string position)
+    public Piece? GetPieceAtPosition(string position)
     {
         return _tiles[position[1] - '1', position[0] - 'A'].CurrentPiece;
     }
