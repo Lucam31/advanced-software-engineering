@@ -4,10 +4,10 @@ using Pieces;
 
 public static class MoveValidator
 {
-    public static bool ValidateMove(string move, Gameboard gameboard)
+    public static bool ValidateMove(Move move, Gameboard gameboard)
     {
-        var oldPosition = move[0..2];
-        var newPosition = move[2..4];
+        var oldPosition = move.From;
+        var newPosition = move.To;
         if (oldPosition == newPosition) return false;
         Piece? movePiece = gameboard.GetPieceAtPosition(oldPosition);
         Piece? targetPiece = gameboard.GetPieceAtPosition(newPosition);
@@ -21,13 +21,13 @@ public static class MoveValidator
         if (movePiece is Pawn)
         {
             // Pawn Promotion
-            if (colDiff > 1 || (colDiff == 1 && rowDiff > 1)) return false;
+            if (colDiff > 1 && movePiece.Moved || (colDiff == 1 && rowDiff > 1)) return false;
             if (colDiff == 1 && rawRowDiff == 1) // Pawns can't move sideways unless capturing
             {
                 if (targetPiece is not null || CheckEnPassant()) return true;
                 return false;
             }
-            if (movePiece.Moved)
+            if (!movePiece.Moved)
             {
                 return (rawRowDiff is > 0 and < 3 && ValidateTilesBetween(oldPosition, newPosition, movePiece, gameboard));
             }
@@ -38,13 +38,13 @@ public static class MoveValidator
         if (movePiece is Bishop)
         {
             // Bishop moves diagonally, so the difference between the file and rank should be the same
-            return colDiff == rowDiff;
+            return colDiff == rowDiff && ValidateTilesBetween(oldPosition, newPosition, movePiece, gameboard);
         }
 
 
         if (movePiece is Rook)
         {
-            return (colDiff == 0 && rowDiff != 0) || (colDiff != 0 && rowDiff == 0);
+            return ((colDiff == 0 && rowDiff != 0) || (colDiff != 0 && rowDiff == 0)) && ValidateTilesBetween(oldPosition, newPosition, movePiece, gameboard);
         }
 
         if (movePiece is Knight)
@@ -55,7 +55,7 @@ public static class MoveValidator
 
         if (movePiece is Queen)
         {
-            return (colDiff == rowDiff) || (colDiff == 0 || rowDiff != 0);
+            return (colDiff == rowDiff) || (colDiff == 0 || rowDiff != 0) && ValidateTilesBetween(oldPosition, newPosition, movePiece, gameboard);
         }
 
         if (movePiece is King)
@@ -69,10 +69,10 @@ public static class MoveValidator
     
     private static bool ValidateTilesBetween(string start, string end, Piece piece, Gameboard gameboard)
     {
-        int startRow = start[1];
-        int startCol = start[0];
-        int endRow = end[1];
-        int endCol = end[0];
+        int startRow = start[1]-'0';
+        char startCol = start[0];
+        int endRow = end[1]-'0';
+        char endCol = end[0];
         
         if (piece is Pawn)
         {
@@ -87,7 +87,7 @@ public static class MoveValidator
         }
         else if (piece is Rook)
         {
-            return RookCheck(start, end, gameboard);
+            return RookCheck(startRow, startCol, endRow, endCol, gameboard);
         }
         else if (piece is Knight)
         {
@@ -99,8 +99,8 @@ public static class MoveValidator
             int colDiff = Math.Abs(endCol - startCol);
             int rowDiff = Math.Abs(endRow - startRow);
             if (rowDiff is < 2 && colDiff is < 2) return true; // adjacent move
-            else if (colDiff == rowDiff) return BishopCheck(start, end, gameboard);
-            else if (colDiff == 0 || rowDiff == 0) return RookCheck(start, end, gameboard);
+            else if (colDiff == rowDiff) return BishopCheck(startRow, startCol, endRow, endCol, gameboard);
+            else if (colDiff == 0 || rowDiff == 0) return RookCheck(startRow, startCol, endRow, endCol, gameboard);
             else return false;
         }
         else if (piece is King)
@@ -110,18 +110,14 @@ public static class MoveValidator
         }
         else if (piece is Bishop)
         {
-            return BishopCheck(start, end, gameboard);
+            return BishopCheck(startRow, startCol, endRow, endCol, gameboard);
         }
         
         return false;
     }
 
-    private static bool RookCheck(string start, string end, Gameboard gameboard)
+    private static bool RookCheck(int startRow, char startCol, int endRow, char endCol, Gameboard gameboard)
     {
-        int startRow = start[1];
-        int startCol = start[0];
-        int endRow = end[1];
-        int endCol = end[0];
         if (startRow < endRow)
         {
             for (int row = startRow + 1; row < endRow; row++)
@@ -140,7 +136,7 @@ public static class MoveValidator
         }
         else if (startCol < endCol)
         {
-            for (int col = startCol + 1; col < endCol; col++)
+            for (char col = Convert.ToChar(startCol + 1); col < endCol; col++)
             {
                 if (gameboard.GetPieceAtPosition($"{col}{startRow}") is not null) return false;
             }
@@ -148,7 +144,7 @@ public static class MoveValidator
         }
         else if (startCol > endCol)
         {
-            for (int col = startCol - 1; col > endCol; col--)
+            for (char col = Convert.ToChar(startCol - 1); col > endCol; col--)
             {
                 if (gameboard.GetPieceAtPosition($"{col}{startRow}") is not null) return false;
             }
@@ -157,17 +153,15 @@ public static class MoveValidator
         return false;
     }
 
-    private static bool BishopCheck(string start, string end, Gameboard gameboard)
+    private static bool BishopCheck(int startRow, char startCol, int endRow, char endCol, Gameboard gameboard)
     {
-        int startRow = start[1];
-        int startCol = start[0];
-        int endRow = end[1];
-        int endCol = end[0];
+        int test1 = 0;
         if (startRow < endRow && startCol < endCol)
         {
-            int col = startCol + 1;
+            char col = Convert.ToChar(startCol + 1);
             for (int row = startRow + 1; row < endRow; row++)
             {
+                Piece? test = gameboard.GetPieceAtPosition($"{col}{row}");
                 if (gameboard.GetPieceAtPosition($"{col}{row}") is not null) return false;
                 col++;
             }
@@ -175,9 +169,10 @@ public static class MoveValidator
         }
         else if (startRow < endRow && startCol > endCol)
         {
-            int col = startCol - 1;
+            char col = Convert.ToChar(startCol - 1);
             for (int row = startRow + 1; row < endRow; row++)
             {
+                Piece? test = gameboard.GetPieceAtPosition($"{col}{row}");
                 if (gameboard.GetPieceAtPosition($"{col}{row}") is not null) return false;
                 col--;
             }
@@ -185,9 +180,10 @@ public static class MoveValidator
         }
         else if (startRow > endRow && startCol < endCol)
         {
-            int col = startCol + 1;
+            char col = Convert.ToChar(startCol + 1);
             for (int row = startRow - 1; row > endRow; row--)
             {
+                Piece? test = gameboard.GetPieceAtPosition($"{col}{row}");
                 if (gameboard.GetPieceAtPosition($"{col}{row}") is not null) return false;
                 col++;
             }
@@ -195,9 +191,10 @@ public static class MoveValidator
         }
         else if (startRow > endRow && startCol > endCol)
         {
-            int col = startCol - 1;
+            char col = Convert.ToChar(startCol - 1);
             for (int row = startRow - 1; row > endRow; row--)
             {
+                Piece? test = gameboard.GetPieceAtPosition($"{col}{row}");
                 if (gameboard.GetPieceAtPosition($"{col}{row}") is not null) return false;
                 col--;
             }

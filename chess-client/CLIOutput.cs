@@ -25,6 +25,12 @@ public static class CLIOutput
         Console.Write(message);
     }
 
+    public static void WriteErrorMessage(string message)
+    {
+        Console.SetCursorPosition(0, Console.CursorTop-1);
+        OverwriteLine(message);
+    }
+
     public static void OverwriteLineRelative(int targetLine, string message)
     {
         int prevLine = Console.CursorTop;
@@ -40,11 +46,13 @@ public static class CLIOutput
     
     public static void RewriteBoard(Gameboard board)
     {
-        int prevLine = Console.CursorTop;
+        int prevLine = Console.CursorTop-1;
         
-        Console.SetCursorPosition(0, Console.CursorTop-12);
-        // board.PrintBoard();
+        Console.SetCursorPosition(0, 0);
+        board.PrintBoard();
         Console.SetCursorPosition(0, prevLine);
+        ClearCurrentConsoleLine();
+        Console.Write("Enter your next move: ");
     }
     
     
