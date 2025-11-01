@@ -119,7 +119,7 @@ public class Gameboard
             Console.Write($" {fileChar} ");
         }
 
-        Console.WriteLine();
+        // Console.WriteLine();
     }
 
     public Piece? GetPieceAtPosition(string position)
@@ -151,6 +151,7 @@ public class Gameboard
         }
 
         _tiles[toIndexNumber, toIndexLetter].CurrentPiece = _tiles[fromIndexNumber, fromIndexLetter].CurrentPiece;
+        _tiles[toIndexNumber, toIndexLetter].CurrentPiece?.Move(move.To);
         _tiles[fromIndexNumber, fromIndexLetter].CurrentPiece = null;
         return true;
     }
