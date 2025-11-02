@@ -1,4 +1,4 @@
-namespace Shared.InputDto;
+namespace Shared.InputDtos;
 
 public class UserDto
 {

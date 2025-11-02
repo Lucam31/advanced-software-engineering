@@ -1,13 +1,15 @@
 using chess_server.Models;
 using chess_server.Repositories;
-using Shared.InputDto;
+using Shared.Exceptions;
+using Shared.InputDtos;
 
 namespace chess_server.Services;
 
 public interface IUserService
 {
-    public Task RegisterAsync(UserDto dto);
-    public Task<Guid> LoginAsync(UserDto dto);
+    Task RegisterAsync(UserDto dto);
+    Task<Guid> LoginAsync(UserDto dto);
+    Task<List<string>> SearchUsersAsync(string query);
 }
 
 public class UserService : IUserService
@@ -21,6 +23,12 @@ public class UserService : IUserService
 
     public async Task RegisterAsync(UserDto dto)
     {
+        var existingUser = await _repository.GetUserByUsernameAsync(dto.Username);
+        if (existingUser != null)
+        {
+            throw new UserAlreadyExists();
+        }
+        
         CreatePasswordHash(dto.Password, out var hash, out var salt);
         
         var user = new User
@@ -40,15 +48,22 @@ public class UserService : IUserService
         var user = await _repository.GetUserByUsernameAsync(dto.Username);
         if (user == null)
         {
-            throw new Exception("User not found");
+            throw new UserNotFound();
         }
 
         if (!VerifyPasswordHash(dto.Password, user.PasswordHash, user.PasswordSalt))
         {
-            throw new Exception("Invalid password");
+            throw new InvalidCredentials();
         }
         
         return user.Id;
+    }
+    
+    public async Task<List<string>> SearchUsersAsync(string query)
+    {
+        var users = await _repository.SearchUsersByUsernameAsync(query);
+        
+        return users.Select(u => u.Username).ToList();
     }
     
     private void CreatePasswordHash(string password, out byte[] hash, out byte[] salt)

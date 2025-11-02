@@ -45,6 +45,9 @@ public class Router : IRouter
             var routeAttribute = method.GetCustomAttribute<RouteAttribute>();
             var fullPath = basePath + routeAttribute.Path;
 
+            var httpMethodAttr = method.GetCustomAttribute<HttpMethodAttribute>();
+            var httpMethod = httpMethodAttr?.Method ?? throw new Exception($"HTTP method not defined for {method.Name}");
+
             RouteHandler handler = async (context) =>
             {
                 var instance = _diContainer.Resolve<T>();
@@ -63,8 +66,9 @@ public class Router : IRouter
                     }
                 }
             };
-
-            _routes.Add(fullPath, handler);
+            
+            var key = $"{httpMethod}:{fullPath}";
+            _routes.Add(key, handler);
         }
     }
 
@@ -91,6 +95,18 @@ public class Router : IRouter
                 var json = await reader.ReadToEndAsync();
                 args[i] = JsonSerializer.Deserialize(json, param.ParameterType);
             }
+            else if (param.GetCustomAttribute<FromQueryAttribute>() != null)
+            {
+                var queryValue = context.Request.QueryString[param.Name];
+                if (queryValue != null)
+                {
+                    args[i] = Convert.ChangeType(queryValue, param.ParameterType);
+                }
+                else
+                {
+                    args[i] = null; 
+                }
+            }
         }
 
         return args;
@@ -101,13 +117,15 @@ public class Router : IRouter
         await _exceptionMiddleware.HandleWithExceptionCatch(context, async () =>
         {
             var path = context.Request.Url?.AbsolutePath;
-            if (path != null && _routes.TryGetValue(path, out var handler))
+            var method = context.Request.HttpMethod?.ToUpperInvariant() ?? "GET";
+
+            if (path != null && _routes.TryGetValue($"{method}:{path}", out var handler))
             {
                 await handler(context);
             }
             else
             {
-                throw new KeyNotFoundException($"Route '{path}' nicht gefunden");
+                throw new KeyNotFoundException($"Route '{method}:{path}' nicht gefunden");
             }
         });
     }
