@@ -1,6 +1,6 @@
 namespace Shared;
 
-using Shared.Pieces;
+using Pieces;
 
 public class Tile(int row, int col, bool isWhite, Piece? piece = null)
 {

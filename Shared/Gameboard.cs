@@ -1,6 +1,6 @@
 namespace Shared;
-using Pieces;
 
+using Pieces;
 using System;
 using Pieces;
 
@@ -118,8 +118,6 @@ public class Gameboard
             var fileChar = (char)('A' + file);
             Console.Write($" {fileChar} ");
         }
-
-        // Console.WriteLine();
     }
 
     public Piece? GetPieceAtPosition(string position)
