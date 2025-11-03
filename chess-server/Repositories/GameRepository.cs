@@ -1,43 +1,78 @@
 using System.Data;
 using chess_server.Data;
 using chess_server.Models;
+using Shared.Logger;
 
 namespace chess_server.Repositories;
 
+/// <summary>
+/// Defines the interface for game data operations.
+/// </summary>
 public interface IGameRepository
 {
+    /// <summary>
+    /// Inserts a new game into the database.
+    /// </summary>
+    /// <param name="game">The game to insert.</param>
     Task InsertGameAsync(Game game);
+
+    /// <summary>
+    /// Retrieves a list of the most recent games.
+    /// </summary>
+    /// <param name="limit">The maximum number of games to retrieve.</param>
+    /// <returns>A list of <see cref="Game"/> objects.</returns>
     Task<List<Game>> GetRecentGamesAsync(int limit = 10);
+
+    /// <summary>
+    /// Retrieves a list of games played by a specific user.
+    /// </summary>
+    /// <param name="userId">The ID of the user.</param>
+    /// <param name="limit">The maximum number of games to retrieve.</param>
+    /// <returns>A list of <see cref="Game"/> objects.</returns>
     Task<List<Game>> GetGamesByUserIdAsync(Guid userId, int limit = 10);
 }
 
+/// <summary>
+/// Provides methods for accessing game data in the database.
+/// </summary>
 public class GameRepository : IGameRepository
 {
     private readonly IDatabase _database;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GameRepository"/> class.
+    /// </summary>
+    /// <param name="database">The database instance.</param>
     public GameRepository(IDatabase database)
     {
         _database = database;
     }
 
+    /// <inheritdoc/>
     public async Task InsertGameAsync(Game game)
     {
+        GameLogger.Debug(
+            $"Inserting game: White={game.WhitePlayerId}, Black={game.BlackPlayerId}, Moves={game.Moves?.Count ?? 0}");
         var sql = @"
             INSERT INTO games (id, white_player_id, black_player_id, moves)
             VALUES (@Id, @WhitePlayerId, @BlackPlayerId, @Moves)";
 
         var parameters = new Dictionary<string, object>
         {
+            { "@Id", game.Guid },
             { "@WhitePlayerId", game.WhitePlayerId },
             { "@BlackPlayerId", game.BlackPlayerId },
             { "@Moves", game.Moves.ToArray() }
         };
 
         await _database.ExecuteNonQueryWithTransactionAsync(sql, parameters);
+        GameLogger.Info($"Inserted game {game.Guid}");
     }
 
+    /// <inheritdoc/>
     public async Task<List<Game>> GetRecentGamesAsync(int limit = 10)
     {
+        GameLogger.Debug($"Fetching recent games, limit={limit}");
         var sql = @"
             SELECT id, white_player_id, black_player_id, moves
             FROM games
@@ -50,11 +85,15 @@ public class GameRepository : IGameRepository
         };
 
         var dataTable = await _database.ExecuteQueryAsync(sql, parameters);
-        return ConvertDataTableToGames(dataTable);
+        var result = ConvertDataTableToGames(dataTable);
+        GameLogger.Debug($"Fetched {result.Count} recent games");
+        return result;
     }
 
+    /// <inheritdoc/>
     public async Task<List<Game>> GetGamesByUserIdAsync(Guid userId, int limit = 10)
     {
+        GameLogger.Debug($"Fetching games by user {userId}, limit={limit}");
         var sql = @"
             SELECT id, white_player_id, black_player_id, moves
             FROM games
@@ -69,9 +108,16 @@ public class GameRepository : IGameRepository
         };
 
         var dataTable = await _database.ExecuteQueryAsync(sql, parameters);
-        return ConvertDataTableToGames(dataTable);
+        var result = ConvertDataTableToGames(dataTable);
+        GameLogger.Debug($"Fetched {result.Count} games for user {userId}");
+        return result;
     }
 
+    /// <summary>
+    /// Converts a DataTable to a list of Game objects.
+    /// </summary>
+    /// <param name="dataTable">The DataTable to convert.</param>
+    /// <returns>A list of <see cref="Game"/> objects.</returns>
     private List<Game> ConvertDataTableToGames(DataTable dataTable)
     {
         var games = new List<Game>();
@@ -85,6 +131,7 @@ public class GameRepository : IGameRepository
                 Moves = ((string[])row["moves"]).ToList()
             });
         }
+
         return games;
     }
 }
