@@ -1,8 +1,4 @@
-using System.Text.RegularExpressions;
-
 namespace Shared.Pieces;
-
-using Shared;
 
 public abstract class Piece(string position, string name, bool isWhite, bool isCaptured = false)
 {
@@ -17,9 +13,9 @@ public abstract class Piece(string position, string name, bool isWhite, bool isC
 
     public override string ToString() => UnicodeSymbol;
 
-    public virtual void Move(string newPosition)
+    public void Move(string newPosition)
     {
-        this.Position = newPosition;
+        Position = newPosition;
         Moved = true;
     }
 }
