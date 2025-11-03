@@ -1,3 +1,5 @@
+using Shared.Logger;
+
 namespace chess_client;
 
 using Shared;

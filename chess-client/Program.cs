@@ -1,6 +1,7 @@
 ﻿using Shared;
 using System.Text;
-using LogLevel = Shared.LogLevel;
+using Shared.Logger;
+using LogLevel = Shared.Logger.LogLevel;
 
 namespace chess_client;
 

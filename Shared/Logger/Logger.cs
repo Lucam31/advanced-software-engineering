@@ -1,37 +1,6 @@
 using System.Text;
 
-namespace Shared;
-
-/// <summary>
-/// Defines the severity of a log message.
-/// </summary>
-public enum LogLevel
-{
-    /// <summary>
-    /// Detailed information for debugging.
-    /// </summary>
-    Debug,
-
-    /// <summary>
-    /// Normal application events.
-    /// </summary>
-    Info,
-
-    /// <summary>
-    /// Unexpected, but non-critical problems.
-    /// </summary>
-    Warning,
-
-    /// <summary>
-    /// An error occurred, but the application can continue.
-    /// </summary>
-    Error,
-
-    /// <summary>
-    /// An error that forces the application to stop.
-    /// </summary>
-    Fatal
-}
+namespace Shared.Logger;
 
 /// <summary>
 /// A simple, static logger for the game.
@@ -47,8 +16,8 @@ public static class GameLogger
     private static bool _logToFile = true;
     private static string _logFilePath = "logs/default_log.txt";
 
-    private static readonly object _consoleLock = new object();
-    private static readonly object _fileLock = new object();
+    private static readonly Lock _consoleLock = new Lock();
+    private static readonly Lock _fileLock = new Lock();
 
     /// <summary>
     /// Configures the logger once at application startup.
@@ -69,7 +38,10 @@ public static class GameLogger
         _logToFile = logToFile;
         if (logFilePath != null)
         {
-            _logFilePath = logFilePath;
+            lock (_fileLock)
+            {
+                _logFilePath = logFilePath;
+            }
         }
 
         if (!_logToFile) return;
@@ -227,7 +199,7 @@ public static class GameLogger
                 var directory = Path.GetDirectoryName(_logFilePath);
                 if (!Directory.Exists(directory))
                 {
-                    Directory.CreateDirectory(directory);
+                    Directory.CreateDirectory(directory!);
                 }
 
                 // Appends the line to the end of the file

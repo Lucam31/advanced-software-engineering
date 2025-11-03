@@ -5,6 +5,7 @@ using chess_server.Repositories;
 using chess_server.Services;
 using Shared;
 using System.Text;
+using Shared.Logger;
 
 namespace chess_server;
 
