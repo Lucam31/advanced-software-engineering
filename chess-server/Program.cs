@@ -3,14 +3,19 @@ using chess_server.Api.Controller;
 using chess_server.Data;
 using chess_server.Repositories;
 using chess_server.Services;
-using Shared;
 using System.Text;
 using Shared.Logger;
 
 namespace chess_server;
 
+/// <summary>
+/// The main entry point for the chess server application.
+/// </summary>
 internal static class Program
 {
+    /// <summary>
+    /// The main method that configures and runs the server.
+    /// </summary>
     private static async Task Main()
     {
         Console.OutputEncoding = Encoding.UTF8;

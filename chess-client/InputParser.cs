@@ -1,11 +1,20 @@
 using Shared.Logger;
+using Shared;
 
 namespace chess_client;
 
-using Shared;
-
+/// <summary>
+/// Provides static methods for parsing user input.
+/// </summary>
 public static class InputParser
 {
+    /// <summary>
+    /// Reads and validates user input against a set of valid options.
+    /// </summary>
+    /// <param name="prompt">The message to display to the user.</param>
+    /// <param name="newLine">Whether to print the prompt on a new line.</param>
+    /// <param name="validInputs">An array of valid input strings.</param>
+    /// <returns>The validated user input.</returns>
     public static string? ReadInput(string prompt, bool newLine = false, params string[] validInputs)
     {
         if (validInputs.Length == 0)
@@ -45,6 +54,10 @@ public static class InputParser
         }
     }
 
+    /// <summary>
+    /// Reads a chess move from the user in algebraic notation (e.g., "e2e4").
+    /// </summary>
+    /// <returns>A <see cref="Move"/> object representing the user's move.</returns>
     public static Move ReadMove()
     {
         GameLogger.Debug("Reading move from console input.");

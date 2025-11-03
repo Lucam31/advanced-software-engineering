@@ -3,26 +3,49 @@ namespace Shared;
 using Pieces;
 using System;
 
+/// <summary>
+/// Represents the chessboard, containing the grid of tiles and managing piece positions.
+/// </summary>
 public class Gameboard
 {
     private readonly Tile[,] _tiles;
 
+    /// <summary>
+    /// Gets the number of rows on the game board.
+    /// </summary>
     private int Rows => _tiles.GetLength(0);
+    
+    /// <summary>
+    /// Gets the number of columns on the game board.
+    /// </summary>
     private int Cols => _tiles.GetLength(1);
 
     private readonly List<Piece> _capturedBlackPieces = [];
     private readonly List<Piece> _capturedWhitePieces = [];
 
+    /// <summary>
+    /// Gets a list of all captured white pieces.
+    /// </summary>
     public List<Piece> CapturedWhitePieces => [.._capturedWhitePieces];
+    
+    /// <summary>
+    /// Gets a list of all captured black pieces.
+    /// </summary>
     public List<Piece> CapturedBlackPieces => [.._capturedBlackPieces];
 
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Gameboard"/> class, setting up the initial state of the board.
+    /// </summary>
     public Gameboard()
     {
         _tiles = new Tile[8, 8];
         InitializeTiles();
     }
 
+    /// <summary>
+    /// Sets up the initial placement of all pieces on the board.
+    /// </summary>
     private void InitializeTiles()
     {
         for (var r = 0; r < Rows; r++)
@@ -64,12 +87,21 @@ public class Gameboard
         }
     }
 
+    /// <summary>
+    /// Gets or sets the tile at the specified row and column.
+    /// </summary>
+    /// <param name="row">The zero-based row index.</param>
+    /// <param name="col">The zero-based column index.</param>
+    /// <returns>The <see cref="Tile"/> at the specified position.</returns>
     public Tile this[int row, int col]
     {
         get => _tiles[row, col];
         set => _tiles[row, col] = value ?? throw new ArgumentNullException(nameof(value));
     }
 
+    /// <summary>
+    /// Prints the current state of the board to the console, including pieces and coordinates.
+    /// </summary>
     public void PrintBoard()
     {
         const int cellWidth = 3;
@@ -119,11 +151,21 @@ public class Gameboard
         }
     }
 
+    /// <summary>
+    /// Retrieves the piece at a given algebraic notation position.
+    /// </summary>
+    /// <param name="position">The algebraic notation of the tile (e.g., "A1", "H8").</param>
+    /// <returns>The <see cref="Piece"/> at the specified position, or null if the tile is empty.</returns>
     public Piece? GetPieceAtPosition(string position)
     {
         return _tiles[position[1] - '1', position[0] - 'A'].CurrentPiece;
     }
 
+    /// <summary>
+    /// Executes a move on the board, updating piece positions and handling captures.
+    /// </summary>
+    /// <param name="move">The move to be executed.</param>
+    /// <returns>True if the move was successfully executed.</returns>
     public bool Move(Move move)
     {
         var fromIndexLetter = move.From[0] - 'A';

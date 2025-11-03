@@ -8,26 +8,50 @@ using chess_server.Api.Middlewares;
 
 namespace chess_server.Api;
 
+/// <summary>
+/// Defines the interface for a router that handles HTTP requests.
+/// </summary>
 public interface IRouter
 {
+    /// <summary>
+    /// Registers a controller class, making its methods available as routes.
+    /// </summary>
+    /// <typeparam name="T">The type of the controller to register.</typeparam>
     void RegisterController<T>() where T : class;
+
+    /// <summary>
+    /// Handles an incoming HTTP request by dispatching it to the appropriate route handler.
+    /// </summary>
+    /// <param name="context">The HTTP listener context for the request.</param>
     Task HandleRequest(HttpListenerContext context);
 }
 
+/// <summary>
+/// Represents a delegate for handling a specific route.
+/// </summary>
+/// <param name="context">The HTTP listener context for the request.</param>
 public delegate Task RouteHandler(HttpListenerContext context);
 
+/// <summary>
+/// A router that maps HTTP requests to controller methods.
+/// </summary>
 public class Router : IRouter
 {
     private readonly Dictionary<string, RouteHandler> _routes = new();
     private readonly IDiContainer _diContainer;
     private readonly ExceptionMiddleware _exceptionMiddleware;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Router"/> class.
+    /// </summary>
+    /// <param name="diContainer">The dependency injection container.</param>
     public Router(IDiContainer diContainer)
     {
         _diContainer = diContainer;
         _exceptionMiddleware = new ExceptionMiddleware();
     }
 
+    /// <inheritdoc/>
     public void RegisterController<T>() where T : class
     {
         var controller = typeof(T);
@@ -46,7 +70,8 @@ public class Router : IRouter
             var fullPath = basePath + routeAttribute.Path;
 
             var httpMethodAttr = method.GetCustomAttribute<HttpMethodAttribute>();
-            var httpMethod = httpMethodAttr?.Method ?? throw new Exception($"HTTP method not defined for {method.Name}");
+            var httpMethod = httpMethodAttr?.Method ??
+                             throw new Exception($"HTTP method not defined for {method.Name}");
 
             RouteHandler handler = async (context) =>
             {
@@ -66,12 +91,18 @@ public class Router : IRouter
                     }
                 }
             };
-            
+
             var key = $"{httpMethod}:{fullPath}";
             _routes.Add(key, handler);
         }
     }
 
+    /// <summary>
+    /// Extracts and deserializes parameters for a controller method from the HTTP request.
+    /// </summary>
+    /// <param name="method">The controller method to extract parameters for.</param>
+    /// <param name="context">The HTTP listener context.</param>
+    /// <returns>An array of objects representing the method's arguments.</returns>
     private async Task<object[]> GetMethodParameters(MethodInfo method, HttpListenerContext context)
     {
         var parameters = method.GetParameters();
@@ -104,7 +135,7 @@ public class Router : IRouter
                 }
                 else
                 {
-                    args[i] = null; 
+                    args[i] = null;
                 }
             }
         }
@@ -112,6 +143,7 @@ public class Router : IRouter
         return args;
     }
 
+    /// <inheritdoc/>
     public async Task HandleRequest(HttpListenerContext context)
     {
         await _exceptionMiddleware.HandleWithExceptionCatch(context, async () =>

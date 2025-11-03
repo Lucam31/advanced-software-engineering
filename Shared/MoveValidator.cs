@@ -2,8 +2,17 @@ namespace Shared;
 
 using Pieces;
 
+/// <summary>
+/// Provides static methods for validating chess moves.
+/// </summary>
 public static class MoveValidator
 {
+    /// <summary>
+    /// Validates a given move on the specified game board.
+    /// </summary>
+    /// <param name="move">The move to validate.</param>
+    /// <param name="gameboard">The current game board state.</param>
+    /// <returns>True if the move is valid; otherwise, false.</returns>
     public static bool ValidateMove(Move move, Gameboard gameboard)
     {
         var oldPosition = move.From;
@@ -70,6 +79,14 @@ public static class MoveValidator
         return false;
     }
 
+    /// <summary>
+    /// Validates that the path between two tiles is clear for a given piece.
+    /// </summary>
+    /// <param name="start">The starting position in algebraic notation.</param>
+    /// <param name="end">The ending position in algebraic notation.</param>
+    /// <param name="piece">The piece that is moving.</param>
+    /// <param name="gameboard">The current game board state.</param>
+    /// <returns>True if the path is clear; otherwise, false.</returns>
     private static bool ValidateTilesBetween(string start, string end, Piece piece, Gameboard gameboard)
     {
         var startRow = start[1] - '0';
@@ -107,6 +124,15 @@ public static class MoveValidator
         }
     }
 
+    /// <summary>
+    /// Checks if the path is clear for a rook's move (horizontally or vertically).
+    /// </summary>
+    /// <param name="startRow">The starting row.</param>
+    /// <param name="startCol">The starting column.</param>
+    /// <param name="endRow">The ending row.</param>
+    /// <param name="endCol">The ending column.</param>
+    /// <param name="gameboard">The game board.</param>
+    /// <returns>True if the path is clear, otherwise false.</returns>
     private static bool RookCheck(int startRow, char startCol, int endRow, char endCol, Gameboard gameboard)
     {
         if (startRow < endRow)
@@ -150,6 +176,15 @@ public static class MoveValidator
         }
     }
 
+    /// <summary>
+    /// Checks if the path is clear for a bishop's move (diagonally).
+    /// </summary>
+    /// <param name="startRow">The starting row.</param>
+    /// <param name="startCol">The starting column.</param>
+    /// <param name="endRow">The ending row.</param>
+    /// <param name="endCol">The ending column.</param>
+    /// <param name="gameboard">The game board.</param>
+    /// <returns>True if the path is clear, otherwise false.</returns>
     private static bool BishopCheck(int startRow, char startCol, int endRow, char endCol, Gameboard gameboard)
     {
         if (startRow < endRow && startCol < endCol)
@@ -201,6 +236,10 @@ public static class MoveValidator
         }
     }
 
+    /// <summary>
+    /// Checks if an en passant move is valid.
+    /// </summary>
+    /// <returns>True if the en passant move is valid, otherwise false. Currently a placeholder.</returns>
     private static bool CheckEnPassant()
     {
         // Placeholder for en passant logic

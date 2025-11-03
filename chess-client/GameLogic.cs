@@ -4,16 +4,26 @@ namespace chess_client;
 
 using Shared;
 
+/// <summary>
+/// Manages the core logic of the chess game.
+/// </summary>
 public class GameLogic
 {
-    private Gameboard _gameboard;
+    private readonly Gameboard _gameboard;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GameLogic"/> class.
+    /// </summary>
+    /// <param name="gameboard">The game board to be used.</param>
     public GameLogic(Gameboard gameboard)
     {
         _gameboard = gameboard;
         GameLogger.Debug("GameLogic initialized with Gameboard instance.");
     }
 
+    /// <summary>
+    /// Starts a new game, including connecting to the server and entering the main gameplay loop.
+    /// </summary>
     public void StartNewGame()
     {
         GameLogger.Info("Starting new game sequence.");
@@ -41,6 +51,9 @@ public class GameLogic
         }
     }
 
+    /// <summary>
+    /// The main loop for gameplay, handling user input and move validation.
+    /// </summary>
     private void GameplayLoop()
     {
         GameLogger.Debug("GameplayLoop started.");

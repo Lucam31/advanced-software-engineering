@@ -2,11 +2,15 @@ using Shared.Logger;
 
 namespace chess_client;
 
-using Shared;
-using System;
-
+/// <summary>
+/// Manages the main menu of the game.
+/// </summary>
 public class GameMenu
 {
+    /// <summary>
+    /// Displays the main menu and handles user input for starting or quitting the game.
+    /// </summary>
+    /// <returns>True if the user chooses to play, false if they choose to quit.</returns>
     public static bool DisplayMainMenu()
     {
         while (true)

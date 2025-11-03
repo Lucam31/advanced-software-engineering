@@ -1,12 +1,20 @@
 using System.Net;
+using Shared.Logger;
 
 namespace chess_server.Api;
 
+/// <summary>
+/// Represents the core API server that listens for and handles HTTP requests.
+/// </summary>
 public class Api
 {
     private readonly IRouter _router;
     private readonly HttpListener _listener;
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Api"/> class.
+    /// </summary>
+    /// <param name="router">The router to use for handling requests.</param>
     public Api(Router router)
     {
         _router = router;
@@ -14,6 +22,9 @@ public class Api
         _listener.Prefixes.Add("http://+:8080/");
     }
     
+    /// <summary>
+    /// Starts the server and begins listening for incoming requests.
+    /// </summary>
     public async Task Run()
     {
         try
@@ -21,12 +32,12 @@ public class Api
             _listener.Start();
             
             
-            Console.WriteLine("Server started on http://0.0.0.0:8080");
+            GameLogger.Info("Server started on http://0.0.0.0:8080");
 
             while (true)
             {
                 var context = await _listener.GetContextAsync();
-                Console.WriteLine($"Received request: {context.Request.Url}");
+                GameLogger.Info($"Received request: {context.Request.Url}");
                 
                 _ = Task.Run(async () =>
                 {
@@ -36,14 +47,14 @@ public class Api
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Request handling error: {ex.Message}");
+                        GameLogger.Error($"Request handling error: {ex.Message}", ex);
                     }
                 });
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Server error: {ex.Message}");
+            GameLogger.Fatal($"Server error: {ex.Message}", ex);
         }
         finally
         {

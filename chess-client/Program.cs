@@ -5,8 +5,14 @@ using LogLevel = Shared.Logger.LogLevel;
 
 namespace chess_client;
 
+/// <summary>
+/// The main entry point for the chess client application.
+/// </summary>
 internal static class Program
 {
+    /// <summary>
+    /// The main method that runs the client application.
+    /// </summary>
     private static Task Main()
     {
         Console.OutputEncoding = Encoding.UTF8;

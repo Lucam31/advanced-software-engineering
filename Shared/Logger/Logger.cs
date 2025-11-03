@@ -16,8 +16,8 @@ public static class GameLogger
     private static bool _logToFile = true;
     private static string _logFilePath = "logs/default_log.txt";
 
-    private static readonly Lock _consoleLock = new Lock();
-    private static readonly Lock _fileLock = new Lock();
+    private static readonly object _consoleLock = new object();
+    private static readonly object _fileLock = new object();
 
     /// <summary>
     /// Configures the logger once at application startup.
@@ -38,10 +38,7 @@ public static class GameLogger
         _logToFile = logToFile;
         if (logFilePath != null)
         {
-            lock (_fileLock)
-            {
-                _logFilePath = logFilePath;
-            }
+            _logFilePath = logFilePath;
         }
 
         if (!_logToFile) return;
@@ -116,6 +113,9 @@ public static class GameLogger
     {
         Log(LogLevel.Fatal, message, ex);
     }
+
+
+    // --- Private Core Logic ---
 
     /// <summary>
     /// The central log method that formats and dispatches to targets.
