@@ -2,7 +2,6 @@ namespace Shared;
 
 using Pieces;
 using System;
-using Pieces;
 
 public class Gameboard
 {
