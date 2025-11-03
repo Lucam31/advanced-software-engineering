@@ -3,6 +3,7 @@ using chess_server.OutputDtos;
 using chess_server.Repositories;
 using Shared.Exceptions;
 using Shared.InputDtos;
+using Shared.Logger;
 
 namespace chess_server.Services;
 
@@ -53,6 +54,8 @@ public class GameService : IGameService
     /// <inheritdoc/>
     public async Task InsertGameAsync(InsertGame dto)
     {
+        GameLogger.Info(
+            $"Inserting game {dto.Id} (White={dto.WhitePlayerId}, Black={dto.BlackPlayerId}), Moves={dto.Moves?.Count ?? 0}");
         var game = new Game
         {
             Guid = dto.Id,
@@ -62,11 +65,13 @@ public class GameService : IGameService
         };
 
         await _gameRepository.InsertGameAsync(game);
+        GameLogger.Info($"Game {dto.Id} inserted successfully.");
     }
 
     /// <inheritdoc/>
     public async Task<List<PlayedGame>> GetLastGlobalPlayedGamesAsync()
     {
+        GameLogger.Info("Fetching last global played games");
         var games = await _gameRepository.GetRecentGamesAsync();
 
         var playedGames = new List<PlayedGame>();
@@ -77,7 +82,10 @@ public class GameService : IGameService
             var blackPlayer = _userRepository.GetUserByIdAsync(g.BlackPlayerId).Result;
 
             if (whitePlayer == null || blackPlayer == null)
+            {
+                GameLogger.Error($"User not found for game {g.Guid}: White={g.WhitePlayerId}, Black={g.BlackPlayerId}");
                 throw new UserNotFound();
+            }
 
             playedGames.Add(new PlayedGame
             {
@@ -88,12 +96,14 @@ public class GameService : IGameService
             });
         }
 
+        GameLogger.Info($"Returning {playedGames.Count} global games");
         return playedGames;
     }
 
     /// <inheritdoc/>
     public async Task<List<PlayedGame>> GetLastUserPlayedGamesAsync(Guid userId)
     {
+        GameLogger.Info($"Fetching last games for user {userId}");
         var games = await _gameRepository.GetGamesByUserIdAsync(userId);
 
         var playedGames = new List<PlayedGame>();
@@ -104,7 +114,10 @@ public class GameService : IGameService
             var blackPlayer = _userRepository.GetUserByIdAsync(g.BlackPlayerId).Result;
 
             if (whitePlayer == null || blackPlayer == null)
+            {
+                GameLogger.Error($"User not found for game {g.Guid}: White={g.WhitePlayerId}, Black={g.BlackPlayerId}");
                 throw new UserNotFound();
+            }
 
             playedGames.Add(new PlayedGame
             {
@@ -115,6 +128,7 @@ public class GameService : IGameService
             });
         }
 
+        GameLogger.Info($"Returning {playedGames.Count} games for user {userId}");
         return playedGames;
     }
 }

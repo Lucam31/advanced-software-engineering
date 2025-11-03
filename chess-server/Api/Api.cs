@@ -10,7 +10,7 @@ public class Api
 {
     private readonly IRouter _router;
     private readonly HttpListener _listener;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Api"/> class.
     /// </summary>
@@ -21,7 +21,7 @@ public class Api
         _listener = new HttpListener();
         _listener.Prefixes.Add("http://+:8080/");
     }
-    
+
     /// <summary>
     /// Starts the server and begins listening for incoming requests.
     /// </summary>
@@ -30,15 +30,15 @@ public class Api
         try
         {
             _listener.Start();
-            
-            
+
+
             GameLogger.Info("Server started on http://0.0.0.0:8080");
 
             while (true)
             {
                 var context = await _listener.GetContextAsync();
-                GameLogger.Info($"Received request: {context.Request.Url}");
-                
+                GameLogger.Info($"Received request: {context.Request.HttpMethod} {context.Request.Url}");
+
                 _ = Task.Run(async () =>
                 {
                     try
@@ -59,6 +59,7 @@ public class Api
         finally
         {
             _listener?.Stop();
+            GameLogger.Info("HTTP listener stopped.");
         }
         // ReSharper disable once FunctionNeverReturns
     }

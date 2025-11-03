@@ -1,4 +1,5 @@
 using System.Net;
+using Shared.Logger;
 
 namespace chess_server.Api.ActionResults;
 
@@ -21,6 +22,7 @@ public class OkResult : IActionResult
     /// <inheritdoc/>
     public async Task ExecuteResultAsync(HttpListenerContext context)
     {
+        GameLogger.Debug($"Executing OkResult (HasValue={_value != null})");
         var response = new Response(context);
         response.SetStatusCode(HttpStatusCode.OK);
 

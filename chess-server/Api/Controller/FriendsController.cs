@@ -2,6 +2,7 @@ using chess_server.Api.ActionResults;
 using chess_server.Api.Attributes;
 using chess_server.Services;
 using Shared.InputDtos;
+using Shared.Logger;
 
 namespace chess_server.Api.Controller;
 
@@ -61,8 +62,9 @@ public class FriendsController : IFriendsController
     [Route("/add")]
     public async Task<IActionResult> AddFriend([FromBody] FriendRequest dto)
     {
+        GameLogger.Info($"HTTP POST /api/friends/add by {dto.UserId} for '{dto.FriendUsername}'");
         await _friendsService.AddFriendAsync(dto);
-        
+        GameLogger.Info($"Friend request created by {dto.UserId} for '{dto.FriendUsername}'");
         return Results.Ok();
     }
 
@@ -71,8 +73,9 @@ public class FriendsController : IFriendsController
     [Route("/list")]
     public async Task<IActionResult> GetFriends([FromQuery] Guid userId)
     {
+        GameLogger.Info($"HTTP GET /api/friends/list?userId={userId}");
         var friends = await _friendsService.GetFriendsAsync(userId);
-        
+        GameLogger.Info($"Returning {friends.Count} friends for user {userId}");
         return Results.Ok(friends);
     }
 
@@ -81,7 +84,10 @@ public class FriendsController : IFriendsController
     [Route("/pendingRequests")]
     public async Task<IActionResult> GetPendingRequests([FromQuery] Guid userId)
     {
-        return Results.Ok(await _friendsService.GetPendingFriendRequestsAsync(userId));
+        GameLogger.Info($"HTTP GET /api/friends/pendingRequests?userId={userId}");
+        var pending = await _friendsService.GetPendingFriendRequestsAsync(userId);
+        GameLogger.Info($"Returning {pending.Count} pending requests for user {userId}");
+        return Results.Ok(pending);
     }
 
     /// <inheritdoc/>
@@ -89,8 +95,9 @@ public class FriendsController : IFriendsController
     [Route("/update")]
     public async Task<IActionResult> UpdateFriendRequest([FromBody] UpdateFriendship dto)
     {
+        GameLogger.Info($"HTTP PATCH /api/friends/update id={dto.FriendshipId} status={dto.Status}");
         await _friendsService.UpdateFriendRequestAsync(dto);
-        
+        GameLogger.Info($"Friendship {dto.FriendshipId} updated to {dto.Status}");
         return Results.Ok();
     }
 }

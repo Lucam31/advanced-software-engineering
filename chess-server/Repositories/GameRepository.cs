@@ -1,6 +1,7 @@
 using System.Data;
 using chess_server.Data;
 using chess_server.Models;
+using Shared.Logger;
 
 namespace chess_server.Repositories;
 
@@ -50,23 +51,28 @@ public class GameRepository : IGameRepository
     /// <inheritdoc/>
     public async Task InsertGameAsync(Game game)
     {
+        GameLogger.Debug(
+            $"Inserting game: White={game.WhitePlayerId}, Black={game.BlackPlayerId}, Moves={game.Moves?.Count ?? 0}");
         var sql = @"
             INSERT INTO games (id, white_player_id, black_player_id, moves)
             VALUES (@Id, @WhitePlayerId, @BlackPlayerId, @Moves)";
 
         var parameters = new Dictionary<string, object>
         {
+            { "@Id", game.Guid },
             { "@WhitePlayerId", game.WhitePlayerId },
             { "@BlackPlayerId", game.BlackPlayerId },
             { "@Moves", game.Moves.ToArray() }
         };
 
         await _database.ExecuteNonQueryWithTransactionAsync(sql, parameters);
+        GameLogger.Info($"Inserted game {game.Guid}");
     }
 
     /// <inheritdoc/>
     public async Task<List<Game>> GetRecentGamesAsync(int limit = 10)
     {
+        GameLogger.Debug($"Fetching recent games, limit={limit}");
         var sql = @"
             SELECT id, white_player_id, black_player_id, moves
             FROM games
@@ -79,12 +85,15 @@ public class GameRepository : IGameRepository
         };
 
         var dataTable = await _database.ExecuteQueryAsync(sql, parameters);
-        return ConvertDataTableToGames(dataTable);
+        var result = ConvertDataTableToGames(dataTable);
+        GameLogger.Debug($"Fetched {result.Count} recent games");
+        return result;
     }
 
     /// <inheritdoc/>
     public async Task<List<Game>> GetGamesByUserIdAsync(Guid userId, int limit = 10)
     {
+        GameLogger.Debug($"Fetching games by user {userId}, limit={limit}");
         var sql = @"
             SELECT id, white_player_id, black_player_id, moves
             FROM games
@@ -99,7 +108,9 @@ public class GameRepository : IGameRepository
         };
 
         var dataTable = await _database.ExecuteQueryAsync(sql, parameters);
-        return ConvertDataTableToGames(dataTable);
+        var result = ConvertDataTableToGames(dataTable);
+        GameLogger.Debug($"Fetched {result.Count} games for user {userId}");
+        return result;
     }
 
     /// <summary>
