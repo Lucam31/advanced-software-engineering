@@ -43,7 +43,7 @@ public static class CLIOutput
         int prevLine = Console.CursorTop;
         
         Console.SetCursorPosition(0, Console.CursorTop-12);
-        // board.PrintBoard();
+        board.PrintBoard();
         Console.SetCursorPosition(0, prevLine);
     }
     

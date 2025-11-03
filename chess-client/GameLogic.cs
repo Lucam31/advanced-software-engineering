@@ -28,11 +28,11 @@ public class GameLogic
 
     private void GameplayLoop()
     {
-        string move;
+        Move move;
         while (true)
         {
-            move = InputParser.ReadMove();
-            MoveValidator.ValidateMove(move, _gameboard);
+            move = new Move("e2", "e4");
+            MoveValidator.ValidateMove("e2e4", _gameboard);
             _gameboard.Move(move);
             return;
         }

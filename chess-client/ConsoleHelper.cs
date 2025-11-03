@@ -6,6 +6,8 @@ public static class ConsoleHelper
 --------------------
 |     Play(P)      |
 --------------------
+|    Replay(R)     |
+--------------------
 |     Quit(Q)      |
 --------------------";
     // maybe add print gameboard here???
