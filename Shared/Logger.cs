@@ -42,13 +42,11 @@ public enum LogLevel
 /// </summary>
 public static class GameLogger
 {
-    // --- Configuration ---
     private static LogLevel _minLevel = LogLevel.Info;
     private static bool _logToConsole = true;
     private static bool _logToFile = true;
     private static string _logFilePath = "logs/default_log.txt";
 
-    // --- Thread-Safety ---
     private static readonly object _consoleLock = new object();
     private static readonly object _fileLock = new object();
 
@@ -147,9 +145,6 @@ public static class GameLogger
         Log(LogLevel.Fatal, message, ex);
     }
 
-
-    // --- Private Core Logic ---
-
     /// <summary>
     /// The central log method that formats and dispatches to targets.
     /// </summary>
@@ -211,12 +206,10 @@ public static class GameLogger
             Console.WriteLine(message);
 
             // Exception (Red)
-            if (ex != null)
-            {
-                Console.ForegroundColor = ConsoleColor.DarkRed;
-                Console.WriteLine(ex);
-                Console.ResetColor();
-            }
+            if (ex == null) return;
+            Console.ForegroundColor = ConsoleColor.DarkRed;
+            Console.WriteLine(ex);
+            Console.ResetColor();
         }
     }
 
@@ -259,14 +252,14 @@ public static class GameLogger
     /// </summary>
     private static ConsoleColor GetLevelColor(LogLevel level)
     {
-        switch (level)
+        return level switch
         {
-            case LogLevel.Debug: return ConsoleColor.Gray;
-            case LogLevel.Info: return ConsoleColor.Cyan;
-            case LogLevel.Warning: return ConsoleColor.Yellow;
-            case LogLevel.Error: return ConsoleColor.Red;
-            case LogLevel.Fatal: return ConsoleColor.Magenta;
-            default: return ConsoleColor.White;
-        }
+            LogLevel.Debug => ConsoleColor.Gray,
+            LogLevel.Info => ConsoleColor.Cyan,
+            LogLevel.Warning => ConsoleColor.Yellow,
+            LogLevel.Error => ConsoleColor.Red,
+            LogLevel.Fatal => ConsoleColor.Magenta,
+            _ => ConsoleColor.White
+        };
     }
 }
