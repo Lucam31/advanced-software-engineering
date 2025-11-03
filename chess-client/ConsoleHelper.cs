@@ -2,7 +2,7 @@ namespace chess_client;
 
 public static class ConsoleHelper
 {
-    public static readonly string Menu = @"Welcome to ChessLI!
+    public const string Menu = @"Welcome to ChessLI!
 --------------------
 |     Play(P)      |
 --------------------
