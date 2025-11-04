@@ -40,6 +40,8 @@ public class ExceptionMiddleware
             InvalidCredentials => HttpStatusCode.Unauthorized,
 
             UserAlreadyExists => HttpStatusCode.Conflict,
+            
+            BadParameters => HttpStatusCode.BadRequest,
 
             _ => HttpStatusCode.InternalServerError
         };

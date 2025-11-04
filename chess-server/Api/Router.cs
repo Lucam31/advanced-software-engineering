@@ -4,7 +4,9 @@ using System.Text;
 using System.Text.Json;
 using chess_server.Api.ActionResults;
 using chess_server.Api.Attributes;
+using chess_server.Api.Hub;
 using chess_server.Api.Middlewares;
+using Shared.Exceptions;
 using Shared.Logger;
 
 namespace chess_server.Api;
@@ -20,6 +22,12 @@ public interface IRouter
     /// <typeparam name="T">The type of the controller to register.</typeparam>
     void RegisterController<T>() where T : class;
 
+    /// <summary>
+    /// Registers a WebSocket hub to manage incoming websocket connections.
+    /// </summary>
+    /// <param name="hub">The WebSocket hub to register.</param>
+    void RegisterHub(WebSocketHub hub);
+    
     /// <summary>
     /// Handles an incoming HTTP request by dispatching it to the appropriate route handler.
     /// </summary>
@@ -46,10 +54,11 @@ public class Router : IRouter
     /// Initializes a new instance of the <see cref="Router"/> class.
     /// </summary>
     /// <param name="diContainer">The dependency injection container.</param>
-    public Router(IDiContainer diContainer)
+    /// <param name="exceptionMiddleware">The exception handling middleware.</param>
+    public Router(IDiContainer diContainer, ExceptionMiddleware exceptionMiddleware)
     {
         _diContainer = diContainer;
-        _exceptionMiddleware = new ExceptionMiddleware();
+        _exceptionMiddleware = exceptionMiddleware;
         GameLogger.Debug("Router initialized with ExceptionMiddleware.");
     }
 
@@ -64,7 +73,7 @@ public class Router : IRouter
         var basePath = controllerRoute?.Path ?? "";
 
         var methods = controller.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-            .Where(m => m.GetCustomAttribute<RouteAttribute>() != null);
+            .Where(m => m.GetCustomAttribute<RouteAttribute>() != null).ToList();
 
         foreach (var method in methods)
         {
@@ -91,9 +100,15 @@ public class Router : IRouter
                     if (task.GetType().IsGenericType &&
                         task.GetType().GetGenericArguments()[0].IsAssignableTo(typeof(IActionResult)))
                     {
+                        
                         var actionResult = (IActionResult)task.GetType().GetProperty("Result")?.GetValue(task);
-                        GameLogger.Warning($"Action {controller.Name}.{method.Name} returned null IActionResult.");
-                        await actionResult?.ExecuteResultAsync(context);
+                        if (actionResult != null)
+                        {
+                            await actionResult.ExecuteResultAsync(context);
+                        }else
+                        {
+                            GameLogger.Warning($"Action {controller.Name}.{method.Name} returned null IActionResult.");
+                        }
                     }
                 }
             };
@@ -104,6 +119,30 @@ public class Router : IRouter
         }
 
         GameLogger.Info($"Controller {controller.Name} registration completed with {methods.Count()} route(s).");
+    }
+    
+    /// <inheritdoc/>
+    public void RegisterHub(WebSocketHub hub)
+    {
+        GameLogger.Info("Registering WebSocket Hub.");
+
+        RouteHandler handler = async (context) =>
+        {
+            GameLogger.Debug("Handling WebSocket connection.");
+            if (context.Request.IsWebSocketRequest)
+            {
+                await hub.HandleConnectionRequest(context);
+            }
+            else
+            {
+                GameLogger.Warning("Received non-WebSocket request on WebSocket route.");
+                throw new BadParameters("NO_WEBSOCKET");
+            }
+        };
+
+        var key = $"GET:/ws";
+        _routes.Add(key, handler);
+        GameLogger.Info("WebSocket Hub registered at route GET:/ws.");
     }
 
     /// <summary>
