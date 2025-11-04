@@ -1,12 +1,13 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="chess-client" type="DotNetProject" factoryName=".NET Project" folderName="client">
-    <log_file alias="chess-client-logs" path="$PROJECT_DIR$/chess-client/bin/Debug/net9.0/logs/client_log.txt" show_all="true" />
-    <option name="EXE_PATH" value="$PROJECT_DIR$/chess-client/bin/Debug/net9.0/chess-client" />
+  <configuration default="false" name="chess-server/file" type="DotNetProject" factoryName=".NET Project" folderName="server">
+    <log_file alias="chess-server-logs" path="$PROJECT_DIR$/chess-server/bin/Debug/net9.0/logs/server_log.txt" show_all="true" />
+    <option name="EXE_PATH" value="$PROJECT_DIR$/chess-server/bin/Debug/net9.0/chess-server" />
     <option name="PROGRAM_PARAMETERS" value="" />
-    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/chess-client/bin/Debug/net9.0" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/chess-server/bin/Debug/net9.0" />
     <option name="PASS_PARENT_ENVS" value="1" />
     <envs>
       <env name="CONSOLE_LOG" value="false" />
+      <env name="FILE_LOG" value="true" />
     </envs>
     <option name="USE_EXTERNAL_CONSOLE" value="0" />
     <option name="ENV_FILE_PATHS" value="" />
@@ -16,7 +17,7 @@
     <option name="USE_MONO" value="0" />
     <option name="RUNTIME_ARGUMENTS" value="" />
     <option name="AUTO_ATTACH_CHILDREN" value="0" />
-    <option name="PROJECT_PATH" value="$PROJECT_DIR$/chess-client/chess-client.csproj" />
+    <option name="PROJECT_PATH" value="$PROJECT_DIR$/chess-server/chess-server.csproj" />
     <option name="PROJECT_EXE_PATH_TRACKING" value="1" />
     <option name="PROJECT_ARGUMENTS_TRACKING" value="1" />
     <option name="PROJECT_WORKING_DIRECTORY_TRACKING" value="1" />

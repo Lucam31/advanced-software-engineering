@@ -9,7 +9,7 @@
         </option>
         <option name="executable">
           <ExecutableSnapshot>
-            <option name="id" value="runConfig:.NET Project.chess-server" />
+            <option name="id" value="runConfig:.NET Project.chess-server/file+cli" />
           </ExecutableSnapshot>
         </option>
       </ExecutableRowSnapshot>
@@ -24,7 +24,7 @@
         </option>
         <option name="executable">
           <ExecutableSnapshot>
-            <option name="id" value="runConfig:.NET Project.chess-client" />
+            <option name="id" value="runConfig:.NET Project.chess-client/file" />
           </ExecutableSnapshot>
         </option>
       </ExecutableRowSnapshot>

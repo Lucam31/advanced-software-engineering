@@ -20,18 +20,15 @@ internal static class Program
     {
         Console.OutputEncoding = Encoding.UTF8;
 
-        var enableConsole = true;
-        var consoleLogEnv = Environment.GetEnvironmentVariable("CONSOLE_LOG");
-
-        if (consoleLogEnv != null && consoleLogEnv.Equals("false", StringComparison.OrdinalIgnoreCase))
-        {
-            enableConsole = false;
-        }
+        var enableConsoleLog = !string.Equals(Environment.GetEnvironmentVariable("CONSOLE_LOG"), "false",
+            StringComparison.OrdinalIgnoreCase);
+        var enableFileLog = !string.Equals(Environment.GetEnvironmentVariable("FILE_LOG"), "false",
+            StringComparison.OrdinalIgnoreCase);
 
         GameLogger.Configure(
             minLevel: LogLevel.Debug,
-            logToConsole: enableConsole,
-            logToFile: true,
+            logToConsole: enableConsoleLog,
+            logToFile: enableFileLog,
             logFilePath: "logs/server_log.txt"
         );
 
