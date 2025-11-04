@@ -1,5 +1,7 @@
 ﻿using Shared;
 using System.Text;
+using chess_client.Menus;
+using chess_client.Services;
 using Shared.Logger;
 using LogLevel = Shared.Logger.LogLevel;
 
@@ -13,7 +15,7 @@ internal static class Program
     /// <summary>
     /// The main method that runs the client application.
     /// </summary>
-    private static Task Main()
+    private static async Task Main()
     {
         Console.OutputEncoding = Encoding.UTF8;
 
@@ -40,33 +42,30 @@ internal static class Program
             var gameLogic = new GameLogic(gameboard);
             GameLogger.Debug("Core components initialized.");
 
-            GameLogger.Info("Displaying main menu...");
-            var start = GameMenu.DisplayMainMenu();
-            GameLogger.Debug($"Main menu returned decision: {start}");
+            GameLogger.Info("Displaying login menu...");
 
-            if (start)
+            var userContainer = new UserContainer();
+
+            var loginMenu = new LoginMenu(new AuthService(), userContainer);
+            var gameMenu = new GameMenu(userContainer);
+            
+            while (true)
             {
-                GameLogger.Info("User selected 'Start Game'.");
-                CliOutput.PrintConsole("Starting a new game...");
+                var loggedIn = await loginMenu.DisplayMenu();
+                if (!loggedIn)
+                    break;
+                
+                GameLogger.Info("User logged in successfully.");
 
-                gameLogic.StartNewGame();
-
-                GameLogger.Info("Game loop finished.");
-            }
-            else
-            {
-                GameLogger.Info("User selected 'Exit' from main menu.");
+                gameMenu.DisplayMainMenu();
             }
 
-            CliOutput.PrintConsoleNewline("Closing Application...");
-            GameLogger.Info("Client application shutting down normally.");
+            GameLogger.Info("Client shutting down normally.");
         }
         catch (Exception ex)
         {
             GameLogger.Fatal("An unhandled exception occurred! Application will crash.", ex);
             throw;
         }
-
-        return Task.CompletedTask;
     }
 }
