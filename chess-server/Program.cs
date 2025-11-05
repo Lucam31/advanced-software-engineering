@@ -4,6 +4,8 @@ using chess_server.Data;
 using chess_server.Repositories;
 using chess_server.Services;
 using System.Text;
+using chess_server.Api.Hub;
+using chess_server.Api.Middlewares;
 using Shared.Logger;
 
 namespace chess_server;
@@ -51,15 +53,27 @@ internal static class Program
             var container = new DiContainer();
 
             container.Register<IDatabase, Database>(() => new Database(connectionString));
-            container.Register<IUserRepository, UserRepository>(() =>
-                new UserRepository(container.Resolve<IDatabase>()));
+            container.Register<IUserRepository, UserRepository>(() => new UserRepository(container.Resolve<IDatabase>()));
+            container.Register<IGameRepository, GameRepository>(() => new GameRepository(container.Resolve<IDatabase>()));
+            container.Register<IFriendsRepository, FriendsRepository>(() => new FriendsRepository(container.Resolve<IDatabase>()));
             container.Register<IUserService, UserService>(() => new UserService(container.Resolve<IUserRepository>()));
+            container.Register<IGameService, GameService>(() => new GameService(
+                container.Resolve<IGameRepository>(),
+                container.Resolve<IUserRepository>()));
+            container.Register<IFriendsService, FriendsService>(() => new FriendsService(
+                container.Resolve<IFriendsRepository>(),
+                container.Resolve<IUserRepository>()));
             container.Register<UserController>(() => new UserController(container.Resolve<IUserService>()));
+            container.Register<GameController>(() => new GameController(container.Resolve<IGameService>()));
+            container.Register<FriendsController>(() => new FriendsController(container.Resolve<IFriendsService>()));
             GameLogger.Debug("DI container configured.");
 
-            var router = new Router(container);
+            var router = new Router(container, new ExceptionMiddleware());
 
             router.RegisterController<UserController>();
+            router.RegisterController<GameController>();
+            router.RegisterController<FriendsController>();
+            router.RegisterHub(new WebSocketHub());
 
             GameLogger.Info("Routes registered successfully.");
 
