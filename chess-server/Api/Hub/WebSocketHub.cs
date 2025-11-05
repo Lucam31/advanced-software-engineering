@@ -1,8 +1,11 @@
 using System.Collections.Concurrent;
 using System.Net;
+using System.Text.Json;
 using System.Threading.Channels;
+using Shared;
 using Shared.Exceptions;
 using Shared.Logger;
+using Shared.WebSocketMessages;
 
 namespace chess_server.Api.Hub;
 
@@ -11,12 +14,8 @@ namespace chess_server.Api.Hub;
 /// </summary>
 public interface IWebSocketHub
 {
-    /// <summary>
-    /// Processes messages coming from connected websocket clients and dispatches them as needed.
-    /// </summary>
-    /// <returns>A task that completes when processing stops.</returns>
-    Task ProcessMessages();
-
+    Task UnregisterClient(Guid userId);
+    
     /// <summary>
     /// Accepts and handles a new WebSocket connection request from an HTTP listener context.
     /// </summary>
@@ -31,7 +30,8 @@ public interface IWebSocketHub
 public class WebSocketHub : IWebSocketHub
 {
     private readonly ConcurrentDictionary<Guid, WebSocketClient> _clients = new();
-    private readonly Channel<string> _hubInputChan = Channel.CreateUnbounded<string>();
+    private readonly Channel<WebSocketMessage> _hubInputChan = Channel.CreateUnbounded<WebSocketMessage>();
+    private readonly JsonParser _jsonParser = new();
     
     /// <summary>
     /// Initializes a new instance of the <see cref="WebSocketHub"/> class and starts the background message-processing task.
@@ -40,7 +40,31 @@ public class WebSocketHub : IWebSocketHub
     {
         _ = Task.Run(ProcessMessages);
     }
-
+    
+    /// <summary>
+    /// Unregisters a client from the hub by removing it from the clients dictionary.
+    /// </summary>
+    /// <param name="userId">The unique identifier of the user to unregister.</param>
+    /// <returns>A task that represents the asynchronous unregister operation.</returns>
+    public Task UnregisterClient(Guid userId)
+    {
+        _clients.TryRemove(userId, out _);
+        GameLogger.Info($"Unregistered client {userId}");
+        return Task.CompletedTask;
+    }
+    
+    /// <summary>
+    /// Registers a new client in the hub by adding it to the clients dictionary.
+    /// </summary>
+    /// <param name="client">The <see cref="WebSocketClient"/> instance to register.</param>
+    /// <returns>A task that represents the asynchronous register operation.</returns>
+    private Task RegisterClient(WebSocketClient client)
+    {
+        _clients.TryAdd(client.Id, client);
+        GameLogger.Info($"Registered client {client.Id}");
+        return Task.CompletedTask;
+    }
+    
     /// <summary>
     /// Handles an incoming WebSocket connection request. Validates the query parameters, accepts the WebSocket
     /// upgrade and registers a new <see cref="WebSocketClient"/> for the given user id.
@@ -62,20 +86,23 @@ public class WebSocketHub : IWebSocketHub
         var wsContext = await context.AcceptWebSocketAsync(subProtocol: null);
         var socket = wsContext.WebSocket;
         
-        var client = new WebSocketClient(userId, socket,_hubInputChan);
-        
-        _clients.TryAdd(userId, client);
+        var client = new WebSocketClient(userId, socket, this);
+
+        await RegisterClient(client);
         
         GameLogger.Info($"New client connected with {userIdStr}");
     }
-
-
+    
     /// <summary>
     /// Continuously processes messages from the hub input channel and dispatches them to clients or other handlers.
     /// </summary>
     /// <returns>A long-running task that processes messages until the application shuts down.</returns>
-    public async Task ProcessMessages()
+    private async Task ProcessMessages()
     {
-        throw new NotImplementedException();
+        await foreach (WebSocketMessage incomingMessage in _hubInputChan.Reader.ReadAllAsync())
+        {
+            
+        }
     }
+    
 }
