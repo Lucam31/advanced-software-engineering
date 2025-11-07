@@ -2,7 +2,7 @@ using System.Data;
 using chess_server.Data;
 using chess_server.Models;
 using chess_server.OutputDtos;
-using Shared.InputDtos;
+using Shared.Dtos;
 using Shared.Logger;
 using Shared.Models;
 

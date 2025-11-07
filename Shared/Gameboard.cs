@@ -1,3 +1,5 @@
+using Shared.Dtos;
+
 namespace Shared;
 
 using Pieces;
@@ -193,5 +195,53 @@ public class Gameboard
         _tiles[toIndexNumber, toIndexLetter].CurrentPiece?.Move(move.To);
         _tiles[fromIndexNumber, fromIndexLetter].CurrentPiece = null;
         return true;
+    }
+    
+    /// <summary>
+    /// Create a Data Transfer Object (DTO) representation of the Gameboard.
+    /// </summary>
+    /// <returns>Returns GameboardDto</returns>
+    public GameboardDto ToDto()
+    {
+        var dto = new GameboardDto();
+    
+        for (int r = 0; r < Rows; r++)
+        {
+            for (int c = 0; c < Cols; c++)
+            {
+                var tile = _tiles[r, c];
+                dto.Tiles[r, c] = tile.ToDto();
+            }
+        }
+    
+        dto.CapturedWhitePieces = _capturedWhitePieces.Select(p => p.ToDto()).ToList();
+        dto.CapturedBlackPieces = _capturedBlackPieces.Select(p => p.ToDto()).ToList();
+    
+        return dto;
+    }
+    
+    /// <summary>
+    /// Creates a Gameboard instance from a Data Transfer Object (DTO).
+    /// </summary>
+    /// <param name="dto">The Data Transfer Object (DTO) representation of the Gameboard.</param>
+    /// <returns>An instance of Gameboard</returns>
+    public static Gameboard FromDto(GameboardDto dto)
+    {
+        var gameboard = new Gameboard();
+    
+        for (int r = 0; r < 8; r++)
+        {
+            for (int c = 0; c < 8; c++)
+            {
+                var tileDto = dto.Tiles[r, c];
+                var piece = tileDto.CurrentPiece != null ? Piece.FromDto(tileDto.CurrentPiece) : null;
+                gameboard._tiles[r, c] = new Tile(tileDto.Row, tileDto.Col, tileDto.IsWhite, piece);
+            }
+        }
+    
+        gameboard._capturedWhitePieces.AddRange(dto.CapturedWhitePieces.Select(Piece.FromDto));
+        gameboard._capturedBlackPieces.AddRange(dto.CapturedBlackPieces.Select(Piece.FromDto));
+    
+        return gameboard;
     }
 }

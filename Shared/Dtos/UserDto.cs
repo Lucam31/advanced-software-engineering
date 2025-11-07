@@ -1,4 +1,6 @@
-namespace Shared.InputDtos;
+using System.Text.Json.Serialization;
+
+namespace Shared.Dtos;
 
 /// <summary>
 /// Represents a data transfer object for user credentials.
@@ -6,12 +8,14 @@ namespace Shared.InputDtos;
 public class UserDto
 {
     /// <summary>
-    /// Gets or sets the username.
+    /// The username of the user.
     /// </summary>
+    [JsonPropertyName("username")]
     public required string Username { get; set; }
     
     /// <summary>
-    /// Gets or sets the password.
+    /// The password of the user.
     /// </summary>
+    [JsonPropertyName("password")]
     public required string Password { get; set; }
 }

@@ -1,5 +1,8 @@
 namespace Shared.WebSocketMessages;
 
+/// <summary>
+/// Represents the various message types used in WebSocket communication.
+/// </summary>
 public static class MessageType
 {
     // game related messages
@@ -9,6 +12,7 @@ public static class MessageType
     public const string GameInvitation = "GAME_INVITATION";
     public const string JoinGame = "JOIN_GAME";
     public const string StartGame = "START_GAME";
+    public const string GameTurn = "GAME_TURN";
     public const string MakeMove = "MAKE_MOVE";
     // spectator related messages
     public const string SpectatorJoin = "SPECTATOR_JOIN";

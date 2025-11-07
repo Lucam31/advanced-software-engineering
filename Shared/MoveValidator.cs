@@ -2,6 +2,8 @@ namespace Shared;
 
 using Pieces;
 
+// TODO: König check ob neues feld im Schach wäre
+
 /// <summary>
 /// Provides static methods for validating chess moves.
 /// </summary>

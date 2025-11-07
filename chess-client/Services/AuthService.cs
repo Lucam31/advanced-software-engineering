@@ -1,6 +1,6 @@
-using Shared.InputDtos;
 using Shared.ServerResponseObjects;
 using Shared;
+using Shared.Dtos;
 
 namespace chess_client.Services;
 

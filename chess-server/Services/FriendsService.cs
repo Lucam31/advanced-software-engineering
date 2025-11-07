@@ -1,7 +1,7 @@
 using chess_server.Repositories;
 using Shared.Exceptions;
-using Shared.InputDtos;
 using chess_server.OutputDtos;
+using Shared.Dtos;
 using Shared.Logger;
 using Shared.Models;
 using Shared.WebSocketMessages;

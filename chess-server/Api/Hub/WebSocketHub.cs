@@ -28,12 +28,29 @@ public interface IWebSocketHub
 /// </summary>
 public class WebSocketHub : IWebSocketHub
 {
+    /// <summary>
+    /// The game service used to manage game logic.
+    /// </summary>
     private readonly IGameService _gameService;
+    /// <summary>
+    /// The dictionary of connected clients, keyed by their unique identifiers.
+    /// </summary>
     private readonly ConcurrentDictionary<Guid, WebSocketClient> _clients = new();
+    /// <summary>
+    /// The dictionary of active games, keyed by their unique game identifiers.
+    /// </summary>
     private readonly ConcurrentDictionary<Guid, ActiveGame> _games = new();
+    /// <summary>
+    /// The JSON parser used for serializing and deserializing messages.
+    /// </summary>
     private readonly JsonParser _jsonParser = new();
+    /// <summary>
+    /// The channel for incoming notifications to be processed and sent to clients.
+    /// </summary>
     private readonly Channel<Notification> _notificationChannel = Channel.CreateUnbounded<Notification>();
-
+    /// <summary>
+    /// Provides the writer for the notification channel.
+    /// </summary>
     public ChannelWriter<Notification> NotificationWriter => _notificationChannel.Writer;
 
     public WebSocketHub(IGameService gameService)
@@ -95,6 +112,25 @@ public class WebSocketHub : IWebSocketHub
         
         GameLogger.Info($"New client connected with {userIdStr}");
     }
+    
+    /// <summary>
+    /// Task that continuously processes notifications from the notification channel
+    /// </summary>
+    private async Task ProcessNotificationsAsync()
+    {
+        await foreach (var notification in _notificationChannel.Reader.ReadAllAsync())
+        {
+            if (_clients.TryGetValue(notification.UserId, out var client))
+            {
+                await client.SendAsync(notification.Message);
+                GameLogger.Info($"Sent notification to user {notification.UserId}");
+            }
+            else
+            {
+                GameLogger.Warning($"Client {notification.UserId} not found for notification");
+            }
+        }
+    }
 
     /// <summary>
     /// Dispatches the received message to the appropriate service based on the message type.
@@ -113,12 +149,19 @@ public class WebSocketHub : IWebSocketHub
             case MessageType.JoinGame:
                 await HandleJoinGame(payload, clientId);
                 break;
-            
+            case MessageType.MakeMove:
+                await HandleMakeMove(payload, clientId);
+                break;
         }
         
         await Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Handles the creation of a new game when a client sends a CreateGame message.
+    /// </summary>
+    /// <param name="payload">The payload of the message</param>
+    /// <param name="clientId">The id of the sender</param>
     private async Task HandleCreateGame(JsonElement payload, Guid clientId)
     {
         var createGamePayload = _jsonParser.DeserializeJsonElement<CreateGamePayload>(payload);
@@ -128,7 +171,7 @@ public class WebSocketHub : IWebSocketHub
             return;
         }
         
-        var game = _gameService.CreateGame(clientId);
+        var game = await _gameService.CreateGame(clientId);
         _games.TryAdd(game.Id, game);
         GameLogger.Info($"Created new game {game.Id} by client {clientId}");
         
@@ -160,6 +203,11 @@ public class WebSocketHub : IWebSocketHub
         await opp.SendAsync(inviteMessage);
     }
     
+    /// <summary>
+    /// Handles a client joining an existing game.
+    /// </summary>
+    /// <param name="payload">The payload of the message</param>
+    /// <param name="clientId">The id of the sender</param>
     private async Task HandleJoinGame(JsonElement payload, Guid clientId)
     {
         var joinGamePayload = _jsonParser.DeserializeJsonElement<JoinGamePayload>(payload);
@@ -175,31 +223,46 @@ public class WebSocketHub : IWebSocketHub
             return;
         }
         
-        lock (game) 
+        lock (game.SyncRoot) 
         {
             _gameService.JoinGame(game, clientId);
         }
         
         GameLogger.Info($"Client {clientId} joined game {joinGamePayload.GameId}");
         
-        // inform the clients about game start, maybe make some public game method so other can easily spectate
+        _clients.TryGetValue(game.GetWhitePlayerId(), out var whiteClient);
+        _clients.TryGetValue(game.GetBlackPlayerId(), out var blackClient);
+        
+        if (whiteClient == null || blackClient == null)
+        {
+            GameLogger.Error("One of the clients is null when sending StartGame message");
+            return;
+        }
+        
+        // inform players about game start
+        var gameStartMessage = new WebSocketMessage
+        {
+            Type = MessageType.StartGame,
+            Payload = _jsonParser.SerializeToJsonElement(new StartGamePayload()
+            {
+                GameId = joinGamePayload.GameId,
+                StartingBoard = game.GetGameboardDto()
+            })
+        };
+        
+        await whiteClient.SendAsync(gameStartMessage);
+        await blackClient.SendAsync(gameStartMessage);
         
         await Task.CompletedTask;
     }
 
-    private async Task ProcessNotificationsAsync()
+    /// <summary>
+    /// Handles a client making a move in an existing game.
+    /// </summary>
+    /// <param name="payload">The payload of the message</param>
+    /// <param name="clientId">The id of the sender</param>
+    private async Task HandleMakeMove(JsonElement payload, Guid clientId)
     {
-        await foreach (var notification in _notificationChannel.Reader.ReadAllAsync())
-        {
-            if (_clients.TryGetValue(notification.UserId, out var client))
-            {
-                await client.SendAsync(notification.Message);
-                GameLogger.Info($"Sent notification to user {notification.UserId}");
-            }
-            else
-            {
-                GameLogger.Warning($"Client {notification.UserId} not found for notification");
-            }
-        }
+        
     }
 }
