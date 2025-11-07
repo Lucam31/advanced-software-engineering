@@ -1,9 +1,11 @@
+using chess_server.Api.Hub;
 using chess_server.Models;
 using chess_server.OutputDtos;
 using chess_server.Repositories;
 using Shared.Exceptions;
 using Shared.InputDtos;
 using Shared.Logger;
+using Shared.WebSocketMessages;
 
 namespace chess_server.Services;
 
@@ -13,7 +15,20 @@ namespace chess_server.Services;
 public interface IGameService
 {
     /// <summary>
-    /// Inserts a new game record.
+    /// Create a new game.
+    /// </summary>
+    /// <param name="clientId">The id of the creator.</param>
+    ActiveGame CreateGame(Guid clientId);
+    
+    /// <summary>
+    /// Join a game.
+    /// </summary>
+    /// <param name="game">The game to join.</param>
+    /// <param name="id">The id of the client who wants to join.</param>
+    void JoinGame(ActiveGame game, Guid id);
+    
+    /// <summary>
+    /// Inserts a new game into the db.
     /// </summary>
     /// <param name="dto">The game data transfer object.</param>
     Task InsertGameAsync(InsertGame dto);
@@ -49,6 +64,17 @@ public class GameService : IGameService
     {
         _gameRepository = gameRepository;
         _userRepository = userRepository;
+    }
+
+    /// <inheritdoc/>
+    public ActiveGame CreateGame(Guid clientId)
+    {
+        return new ActiveGame(Guid.NewGuid(), clientId);
+    }
+
+    public void JoinGame(ActiveGame game, Guid id)
+    {
+        game.JoinGame(id);
     }
 
     /// <inheritdoc/>

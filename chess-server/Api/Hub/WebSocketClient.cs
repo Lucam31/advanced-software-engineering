@@ -30,8 +30,11 @@ public class WebSocketClient : IWebSocketClient
     /// </summary>
     public WebSocket Conn { get; set; }
     
+    public event Func<Guid, Task>? ClientDisconnected;
+    public event Func<string, JsonElement,Guid, Task>? MessageReceived;
+
+    
     private readonly Channel<WebSocketMessage> _sendChan = Channel.CreateUnbounded<WebSocketMessage>();
-    private readonly WebSocketHub _hub;
     private readonly JsonParser _jsonParser = new();
 
     /// <summary>
@@ -39,13 +42,10 @@ public class WebSocketClient : IWebSocketClient
     /// </summary>
     /// <param name="id">The user's unique identifier.</param>
     /// <param name="connection">The established <see cref="WebSocket"/> connection.</param>
-    /// <param name="hub">The hub instance for managing the client.</param>
-    public WebSocketClient(Guid id, WebSocket connection, WebSocketHub hub)
+    public WebSocketClient(Guid id, WebSocket connection)
     {
         Id = id;
         Conn = connection;
-        _hub = hub;
-
         _ = Task.Run(ProcessRead);
         _ = Task.Run(ProcessSend);
     }
@@ -93,8 +93,9 @@ public class WebSocketClient : IWebSocketClient
                var result = await Conn.ReceiveAsync(segment, CancellationToken.None);
                if (result.MessageType == WebSocketMessageType.Close)
                {
-                   await _hub.UnregisterClient(Id);
-                   
+                   if (ClientDisconnected != null) 
+                       await ClientDisconnected.Invoke(Id);
+
                    await Conn.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
                    _sendChan.Writer.TryComplete();
                    break;
@@ -102,12 +103,12 @@ public class WebSocketClient : IWebSocketClient
                
                var messageJson = Encoding.UTF8.GetString(buffer, 0, result.Count);
                var message = _jsonParser.DeserializeJson<WebSocketMessage>(messageJson);
-               if (message == null || string.IsNullOrEmpty(message.Type))
+                
+               if (message?.Type != null)
                {
-                   GameLogger.Warning("Invalid message: missing type");
-                   continue;
+                   if (MessageReceived != null)
+                       await MessageReceived.Invoke(message.Type, message.Payload,Id);
                }
-               await DispatchToService(message.Type, message.Payload);
            }
            catch (Exception ex)
            {
@@ -115,19 +116,4 @@ public class WebSocketClient : IWebSocketClient
            }
        }
    }
-    
-    /// <summary>
-    /// Dispatches the received message to the appropriate service based on the message type.
-    /// This is a placeholder for implementing specific dispatch logic.
-    /// </summary>
-    /// <param name="messageType">The type of the message to dispatch.</param>
-    /// <param name="payload">The payload of the message as a JSON element.</param>
-    /// <returns>A task that represents the asynchronous dispatch operation.</returns>
-    private async Task DispatchToService(string messageType, JsonElement payload)
-    {
-        // Placeholder for dispatch logic based on message type
-        GameLogger.Info($"Dispatching message of type {messageType} with payload: {payload}");
-        await Task.CompletedTask;
-    }
-    
 }

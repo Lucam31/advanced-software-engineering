@@ -62,7 +62,8 @@ internal static class Program
                 container.Resolve<IUserRepository>()));
             container.Register<IFriendsService, FriendsService>(() => new FriendsService(
                 container.Resolve<IFriendsRepository>(),
-                container.Resolve<IUserRepository>()));
+                container.Resolve<IUserRepository>(),
+                container.Resolve<INotificationSender>()));
             container.Register<UserController>(() => new UserController(container.Resolve<IUserService>()));
             container.Register<GameController>(() => new GameController(container.Resolve<IGameService>()));
             container.Register<FriendsController>(() => new FriendsController(container.Resolve<IFriendsService>()));
@@ -70,10 +71,13 @@ internal static class Program
 
             var router = new Router(container, new ExceptionMiddleware());
 
+            var webSocketHub = new WebSocketHub(container.Resolve<IGameService>());
+            container.Register<INotificationSender>(() => new NotificationSender(webSocketHub.NotificationWriter));
+
             router.RegisterController<UserController>();
             router.RegisterController<GameController>();
             router.RegisterController<FriendsController>();
-            router.RegisterHub(new WebSocketHub());
+            router.RegisterHub(webSocketHub);
 
             GameLogger.Info("Routes registered successfully.");
 
