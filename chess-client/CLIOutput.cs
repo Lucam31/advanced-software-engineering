@@ -1,3 +1,4 @@
+using System;
 using Shared.Logger;
 
 namespace chess_client;
@@ -10,15 +11,30 @@ using Shared;
 public static class CliOutput
 {
     /// <summary>
+    /// The console adapter used for output
+    /// </summary>
+    private static IConsoleAdapter _console = SystemConsoleAdapter.Instance;
+
+    /// <summary>
+    /// For testing: replace the console adapter.
+    /// </summary>
+    public static void SetConsole(IConsoleAdapter console) => _console = console;
+
+    /// <summary>
+    /// For testing: reset the console adapter to the default system console.
+    /// </summary>
+    public static void ResetConsole() => _console = SystemConsoleAdapter.Instance;
+
+    /// <summary>
     /// Clears the current line in the console.
     /// </summary>
-    private static void ClearCurrentConsoleLine()
+    public static void ClearCurrentConsoleLine()
     {
         GameLogger.Debug("Clearing current console line.");
-        var currentLineCursor = Console.CursorTop;
-        Console.SetCursorPosition(0, Console.CursorTop);
-        Console.Write(new string(' ', Console.WindowWidth));
-        Console.SetCursorPosition(0, currentLineCursor);
+        var currentLineCursor = _console.CursorTop;
+        _console.SetCursorPosition(0, _console.CursorTop);
+        _console.Write(new string(' ', _console.WindowWidth));
+        _console.SetCursorPosition(0, currentLineCursor);
     }
 
     /// <summary>
@@ -28,7 +44,7 @@ public static class CliOutput
     public static void PrintConsoleNewline(string message)
     {
         GameLogger.Debug($"PrintConsoleNewline: '{message}'");
-        Console.Write("\n{0}", message);
+        _console.Write("\n{0}".Replace("{0}", message));
     }
 
     /// <summary>
@@ -38,7 +54,7 @@ public static class CliOutput
     public static void PrintConsole(string message)
     {
         GameLogger.Debug($"PrintConsole: '{message}'");
-        Console.Write(message);
+        _console.Write(message);
     }
 
     /// <summary>
@@ -49,7 +65,7 @@ public static class CliOutput
     {
         GameLogger.Debug($"OverwriteLine: '{message}'");
         ClearCurrentConsoleLine();
-        Console.Write(message);
+        _console.Write(message);
     }
 
     /// <summary>
@@ -59,7 +75,7 @@ public static class CliOutput
     public static void WriteErrorMessage(string message)
     {
         GameLogger.Warning($"WriteErrorMessage: '{message}'");
-        Console.SetCursorPosition(0, Console.CursorTop - 1);
+        _console.SetCursorPosition(0, _console.CursorTop - 1);
         OverwriteLine(message);
     }
 
@@ -70,18 +86,18 @@ public static class CliOutput
     /// <param name="message">The message to write.</param>
     public static void OverwriteLineRelative(int targetLine, string message)
     {
-        var prevLine = Console.CursorTop;
-        if (targetLine < 0 || targetLine >= Console.WindowHeight)
+        var prevLine = _console.CursorTop;
+        if (targetLine < 0 || targetLine >= _console.WindowHeight)
         {
             GameLogger.Error(
-                $"OverwriteLineRelative out of range: targetLine={targetLine}, WindowHeight={Console.WindowHeight}");
+                $"OverwriteLineRelative out of range: targetLine={targetLine}, WindowHeight={_console.WindowHeight}");
             throw new ArgumentOutOfRangeException(nameof(targetLine));
         }
 
         GameLogger.Debug($"OverwriteLineRelative targetLine={targetLine}, message='{message}'");
-        Console.SetCursorPosition(0, Console.CursorTop - targetLine);
+        _console.SetCursorPosition(0, _console.CursorTop - targetLine);
         OverwriteLine(message);
-        Console.SetCursorPosition(0, prevLine);
+        _console.SetCursorPosition(0, prevLine);
     }
 
     /// <summary>
@@ -91,12 +107,12 @@ public static class CliOutput
     public static void RewriteBoard(Gameboard board)
     {
         GameLogger.Debug("RewriteBoard called.");
-        var prevLine = Console.CursorTop - 1;
+        var prevLine = _console.CursorTop - 1;
 
-        Console.SetCursorPosition(0, 0);
+        _console.SetCursorPosition(0, 0);
         board.PrintBoard();
-        Console.SetCursorPosition(0, prevLine);
+        _console.SetCursorPosition(0, prevLine);
         ClearCurrentConsoleLine();
-        Console.Write("Enter your next move: ");
+        _console.Write("Enter your next move: ");
     }
 }

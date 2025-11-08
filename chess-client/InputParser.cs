@@ -81,7 +81,7 @@ public static class InputParser
         catch (Exception e)
         {
             GameLogger.Error("Exception while parsing move input.", e);
-            CliOutput.OverwriteLine(e.Message);
+            CliOutput.WriteErrorMessage(e.Message);
             throw;
         }
 
