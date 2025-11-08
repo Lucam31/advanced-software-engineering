@@ -1,7 +1,7 @@
 using chess_server.Models;
 using chess_server.Repositories;
+using Shared.Dtos;
 using Shared.Exceptions;
-using Shared.InputDtos;
 using Shared.Logger;
 
 namespace chess_server.Services;

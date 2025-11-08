@@ -1,3 +1,5 @@
+using Shared.Dtos;
+
 namespace Shared;
 
 using Pieces;
@@ -35,4 +37,18 @@ public class Tile(int row, int col, bool isWhite, Piece? piece = null)
     /// Gets a value indicating whether the tile is occupied by a piece.
     /// </summary>
     public bool IsOccupied => CurrentPiece != null;
+    
+    /// <summary>
+    /// Converts the Tile to its corresponding Data Transfer Object (DTO).
+    /// </summary>
+    public TileDto ToDto()
+    {
+        return new TileDto
+        {
+            Row = Row,
+            Col = Col,
+            IsWhite = IsWhite,
+            CurrentPiece = CurrentPiece?.ToDto()
+        };
+    }
 }

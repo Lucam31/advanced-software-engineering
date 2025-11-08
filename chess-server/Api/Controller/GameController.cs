@@ -1,7 +1,7 @@
 using chess_server.Api.ActionResults;
 using chess_server.Api.Attributes;
 using chess_server.Services;
-using Shared.InputDtos;
+using Shared.Dtos;
 using Shared.Logger;
 
 namespace chess_server.Api.Controller;

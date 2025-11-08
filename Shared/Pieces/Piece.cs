@@ -1,3 +1,5 @@
+using Shared.Dtos;
+
 namespace Shared.Pieces;
 
 /// <summary>
@@ -53,5 +55,51 @@ public abstract class Piece(string position, string name, bool isWhite, bool isC
     {
         Position = newPosition;
         Moved = true;
+    }
+    
+    /// <summary>
+    /// Create a Data Transfer Object (DTO) representation of the Piece.
+    /// </summary>
+    /// <returns>Returns PieceDto</returns>
+    public PieceDto ToDto()
+    {
+        return new PieceDto
+        {
+            Position = Position,
+            IsWhite = IsWhite,
+            Type = Name,
+            UnicodeSymbol = UnicodeSymbol,
+            IsCaptured = IsCaptured,
+            Moved = Moved
+        };
+    }
+    
+    /// <summary>
+    /// Creates a Piece instance from a PieceDto.
+    /// </summary>
+    /// <param name="dto">The Data Transfer Object (DTO) representation of the Piece.</param>
+    /// <returns>An instance of Piece</returns>
+    /// <exception cref="ArgumentException">Unknown Piece Type</exception>
+    public static Piece FromDto(PieceDto dto)
+    {
+        Piece piece = dto.Type switch
+        {
+            "Pawn" => new Pawn(dto.Position, dto.IsWhite),
+            "Rook" => new Rook(dto.Position, dto.IsWhite),
+            "Knight" => new Knight(dto.Position, dto.IsWhite),
+            "Bishop" => new Bishop(dto.Position, dto.IsWhite),
+            "Queen" => new Queen(dto.Position, dto.IsWhite),
+            "King" => new King(dto.Position, dto.IsWhite),
+            _ => throw new ArgumentException($"Unknown piece type: {dto.Type}")
+        };
+    
+        piece.IsCaptured = dto.IsCaptured;
+    
+        if (dto.Moved && piece.Position != dto.Position)
+        {
+            piece.Move(dto.Position);
+        }
+    
+        return piece;
     }
 }

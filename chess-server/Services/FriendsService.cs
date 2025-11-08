@@ -1,9 +1,10 @@
 using chess_server.Repositories;
 using Shared.Exceptions;
-using Shared.InputDtos;
 using chess_server.OutputDtos;
+using Shared.Dtos;
 using Shared.Logger;
 using Shared.Models;
+using Shared.WebSocketMessages;
 
 namespace chess_server.Services;
 
@@ -46,16 +47,19 @@ public class FriendsService : IFriendsService
 {
     private readonly IFriendsRepository _friendsRepository;
     private readonly IUserRepository _userRepository;
+    private readonly INotificationSender _notificationSender;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="FriendsService"/> class.
     /// </summary>
     /// <param name="friendsRepository">The friends repository.</param>
     /// <param name="userRepository">The user repository.</param>
-    public FriendsService(IFriendsRepository friendsRepository, IUserRepository userRepository)
+    /// <param name="notificationSender">The notification sender.</param>
+    public FriendsService(IFriendsRepository friendsRepository, IUserRepository userRepository, INotificationSender notificationSender)
     {
         _friendsRepository = friendsRepository;
         _userRepository = userRepository;
+        _notificationSender = notificationSender;
     }
 
     /// <inheritdoc/>
@@ -72,6 +76,12 @@ public class FriendsService : IFriendsService
         
         await _friendsRepository.AddFriendshipAsync(dto.UserId, friend.Id);
         GameLogger.Info($"Friend request sent from {dto.UserId} to {friend.Id}");
+
+        // Send notification to the friend if online
+        await _notificationSender.SendNotificationAsync(friend.Id, new WebSocketMessage
+        {
+            Type = MessageType.FetchFriendRequest
+        });
     }
     
     /// <inheritdoc/>
