@@ -53,6 +53,45 @@ public static class InputParser
             CliOutput.PrintConsoleNewline("Invalid input. Please try again.");
         }
     }
+    
+    public static char ReadSingleCharInput(string prompt, bool newLine = false, params char[] validInputs)
+    {
+        if (validInputs.Length == 0)
+        {
+            GameLogger.Error("ReadSingleCharInput called with empty validInputs.");
+            throw new ArgumentException("validInputs must contain at least one valid input.", nameof(validInputs));
+        }
+
+        if (prompt == "")
+        {
+            GameLogger.Warning("ReadSingleCharInput called with empty prompt.");
+            CliOutput.WriteErrorMessage("prompt must not be empty.");
+        }
+
+        while (true)
+        {
+            GameLogger.Debug($"Prompting user. newLine={newLine}, validInputs=[{string.Join(",", validInputs)}]");
+            if (newLine)
+            {
+                CliOutput.PrintConsoleNewline(prompt);
+            }
+            else
+            {
+                CliOutput.PrintConsole(prompt);
+            }
+
+            var input = Console.ReadKey().KeyChar;
+            GameLogger.Debug($"User entered: '{input}'");
+            if (validInputs.Any(validInput => input == validInput))
+            {
+                GameLogger.Info($"Valid input received: '{input}'");
+                return input;
+            }
+
+            GameLogger.Warning($"Invalid input: '{input}'. Expected one of: [{string.Join(",", validInputs)}]");
+            CliOutput.PrintConsoleNewline("Invalid input. Please try again.");
+        }
+    }
 
     /// <summary>
     /// Reads a chess move from the user in algebraic notation (e.g., "e2e4").

@@ -24,6 +24,7 @@ public class Gameboard
 
     private readonly List<Piece> _capturedBlackPieces = [];
     private readonly List<Piece> _capturedWhitePieces = [];
+    private readonly List<Move> _moves = [];
 
     /// <summary>
     /// Gets a list of all captured white pieces.
@@ -164,17 +165,19 @@ public class Gameboard
     }
 
     /// <summary>
-    /// Executes a move on the board, updating piece positions and handling captures.
+    /// Executes a move on the board, updating piece positions and handling captures
     /// </summary>
-    /// <param name="move">The move to be executed.</param>
-    /// <returns>True if the move was successfully executed.</returns>
-    public bool Move(Move move)
+    /// <param name="move">The move to be executed</param>
+    /// <param name="enPassant">The move was an en passant</param>
+    /// <returns>True if the move was successfully executed</returns>
+    public bool Move(Move move, bool enPassant = false)
     {
         var fromIndexLetter = move.From[0] - 'A';
         var fromIndexNumber = move.From[1] - '1';
         var toIndexLetter = move.To[0] - 'A';
         var toIndexNumber = move.To[1] - '1';
 
+        _moves.Add(new Move(move.From, move.To, _tiles[fromIndexNumber, fromIndexLetter].CurrentPiece, enPassant ? $"{toIndexLetter}{toIndexNumber+1}" : $"{toIndexLetter}{toIndexNumber}"));
         // If the tile is occupied, the piece must be captured
         if (_tiles[toIndexNumber, toIndexLetter].CurrentPiece != null)
         {
@@ -190,11 +193,15 @@ public class Gameboard
                 _capturedBlackPieces.Add(_tiles[toIndexNumber, toIndexLetter].CurrentPiece!);
             }
         }
-
         _tiles[toIndexNumber, toIndexLetter].CurrentPiece = _tiles[fromIndexNumber, fromIndexLetter].CurrentPiece;
         _tiles[toIndexNumber, toIndexLetter].CurrentPiece?.Move(move.To);
         _tiles[fromIndexNumber, fromIndexLetter].CurrentPiece = null;
         return true;
+    }
+
+    public void UndoLastMove()
+    {
+        if (_moves.Count == 0) return;
     }
     
     /// <summary>
