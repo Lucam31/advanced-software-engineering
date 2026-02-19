@@ -9,6 +9,9 @@ using Pieces;
 /// </summary>
 public static class MoveValidator
 {
+    public static bool WhitePlayer { get; set; } = true;
+    
+    
     /// <summary>
     /// Validates a given move on the specified game board.
     /// </summary>
@@ -68,14 +71,15 @@ public static class MoveValidator
 
         if (movePiece is Queen)
         {
-            return (colDiff == rowDiff) || (colDiff == 0 || rowDiff != 0) &&
-                ValidateTilesBetween(oldPosition, newPosition, movePiece, gameboard);
+            return ((colDiff == rowDiff) && ValidateTilesBetween(oldPosition, newPosition, movePiece, gameboard)) ||
+                   ((colDiff == 0 || rowDiff == 0) && ValidateTilesBetween(oldPosition, newPosition, movePiece, gameboard));
         }
 
         if (movePiece is King)
         {
-            return (colDiff == 0 && rowDiff == 1) || (colDiff == 1 && rowDiff == 0) ||
-                   (colDiff == 1 && rowDiff == 1);
+            return ((colDiff == 0 && rowDiff == 1) || (colDiff == 1 && rowDiff == 0) ||
+                   (colDiff == 1 && rowDiff == 1)) && !CheckCheckmate(newPosition, gameboard) || 
+                   (colDiff == 2 && rowDiff == 0) && !CheckCheckmate(newPosition, gameboard) && CheckCastling();
         }
 
         return false;
@@ -239,12 +243,150 @@ public static class MoveValidator
     }
 
     /// <summary>
+    /// Checks if the passed tile is in checkmate for the king
+    /// </summary>
+    private static bool CheckCheckmate(string position, Gameboard gameboard)
+    {
+        // Pawn attack positions
+        if (CheckPawnAttack(position, gameboard)) return true;
+        // Knight attack positions
+        if (CheckKnightAttack(position, gameboard)) return true;
+        // Bishop/Queen attack positions
+        if (CheckBishopQueenAttack(position, gameboard)) return true;
+        // Rook/Queen attack positions
+        if (CheckRookQueenAttack(position, gameboard)) return true;
+        // King attack positions
+        if (CheckKingAttack(position, gameboard)) return true;
+        
+        return false;
+    }
+    
+    /// <summary>
+    /// Checks if castling is valid
+    /// </summary>
+    private static bool CheckCastling()
+    {
+        // Placeholder for castling logic
+        return false;
+    }
+
+    /// <summary>
     /// Checks if an en passant move is valid.
     /// </summary>
     /// <returns>True if the en passant move is valid, otherwise false. Currently a placeholder.</returns>
     private static bool CheckEnPassant()
     {
         // Placeholder for en passant logic
+        return false;
+    }
+    
+    
+    private static bool CheckPawnAttack(string position, Gameboard gameboard)
+    {
+        var piecePos1 = gameboard.GetPieceAtPosition($"{(char)(position[0] - 1)}{(char)(position[1] - 1)}");
+        var piecePos2 = gameboard.GetPieceAtPosition($"{(char)(position[0] + 1)}{(char)(position[1] - 1)}");
+        return (piecePos1 is Pawn && (WhitePlayer ? !piecePos1.IsWhite : piecePos1.IsWhite) ||
+            piecePos2 is Pawn && (WhitePlayer ? !piecePos2.IsWhite : piecePos2.IsWhite)) ;
+    }
+    private static bool CheckKnightAttack(string position, Gameboard gameboard)
+    {
+        int[] colOffsets = [-2, -1, 1, 2, 2, 1, -1, -2];
+        int[] rowOffsets = [1, 2, 2, 1, -1, -2, -2, -1];
+
+        for (var i = 0; i < colOffsets.Length; i++)
+        {
+            var col = (char)(position[0] + colOffsets[i]);
+            var row = (char)(position[1] + rowOffsets[i]);
+            if (col < 'A' || col > 'H' || row < '1' || row > '8') continue;
+            var checkPos = $"{col}{row}";
+            var piece = gameboard.GetPieceAtPosition(checkPos);
+            if (piece is Knight && (WhitePlayer ? !piece.IsWhite : piece.IsWhite))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool CheckBishopQueenAttack(string position, Gameboard gameboard)
+    {
+        for (var i = -1; i <= 1; i += 2)
+        {
+            for (var j = -1; j <= 1; j += 2)
+            {
+                var col = (char)(position[0] + i);
+                var row = (char)(position[1] + j);
+                while (col is >= 'A' and <= 'H' && row is >= '1' and <= '8')
+                {
+                    var checkPos = $"{col}{row}";
+                    var piece = gameboard.GetPieceAtPosition(checkPos);
+                    if (piece != null)
+                    {
+                        if ((piece is Bishop or Queen) &&
+                            (WhitePlayer ? !piece.IsWhite : piece.IsWhite))
+                        {
+                            return true;
+                        }
+                        break; // Blocked by another piece
+                    }
+                    col = (char)(col + i);
+                    row = (char)(row + j);
+                }
+            }
+        }
+        
+        return false;
+    }
+    private static bool CheckRookQueenAttack(string position, Gameboard gameboard)
+    {
+        for (var i = -1; i <= 1; i += 2)
+        {
+            var newCol = (char)(position[0] + i);
+            var newRow = (char)(position[1] + i);
+            for (var col = newCol; col is >= 'A' and <= 'H'; col = (char)(col + i)) 
+            {
+               var piece = gameboard.GetPieceAtPosition($"{col}{position[1]}");
+               if (piece is Rook or Queen && (WhitePlayer ? !piece.IsWhite : piece.IsWhite))
+               {
+                   return true;
+               }
+               if (piece != null) break; // Blocked by another piece
+            }
+            
+            for (var row = newRow; row is >= '1' and <= '8'; row = (char)(row + i)) 
+            {
+               var piece = gameboard.GetPieceAtPosition($"{position[0]}{row}");
+               if (piece is Rook or Queen && (WhitePlayer ? !piece.IsWhite : piece.IsWhite))
+               {
+                   return true;
+               }
+               if (piece != null) break; // Blocked by another piece
+            }
+        }
+        
+        return false;
+    }
+
+    private static bool CheckKingAttack(string position, Gameboard gameboard)
+    {
+        for (var i = 0; i < 3; i++)
+        {
+            for (var j = 0; j < 3; j++)
+            {
+                if (i == 1 && j == 1) continue; // Skip the kings own position 
+                var col = (char)(position[0] - 1 + i);
+                var row = (char)(position[1] - 1 + j);
+                if (col < 'A' || col > 'H' || row < '1' || row > '8') continue;
+                var checkPos = $"{col}{row}";
+                var piece = gameboard.GetPieceAtPosition(checkPos);
+                if (piece is King && (WhitePlayer ? !piece.IsWhite : piece.IsWhite))
+                {
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 }
