@@ -14,13 +14,13 @@ public class GameTurnPayload
     [JsonPropertyName("gameId")]
     public Guid GameId { get; set; }
     /// <summary>
-    /// The unique identifier of the player whose turn it is.
-    /// </summary>
-    [JsonPropertyName("currentPlayerId")]
-    public Guid CurrentPlayerId { get; set; }
-    /// <summary>
     /// The current state of the game board.
     /// </summary>
     [JsonPropertyName("currentBoard")]
     public required GameboardDto CurrentBoard { get; set; }
+    /// <summary>
+    /// The move that was just made.
+    /// </summary>
+    [JsonPropertyName("lastMove")]
+    public required String LastMove { get; set; }
 }

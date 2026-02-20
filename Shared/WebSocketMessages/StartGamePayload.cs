@@ -16,6 +16,6 @@ public class StartGamePayload
     /// <summary>
     /// The starting state of the game board.
     /// </summary>
-    [JsonPropertyName("startingBoard")]
-    public required GameboardDto StartingBoard { get; set; }
+    [JsonPropertyName("color")]
+    public required String Color { get; set; }
 }

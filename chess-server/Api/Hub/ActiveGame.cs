@@ -28,13 +28,13 @@ public class ActiveGame(Guid id, Player whitePlayer) : IActiveGame
     /// </summary>
     private Player? BlackPlayer { get; set; }
     /// <summary>
-    /// The gameboard representing the current state of the game.
-    /// </summary>
-    private Gameboard Board { get; set; } = new();
-    /// <summary>
     /// The list of spectators watching the game.
     /// </summary>
     private List<Guid> Spectators { get; set; } = new();
+    /// <summary>
+    /// The history of moves made in the game, stored as a list of strings.
+    /// </summary>
+    private List<String> MoveHistory { get; set; } = new();
     /// <summary>
     /// Synchronization object for thread-safe operations.
     /// </summary>
@@ -50,6 +50,29 @@ public class ActiveGame(Guid id, Player whitePlayer) : IActiveGame
     }
     
     /// <summary>
+    /// Appends a move to the move history of the game in a thread-safe manner.
+    /// </summary>
+    /// <param name="move"></param>
+    public void AppendMove(String move)
+    {
+        lock (SyncRoot)
+        {
+            MoveHistory.Add(move);
+        }
+    }
+    
+    /// <summary>
+    /// Retrieves the move history of the game in a thread-safe manner.
+    /// </summary>
+    public List<String> GetMoveHistory()
+    {
+        lock (SyncRoot)
+        {
+            return new List<String>(MoveHistory);
+        }
+    }
+    
+    /// <summary>
     /// Gets the unique identifier of the white player.
     /// </summary>
     /// <returns>Id</returns>
@@ -59,9 +82,4 @@ public class ActiveGame(Guid id, Player whitePlayer) : IActiveGame
     /// </summary>
     /// <returns>Id</returns>
     public Guid GetBlackPlayerId () => BlackPlayer?.Id ?? throw new InvalidOperationException("Black player has not joined yet.");
-    /// <summary>
-    /// Gets the current state of the gameboard as a Data Transfer Object (DTO).
-    /// </summary>
-    /// <returns>GameboardDto</returns>
-    public GameboardDto GetGameboardDto() => Board.ToDto();
 }

@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Threading.Channels;
 using chess_server.Services;
 using Shared;
+using Shared.Dtos;
 using Shared.Exceptions;
 using Shared.Logger;
 using Shared.WebSocketMessages;
@@ -149,8 +150,11 @@ public class WebSocketHub : IWebSocketHub
             case MessageType.JoinGame:
                 await HandleJoinGame(payload, clientId);
                 break;
-            case MessageType.MakeMove:
+            case MessageType.GameTurn:
                 await HandleMakeMove(payload, clientId);
+                break;
+            case MessageType.GameOver:
+                await HandleGameOver(payload, clientId);
                 break;
         }
         
@@ -240,18 +244,28 @@ public class WebSocketHub : IWebSocketHub
         }
         
         // inform players about game start
-        var gameStartMessage = new WebSocketMessage
+        var whiteStartMessage = new WebSocketMessage
         {
             Type = MessageType.StartGame,
-            Payload = _jsonParser.SerializeToJsonElement(new StartGamePayload()
+            Payload = _jsonParser.SerializeToJsonElement(new StartGamePayload
             {
                 GameId = joinGamePayload.GameId,
-                StartingBoard = game.GetGameboardDto()
+                Color = "white"
             })
         };
-        
-        await whiteClient.SendAsync(gameStartMessage);
-        await blackClient.SendAsync(gameStartMessage);
+
+        var blackStartMessage = new WebSocketMessage
+        {
+            Type = MessageType.StartGame,
+            Payload = _jsonParser.SerializeToJsonElement(new StartGamePayload
+            {
+                GameId = joinGamePayload.GameId,
+                Color = "black"
+            })
+        };
+
+        await whiteClient.SendAsync(whiteStartMessage);
+        await blackClient.SendAsync(blackStartMessage);
         
         await Task.CompletedTask;
     }
@@ -263,6 +277,91 @@ public class WebSocketHub : IWebSocketHub
     /// <param name="clientId">The id of the sender</param>
     private async Task HandleMakeMove(JsonElement payload, Guid clientId)
     {
+        var gameTurnPayload = _jsonParser.DeserializeJsonElement<GameTurnPayload>(payload);
+        if (gameTurnPayload == null) return;
+    
+        if (!_games.TryGetValue(gameTurnPayload.GameId, out var game)) return;
         
+        game.AppendMove(gameTurnPayload.LastMove);
+
+        Guid opponentId;
+        
+        // if clientId is not WhitePlayerId, then it was the black players turn so, to inform white we need his id
+        if (game.GetWhitePlayerId() != clientId)
+        {
+            opponentId = game.GetWhitePlayerId();
+        }
+        else if (game.GetBlackPlayerId() != clientId)
+        {
+            opponentId = game.GetBlackPlayerId();
+        }
+        else
+        {
+            GameLogger.Error("Client is not part of the game when making a move");
+            return;
+        }
+        
+        if (!_clients.TryGetValue(opponentId, out var opponent)) return;
+    
+        // send ack to sender
+        var ackMessage = new WebSocketMessage
+        {
+            Type = MessageType.GameTurnAck,
+            Payload = _jsonParser.SerializeToJsonElement(new GameTurnAckPayload()
+            {
+                GameId = gameTurnPayload.GameId
+            })
+        };
+        
+        // send ack to sender
+        await _clients[clientId].SendAsync(ackMessage);
+        
+        // forward new game state to opponent
+        var forwardMessage = new WebSocketMessage
+        {
+            Type = MessageType.GameTurn,
+            Payload = payload 
+        };
+    
+        await opponent.SendAsync(forwardMessage);
     }
+    
+    /// <summary>
+    /// Handles the end of a game when a client sends a GameOver message. Saves the game result to the database,
+    /// </summary>
+    /// <param name="payload">The payload of the message</param>
+    /// <param name="clientId">The id of the sender</param>
+    private async Task HandleGameOver(JsonElement payload, Guid clientId)
+    {
+        var gameOverPayload = _jsonParser.DeserializeJsonElement<GameOverPayload>(payload);
+        if (gameOverPayload == null) return;
+        
+        if (!_games.TryGetValue(gameOverPayload.GameId, out var game)) return;
+
+        var gameDto = new GameDto
+        {
+            Id = game.Id,
+            WhitePlayerId = game.GetWhitePlayerId(),
+            BlackPlayerId = game.GetBlackPlayerId(),
+            Moves = game.GetMoveHistory()
+        };
+        
+        await _gameService.InsertGameAsync(gameDto);
+        
+        var message = new WebSocketMessage
+        {
+            Type = MessageType.GameOver,
+            Payload = payload
+        };
+    
+        if (_clients.TryGetValue(game.GetWhitePlayerId(), out var white))
+            await white.SendAsync(message);
+    
+        if (_clients.TryGetValue(game.GetBlackPlayerId(), out var black))
+            await black.SendAsync(message);
+    
+        // remove game from active games
+        _games.TryRemove(gameOverPayload.GameId, out _);
+    }
+    
 }
