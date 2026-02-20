@@ -149,7 +149,7 @@ public class WebSocketHub : IWebSocketHub
             case MessageType.JoinGame:
                 await HandleJoinGame(payload, clientId);
                 break;
-            case MessageType.MakeMove:
+            case MessageType.GameTurn:
                 await HandleMakeMove(payload, clientId);
                 break;
         }
@@ -240,18 +240,28 @@ public class WebSocketHub : IWebSocketHub
         }
         
         // inform players about game start
-        var gameStartMessage = new WebSocketMessage
+        var whiteStartMessage = new WebSocketMessage
         {
             Type = MessageType.StartGame,
-            Payload = _jsonParser.SerializeToJsonElement(new StartGamePayload()
+            Payload = _jsonParser.SerializeToJsonElement(new StartGamePayload
             {
                 GameId = joinGamePayload.GameId,
-                StartingBoard = game.GetGameboardDto()
+                Color = "white"
             })
         };
-        
-        await whiteClient.SendAsync(gameStartMessage);
-        await blackClient.SendAsync(gameStartMessage);
+
+        var blackStartMessage = new WebSocketMessage
+        {
+            Type = MessageType.StartGame,
+            Payload = _jsonParser.SerializeToJsonElement(new StartGamePayload
+            {
+                GameId = joinGamePayload.GameId,
+                Color = "black"
+            })
+        };
+
+        await whiteClient.SendAsync(whiteStartMessage);
+        await blackClient.SendAsync(blackStartMessage);
         
         await Task.CompletedTask;
     }
@@ -263,6 +273,49 @@ public class WebSocketHub : IWebSocketHub
     /// <param name="clientId">The id of the sender</param>
     private async Task HandleMakeMove(JsonElement payload, Guid clientId)
     {
+        var gameTurnPayload = _jsonParser.DeserializeJsonElement<GameTurnPayload>(payload);
+        if (gameTurnPayload == null) return;
+    
+        if (!_games.TryGetValue(gameTurnPayload.GameId, out var game)) return;
         
+        game.AppendMove(gameTurnPayload.LastMove);
+
+        Guid opponentId;
+        
+        // if clientId is not WhitePlayerId, then it was the black players turn so, to inform white we need his id
+        if (game.GetWhitePlayerId() != clientId)
+        {
+            opponentId = game.GetWhitePlayerId();
+        }
+        else if (game.GetBlackPlayerId() != clientId)
+        {
+            opponentId = game.GetBlackPlayerId();
+        }
+        else
+        {
+            GameLogger.Error("Client is not part of the game when making a move");
+            return;
+        }
+        
+        if (!_clients.TryGetValue(opponentId, out var opponent)) return;
+    
+        // send ack to sender
+        var ackMessage = new WebSocketMessage
+        {
+            Type = MessageType.GameTurnAck,
+            Payload = _jsonParser.SerializeToJsonElement(new GameTurnAckPayload()
+            {
+                GameId = gameTurnPayload.GameId
+            })
+        };
+        
+        // DTO direkt weiterleiten
+        var forwardMessage = new WebSocketMessage
+        {
+            Type = MessageType.GameTurn,
+            Payload = payload 
+        };
+    
+        await opponent.SendAsync(forwardMessage);
     }
 }
