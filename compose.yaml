@@ -15,7 +15,7 @@
       - shared-network
       
   db:
-    image: postgres:latest
+    image: postgres:15-alpine
     environment:
       POSTGRES_USER: chessuser
       POSTGRES_PASSWORD: chesspassword
