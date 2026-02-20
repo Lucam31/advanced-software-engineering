@@ -32,7 +32,7 @@ public interface IGameService
     /// Inserts a new game into the db.
     /// </summary>
     /// <param name="dto">The game data transfer object.</param>
-    Task InsertGameAsync(InsertGame dto);
+    Task InsertGameAsync(GameDto dto);
 
     /// <summary>
     /// Retrieves a list of the last globally played games.
@@ -94,7 +94,7 @@ public class GameService : IGameService
     }
 
     /// <inheritdoc/>
-    public async Task InsertGameAsync(InsertGame dto)
+    public async Task InsertGameAsync(GameDto dto)
     {
         GameLogger.Info(
             $"Inserting game {dto.Id} (White={dto.WhitePlayerId}, Black={dto.BlackPlayerId}), Moves={dto.Moves?.Count ?? 0}");

@@ -16,7 +16,7 @@ public interface IGameController
     /// </summary>
     /// <param name="dto">The game data.</param>
     /// <returns>An <see cref="IActionResult"/> indicating the result of the operation.</returns>
-    Task<IActionResult> InsertGameAsync(InsertGame dto);
+    Task<IActionResult> InsertGameAsync(GameDto dto);
 
     /// <summary>
     /// Gets the last globally played games.
@@ -52,7 +52,7 @@ public class GameController : IGameController
     /// <inheritdoc/>
     [HttpMethod("POST")]
     [Route("/insert")]
-    public async Task<IActionResult> InsertGameAsync(InsertGame dto)
+    public async Task<IActionResult> InsertGameAsync(GameDto dto)
     {
         GameLogger.Info($"HTTP POST /api/games/insert Id={dto.Id} White={dto.WhitePlayerId} Black={dto.BlackPlayerId}");
         await _gameService.InsertGameAsync(dto);

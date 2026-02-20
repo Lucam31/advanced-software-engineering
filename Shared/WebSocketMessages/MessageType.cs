@@ -14,6 +14,7 @@ public static class MessageType
     public const string StartGame = "START_GAME";
     public const string GameTurn = "GAME_TURN";
     public const string GameTurnAck = "GAME_TURN_ACK";
+    public const string GameOver = "GAME_OVER";
     // spectator related messages
     public const string SpectatorJoin = "SPECTATOR_JOIN";
     public const string SpectatorLeave = "SPECTATOR_LEAVE";

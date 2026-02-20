@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Threading.Channels;
 using chess_server.Services;
 using Shared;
+using Shared.Dtos;
 using Shared.Exceptions;
 using Shared.Logger;
 using Shared.WebSocketMessages;
@@ -151,6 +152,9 @@ public class WebSocketHub : IWebSocketHub
                 break;
             case MessageType.GameTurn:
                 await HandleMakeMove(payload, clientId);
+                break;
+            case MessageType.GameOver:
+                await HandleGameOver(payload, clientId);
                 break;
         }
         
@@ -309,7 +313,7 @@ public class WebSocketHub : IWebSocketHub
             })
         };
         
-        // DTO direkt weiterleiten
+        // forward new game state to opponent
         var forwardMessage = new WebSocketMessage
         {
             Type = MessageType.GameTurn,
@@ -318,4 +322,43 @@ public class WebSocketHub : IWebSocketHub
     
         await opponent.SendAsync(forwardMessage);
     }
+    
+    /// <summary>
+    /// Handles the end of a game when a client sends a GameOver message. Saves the game result to the database,
+    /// </summary>
+    /// <param name="payload">The payload of the message</param>
+    /// <param name="clientId">The id of the sender</param>
+    private async Task HandleGameOver(JsonElement payload, Guid clientId)
+    {
+        var gameOverPayload = _jsonParser.DeserializeJsonElement<GameOverPayload>(payload);
+        if (gameOverPayload == null) return;
+        
+        if (!_games.TryGetValue(gameOverPayload.GameId, out var game)) return;
+
+        var gameDto = new GameDto
+        {
+            Id = game.Id,
+            WhitePlayerId = game.GetWhitePlayerId(),
+            BlackPlayerId = game.GetBlackPlayerId(),
+            Moves = game.GetMoveHistory()
+        };
+        
+        await _gameService.InsertGameAsync(gameDto);
+        
+        var message = new WebSocketMessage
+        {
+            Type = MessageType.GameOver,
+            Payload = payload
+        };
+    
+        if (_clients.TryGetValue(game.GetWhitePlayerId(), out var white))
+            await white.SendAsync(message);
+    
+        if (_clients.TryGetValue(game.GetBlackPlayerId(), out var black))
+            await black.SendAsync(message);
+    
+        // remove game from active games
+        _games.TryRemove(gameOverPayload.GameId, out _);
+    }
+    
 }

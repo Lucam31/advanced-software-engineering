@@ -5,7 +5,7 @@ namespace Shared.Dtos;
 /// <summary>
 /// Represents a data transfer object for inserting a new game record.
 /// </summary>
-public class InsertGame
+public class GameDto
 {
     /// <summary>
     /// Gets or sets the unique identifier for the game.
