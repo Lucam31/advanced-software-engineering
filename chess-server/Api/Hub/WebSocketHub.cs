@@ -313,6 +313,9 @@ public class WebSocketHub : IWebSocketHub
             })
         };
         
+        // send ack to sender
+        await _clients[clientId].SendAsync(ackMessage);
+        
         // forward new game state to opponent
         var forwardMessage = new WebSocketMessage
         {
