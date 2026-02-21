@@ -63,7 +63,7 @@ public class GameLogic
             GameLogger.Debug("Awaiting user move input...");
             move = InputParser.ReadMove();
             GameLogger.Debug($"Received move: {move.From} -> {move.To}");
-            if (MoveValidator.ValidateMove(move, _gameboard))
+            if (MoveValidator.ValidateMove(move, _gameboard) == MoveValidator.MoveValidationResult.Valid)
             {
                 GameLogger.Info($"Move validated: {move.From} -> {move.To}");
                 _gameboard.Move(move);

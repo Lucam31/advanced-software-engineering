@@ -1,7 +1,7 @@
+using Shared.Pieces;
+
 namespace Shared;
 
-using Pieces;
-using Shared.Pieces;
 
 // TODO: König check ob neues feld im Schach wäre
 
@@ -12,6 +12,16 @@ public static class MoveValidator
 {
     public static bool WhitePlayer { get; set; } = true;
     
+    public enum MoveValidationResult
+    {
+        Invalid = 0,
+        Valid = 1,
+        EnPassant = 2,
+        Castling = 3,
+        Check = 4,
+        Checkmate = 5
+    }
+    
     // TODO: change ValidateMove to return an enum (valid, invalid, check, checkmate, enPassant, castling)
     /// <summary>
     /// Validates a given move on the specified game board.
@@ -19,15 +29,15 @@ public static class MoveValidator
     /// <param name="move">The move to validate.</param>
     /// <param name="gameboard">The current game board state.</param>
     /// <returns>True if the move is valid; otherwise, false.</returns>
-    public static bool ValidateMove(Move move, Gameboard gameboard)
+    public static MoveValidationResult ValidateMove(Move move, Gameboard gameboard)
     {
         var oldPosition = move.From;
         var newPosition = move.To;
-        if (oldPosition == newPosition) return false;
+        if (oldPosition == newPosition) return MoveValidationResult.Invalid;
         var movePiece = gameboard.GetPieceAtPosition(oldPosition);
         var targetPiece = gameboard.GetPieceAtPosition(newPosition);
 
-        if (movePiece != null && targetPiece != null && movePiece.IsWhite == targetPiece.IsWhite) return false;
+        if (movePiece != null && targetPiece != null && movePiece.IsWhite == targetPiece.IsWhite) return MoveValidationResult.Invalid;
 
         var colDiff = Math.Abs(newPosition[0] - oldPosition[0]);
         var rawRowDiff = newPosition[1] - oldPosition[1];
@@ -41,64 +51,71 @@ public static class MoveValidator
         if (movePiece is Pawn pawn)
         {
             // Pawn Promotion
-            if (colDiff > 1 && movePiece.Moved) return false;
+            if (colDiff > 1 && movePiece.Moved) return MoveValidationResult.Invalid;
             if (colDiff == 1 && rawRowDiff == 1) // Pawns can't move sideways unless capturing
             {
                 if (targetPiece is not null || CheckEnPassant(startRow, startCol, endRow, endCol, gameboard))
                 {
                     pawn.EnPassantEligible = false;
-                    return true;
+                    return targetPiece is null ? MoveValidationResult.EnPassant : MoveValidationResult.Valid;
                 }
             }
 
             if (!pawn.Moved && rowDiff == 2 && colDiff == 0 && ValidateTilesBetween(startRow, startCol, endRow, endCol, pawn, gameboard))
             {
                 pawn.EnPassantEligible = true;
-                return true;
+                return MoveValidationResult.Valid;
             }
 
             if (rowDiff is > 0 and < 2 && ValidateTilesBetween(startRow, startCol, endRow, endCol, movePiece, gameboard))
             {
                 pawn.EnPassantEligible = false;
-                return true;
+                return MoveValidationResult.Valid;
             }
 
-            return false;
+            return MoveValidationResult.Invalid;
         }
 
         if (movePiece is Bishop)
         {
             // Bishop moves diagonally, so the difference between the file and rank should be the same
-            return colDiff == rowDiff && ValidateTilesBetween(startRow, startCol, endRow, endCol, movePiece, gameboard);
+            return (colDiff == rowDiff && ValidateTilesBetween(startRow, startCol, endRow, endCol, movePiece, gameboard)) ? MoveValidationResult.Valid : MoveValidationResult.Invalid;
         }
 
 
         if (movePiece is Rook)
         {
             return ((colDiff == 0 && rowDiff != 0) || (colDiff != 0 && rowDiff == 0)) &&
-                   ValidateTilesBetween(startRow, startCol, endRow, endCol, movePiece, gameboard);
+                   ValidateTilesBetween(startRow, startCol, endRow, endCol, movePiece, gameboard) ? MoveValidationResult.Valid : MoveValidationResult.Invalid;
         }
 
         if (movePiece is Knight)
         {
             // check for castling
-            return (colDiff == 2 && rowDiff == 1) || (colDiff == 1 && rowDiff == 2);
+            return (colDiff == 2 && rowDiff == 1) || (colDiff == 1 && rowDiff == 2) ? MoveValidationResult.Valid : MoveValidationResult.Invalid;
         }
 
         if (movePiece is Queen)
         {
-            return ((colDiff == rowDiff) && ValidateTilesBetween(startRow, startCol, endRow, endCol, movePiece, gameboard)) ||
-                   ((colDiff == 0 || rowDiff == 0) && ValidateTilesBetween(startRow, startCol, endRow, endCol, movePiece, gameboard));
+            return ((colDiff == rowDiff) && ValidateTilesBetween(startRow, startCol, endRow, endCol, movePiece, gameboard)) || (
+                (colDiff == 0 || rowDiff == 0) &&
+                ValidateTilesBetween(startRow, startCol, endRow, endCol, movePiece, gameboard)) ? MoveValidationResult.Valid : MoveValidationResult.Invalid;
         }
 
         if (movePiece is King)
         {
-            return ((colDiff == 0 && rowDiff == 1) || (colDiff == 1 && rowDiff == 0) ||
-                   (colDiff == 1 && rowDiff == 1)) && !CheckCheckmate(newPosition, gameboard) || 
-                   (colDiff == 2 && rowDiff == 0) && !CheckCheckmate(newPosition, gameboard) && CheckCastling(startRow, startCol, endRow, endCol, gameboard);
+            if (colDiff == 2 && rowDiff == 0)
+            {
+                return (CheckCastling(startRow, startCol, endRow, endCol, gameboard) && !CheckCheck(newPosition, gameboard)) ? MoveValidationResult.Castling : MoveValidationResult.Invalid;
+            }
+
+            if (colDiff <= 1 && rowDiff <= 1)
+            {
+                return CheckCheck(newPosition, gameboard) ? MoveValidationResult.Check : MoveValidationResult.Valid;
+            }
         }
 
-        return false;
+        return MoveValidationResult.Invalid;
     }
 
     /// <summary>
@@ -259,7 +276,7 @@ public static class MoveValidator
     /// <summary>
     /// Checks if the passed tile is in checkmate for the king
     /// </summary>
-    private static bool CheckCheckmate(string position, Gameboard gameboard)
+    private static bool CheckCheck(string position, Gameboard gameboard)
     {
         // Pawn attack positions
         if (CheckPawnAttack(position, gameboard)) return true;
@@ -284,7 +301,7 @@ public static class MoveValidator
         var rook = endCol < startCol
             ? gameboard.GetPieceAtPosition($"A{startRow}")
             : gameboard.GetPieceAtPosition($"H{startRow}");
-        if (king is King && rook is Rook && king != null && rook != null && king.IsWhite == rook.IsWhite && !king.Moved && !rook.Moved)
+        if (king is King && rook is Rook && king.IsWhite == rook.IsWhite && !king.Moved && !rook.Moved)
         {            // Check if the tiles between the king and rook are clear
             if (ValidateTilesBetween(startRow, startCol, endRow, endCol, rook, gameboard))
             {
@@ -297,7 +314,7 @@ public static class MoveValidator
     /// <summary>
     /// Checks if an en passant move is valid.
     /// </summary>
-    /// <returns>True if the en passant move is valid, otherwise false. Currently a placeholder.</returns>
+    /// <returns>True if the en passant move is valid, otherwise false.</returns>
     private static bool CheckEnPassant(int startRow, char startCol, int endRow, char endCol, Gameboard gameboard)
     {
         var pawn = gameboard.GetPieceAtPosition($"{startCol}{startRow}");
