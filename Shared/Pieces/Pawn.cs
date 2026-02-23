@@ -11,4 +11,6 @@ public class Pawn(string position, bool isWhite) : Piece(position, "Pawn", isWhi
     /// Gets the Unicode symbol for the pawn.
     /// </summary>
     public override string UnicodeSymbol => "♟";
+    
+    public bool EnPassantEligible { get; set; } = false;
 }
