@@ -20,6 +20,6 @@ public static class MessageType
     public const string SpectatorLeave = "SPECTATOR_LEAVE";
     public const string SpectatorUpdate = "SPECTATOR_UPDATE";
     // friend related messages
-    public const string FetchFriendRequest = "FETCH_FRIEND_REQUEST";
+    public const string FetchFriends = "FETCH_FRIENDS";
     public const string Error = "ERROR";
 }

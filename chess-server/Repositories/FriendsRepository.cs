@@ -1,10 +1,7 @@
 using System.Data;
 using chess_server.Data;
 using chess_server.Models;
-using chess_server.OutputDtos;
-using Shared.Dtos;
 using Shared.Logger;
-using Shared.Models;
 
 namespace chess_server.Repositories;
 
@@ -26,19 +23,11 @@ public interface IFriendsRepository
     /// <param name="userId">The ID of the user.</param>
     /// <returns>A list of <see cref="Friendship"/> objects.</returns>
     Task<List<Friendship>> GetFriendsAsync(Guid userId);
-
+    
     /// <summary>
-    /// Retrieves a list of pending friend requests for a user.
-    /// </summary>
-    /// <param name="userId">The ID of the user.</param>
-    /// <returns>A list of <see cref="Friendship"/> objects with a 'pending' status.</returns>
-    Task<List<Friendship>> GetPendingFriendRequestsAsync(Guid userId);
-
-    /// <summary>
-    /// Updates the status of a friendship.
-    /// </summary>
-    /// <param name="dto">The data transfer object containing the friendship ID and new status.</param>
-    Task UpdateFriendshipStatusAsync(UpdateFriendship dto);
+    /// Removes an existing friendship between two users.
+    /// </summary> <param name="friendshipId">The ID of the first user.</param>
+    Task RemoveFriendshipAsync(Guid friendshipId);
 }
 
 /// <summary>
@@ -62,8 +51,8 @@ public class FriendsRepository : IFriendsRepository
     {
         GameLogger.Debug($"Adding friendship between {fromUserId} and {toUserId}");
         var sql = @"
-            INSERT INTO friendships (id, user_id_1, user_id_2, initiated_by, status, created_at)
-            VALUES (gen_random_uuid(), @UserId1, @UserId2, @InitiatedBy, 'pending', NOW())";
+            INSERT INTO friendships (id, user_id_1, user_id_2, initiated_by, created_at)
+            VALUES (gen_random_uuid(), @UserId1, @UserId2, @InitiatedBy, NOW())";
 
         var parameters = new Dictionary<string, object>
         {
@@ -85,7 +74,6 @@ public class FriendsRepository : IFriendsRepository
                 f.id as friendship_id,
                 f.user_id_1 as user_id_1,
                 f.user_id_2 as user_id_2,
-                f.status as status,
                 f.initiated_by as initiated_by,
                 f.created_at as created_at
             FROM users u
@@ -93,7 +81,7 @@ public class FriendsRepository : IFriendsRepository
                 (f.user_id_1 = u.id AND f.user_id_2 = @UserId) OR
                 (f.user_id_2 = u.id AND f.user_id_1 = @UserId)
             )
-            WHERE f.status = 'accepted' AND u.id != @UserId";
+            WHERE u.id != @UserId";
 
         var parameters = new Dictionary<string, object>
         {
@@ -107,53 +95,21 @@ public class FriendsRepository : IFriendsRepository
     }
     
     /// <inheritdoc/>
-    public async Task<List<Friendship>> GetPendingFriendRequestsAsync(Guid userId)
+    public async Task RemoveFriendshipAsync(Guid friendshipId)
     {
-        GameLogger.Debug($"Getting pending friend requests for user {userId}");
-        var sql = @"
-            SELECT 
-                f.id as friendship_id,
-                f.user_id_1 as user_id_1,
-                f.user_id_2 as user_id_2,
-                f.status as status,
-                f.initiated_by as initiated_by,
-                f.created_at as created_at
-            FROM users u
-            JOIN friendships f ON (
-                (f.user_id_1 = u.id AND f.user_id_2 = @UserId) OR
-                (f.user_id_2 = u.id AND f.user_id_1 = @UserId)
-            )
-            WHERE f.status = 'pending' AND f.initiated_by != @UserId";
+        GameLogger.Debug($"Removing friendship with ID {friendshipId}");
+        var sql = "DELETE FROM friendships WHERE id = @FriendshipId";
 
         var parameters = new Dictionary<string, object>
         {
-            { "@UserId", userId }
-        };
-
-        var dataTable = await _database.ExecuteQueryAsync(sql, parameters);
-        var friendships = ConvertDataTableToFriendships(dataTable);
-        GameLogger.Debug($"Found {friendships.Count} pending requests for user {userId}");
-        return friendships;
-    }
-
-    /// <inheritdoc/>
-    public async Task UpdateFriendshipStatusAsync(UpdateFriendship dto)
-    {
-        GameLogger.Debug($"Updating friendship {dto.FriendshipId} to status {dto.Status}");
-        var sql = @"
-            UPDATE friendships
-            SET status = @Status
-            WHERE id = @FriendshipId";
-
-        var parameters = new Dictionary<string, object>
-        {
-            { "@Status", dto.Status.ToString().ToLower() },
-            { "@FriendshipId", dto.FriendshipId }
+            { "@FriendshipId", friendshipId }
         };
 
         await _database.ExecuteNonQueryWithTransactionAsync(sql, parameters);
-        GameLogger.Info($"Friendship {dto.FriendshipId} status updated to {dto.Status}");
+        GameLogger.Info($"Friendship with ID {friendshipId} removed");
     }
+    
+    
     
     /// <summary>
     /// Converts a DataTable to a list of Friendship objects.
@@ -170,7 +126,6 @@ public class FriendsRepository : IFriendsRepository
                 Id = (Guid)row["friendship_id"],
                 UserId1 = (Guid)row["user_id_1"],
                 UserId2 = (Guid)row["user_id_2"],
-                Status = row["status"].ToString() ?? "",
                 InitiatedBy = (Guid)row["initiated_by"],
                 CreatedAt = (DateTime)row["created_at"]
             });

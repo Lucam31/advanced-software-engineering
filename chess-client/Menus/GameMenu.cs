@@ -1,4 +1,5 @@
 using chess_client.Services;
+using chess_client.States;
 using Shared.Logger;
 
 namespace chess_client.Menus;
@@ -9,21 +10,30 @@ namespace chess_client.Menus;
 public class GameMenu
 {
     private readonly UserContainer _userContainer;
+    private readonly FriendshipMenu _friendshipMenu;
+    private readonly WebSocketService _webSocketService;
     
     /// <summary>
     /// Initializes a new instance of the GameMenu class.
     /// </summary>
     /// <param name="userContainer">The user container.</param>
-    public GameMenu(UserContainer userContainer)
+    /// <param name="friendshipMenu">The friendship menu.</param>
+    /// <param name="webSocketService">The WebSocket service.</param>
+    public GameMenu(UserContainer userContainer, FriendshipMenu friendshipMenu, WebSocketService webSocketService)
     {
         _userContainer = userContainer;
+        _friendshipMenu = friendshipMenu;
+        _webSocketService = webSocketService;
     }
     
     /// <summary>
     /// Displays the main menu and handles user input.
     /// </summary>
-    public void DisplayMainMenu()
+    public async Task DisplayMainMenu()
     {
+        // Beim Eintritt ins Hauptmenü den passenden State aktivieren
+        _webSocketService.TransitionTo(new MainMenuState());
+
         while (true)
         {
             GameLogger.Info("Displaying main menu.");
@@ -36,10 +46,10 @@ public class GameMenu
 
             switch (input)
             {
-                case "S":
-                case "SEARCH":
-                    GameLogger.Info("User selected 'Search'.");
-                    SearchView();
+                case "F":
+                case "FRIENDS":
+                    GameLogger.Info("User selected 'Friends'.");
+                    await _friendshipMenu.DisplayMenu();
                     continue;
                 case "Q":
                 case "QUIT":
@@ -52,12 +62,5 @@ public class GameMenu
             }
         }
     }
-
-    /// <summary>
-    /// Handles the search view.
-    /// </summary>
-    private void SearchView()
-    {
-        CliOutput.PrintConsoleNewline(_userContainer.Id.ToString());
-    }
+    
 }

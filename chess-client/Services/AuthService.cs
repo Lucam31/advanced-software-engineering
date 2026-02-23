@@ -16,7 +16,7 @@ public interface IAuthService
     /// <param name="password">The password.</param>
     /// <returns>The user ID.</returns>
     Task<Guid> Login(string username, string password);
-    
+
     /// <summary>
     /// Registers a new user with the given credentials.
     /// </summary>
@@ -32,36 +32,35 @@ public class AuthService : IAuthService
 {
     private readonly HttpClient _client = new();
     private readonly JsonParser _jsonParser = new();
-    
+
     /// <inheritdoc/>
     public async Task<Guid> Login(string username, string password)
     {
-        
         var loginDto = new UserDto
         {
             Username = username,
             Password = password
         };
-        
+
         var content = new StringContent(_jsonParser.SerializeJson(loginDto), System.Text.Encoding.UTF8, "application/json");
 
         var res = await _client.PostAsync("http://localhost:8080/api/user/login", content);
-        
+
         if (!res.IsSuccessStatusCode)
         {
             throw new Exception("Registration failed.");
         }
-        
+
         var responseContent = await res.Content.ReadAsStringAsync();
-        
+
         var dto = _jsonParser.DeserializeJson<LoginResponseDto>(responseContent);
-        
+
         if (dto == null)
             throw new Exception("Failed to parse login response.");
-        
+
         return dto.UserId;
     }
-    
+
     /// <inheritdoc/>
     public async Task Register(string username, string password)
     {
@@ -70,11 +69,11 @@ public class AuthService : IAuthService
             Username = username,
             Password = password
         };
-        
+
         var content = new StringContent(_jsonParser.SerializeJson(loginDto), System.Text.Encoding.UTF8, "application/json");
 
         var res = await _client.PostAsync("http://localhost:8080/api/user/register", content);
-        
+
         if (!res.IsSuccessStatusCode)
         {
             throw new Exception("Registration failed.");
