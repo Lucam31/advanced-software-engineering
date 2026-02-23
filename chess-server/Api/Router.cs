@@ -191,7 +191,7 @@ public class Router : IRouter
                 var queryValue = context.Request.QueryString[param.Name];
                 if (queryValue != null)
                 {
-                    args[i] = Convert.ChangeType(queryValue, param.ParameterType);
+                    args[i] = ConvertQueryParameter(queryValue, param.ParameterType);
                     GameLogger.Debug($"Extracted query parameter '{param.Name}' with value '{queryValue}'.");
                 }
                 else
@@ -227,4 +227,19 @@ public class Router : IRouter
             }
         });
     }
+    
+    private static object? ConvertQueryParameter(string value, Type targetType)
+    {
+        if (targetType == typeof(Guid) || targetType == typeof(Guid?))
+            return Guid.Parse(value);
+    
+        if (targetType == typeof(int) || targetType == typeof(int?))
+            return int.Parse(value);
+    
+        if (targetType == typeof(bool) || targetType == typeof(bool?))
+            return bool.Parse(value);
+    
+        return Convert.ChangeType(value, targetType);
+    }
+    
 }

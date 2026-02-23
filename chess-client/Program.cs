@@ -1,4 +1,4 @@
-﻿using Shared;
+﻿﻿using Shared;
 using System.Text;
 using chess_client.Menus;
 using chess_client.Services;
@@ -43,9 +43,11 @@ internal static class Program
             GameLogger.Info("Displaying login menu...");
 
             var userContainer = new UserContainer();
+            var webSocketService = new WebSocketService();
 
             var loginMenu = new LoginMenu(new AuthService(), userContainer);
-            var gameMenu = new GameMenu(userContainer);
+            var friendshipMenu = new FriendshipMenu(userContainer, new FriendshipServices(), webSocketService);
+            var gameMenu = new GameMenu(userContainer, friendshipMenu, webSocketService);
             
             while (true)
             {
@@ -54,8 +56,16 @@ internal static class Program
                     break;
                 
                 GameLogger.Info("User logged in successfully.");
+                
+                if (!webSocketService.IsConnected)
+                {
+                    var wsUri = $"ws://localhost:8080/ws?userId={userContainer.Id}";
+                    var connected = await webSocketService.ConnectAsync(wsUri);
+                    if (!connected)
+                        GameLogger.Warning("WebSocket-Verbindung fehlgeschlagen. Läuft ohne Echtzeit-Updates.");
+                }
 
-                gameMenu.DisplayMainMenu();
+                await gameMenu.DisplayMainMenu();
             }
 
             GameLogger.Info("Client shutting down normally.");

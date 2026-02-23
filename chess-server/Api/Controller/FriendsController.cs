@@ -7,7 +7,7 @@ using Shared.Logger;
 namespace chess_server.Api.Controller;
 
 /// <summary>
-/// Defines the interface for the friends controller.
+/// Defines the interface for the friends' controller.
 /// </summary>
 public interface IFriendsController
 {
@@ -26,18 +26,11 @@ public interface IFriendsController
     Task<IActionResult> GetFriends(Guid userId);
     
     /// <summary>
-    /// Gets the list of pending friend requests for a user.
+    /// Removes a friend from the user's friend list.
     /// </summary>
-    /// <param name="userId">The ID of the user.</param>
-    /// <returns>An <see cref="IActionResult"/> containing the list of pending requests.</returns>
-    Task<IActionResult> GetPendingRequests(Guid userId);
-    
-    /// <summary>
-    /// Updates the status of a friend request.
-    /// </summary>
-    /// <param name="dto">The data for updating the friendship status.</param>
+    /// <param name="friendshipId">The ID of the friendship to remove.</param>
     /// <returns>An <see cref="IActionResult"/> indicating the result of the operation.</returns>
-    Task<IActionResult> UpdateFriendRequest(UpdateFriendship dto);
+    Task<IActionResult> RemoveFriend(Guid friendshipId);
 }
 
 /// <summary>
@@ -80,24 +73,13 @@ public class FriendsController : IFriendsController
     }
 
     /// <inheritdoc/>
-    [HttpMethod("GET")]
-    [Route("/pendingRequests")]
-    public async Task<IActionResult> GetPendingRequests([FromQuery] Guid userId)
+    [HttpMethod("DELETE")]
+    [Route("/remove")]
+    public async Task<IActionResult> RemoveFriend([FromQuery] Guid friendshipId)
     {
-        GameLogger.Info($"HTTP GET /api/friends/pendingRequests?userId={userId}");
-        var pending = await _friendsService.GetPendingFriendRequestsAsync(userId);
-        GameLogger.Info($"Returning {pending.Count} pending requests for user {userId}");
-        return Results.Ok(pending);
-    }
-
-    /// <inheritdoc/>
-    [HttpMethod("PATCH")]
-    [Route("/update")]
-    public async Task<IActionResult> UpdateFriendRequest([FromBody] UpdateFriendship dto)
-    {
-        GameLogger.Info($"HTTP PATCH /api/friends/update id={dto.FriendshipId} status={dto.Status}");
-        await _friendsService.UpdateFriendRequestAsync(dto);
-        GameLogger.Info($"Friendship {dto.FriendshipId} updated to {dto.Status}");
+        GameLogger.Info($"HTTP DELETE /api/friends/remove?friendshipId={friendshipId}");
+        await _friendsService.RemoveFriendAsync(friendshipId);
+        GameLogger.Info($"Friendship {friendshipId} removed");
         return Results.Ok();
     }
 }

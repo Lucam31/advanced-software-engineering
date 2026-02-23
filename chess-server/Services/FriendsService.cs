@@ -27,17 +27,10 @@ public interface IFriendsService
     Task<List<Friend>> GetFriendsAsync(Guid userId);
     
     /// <summary>
-    /// Retrieves a list of pending friend requests for a user.
+    /// Removes a friend from the user's friend list.
     /// </summary>
-    /// <param name="userId">The ID of the user.</param>
-    /// <returns>A list of <see cref="PendingFriendRequest"/> objects.</returns>
-    Task<List<PendingFriendRequest>> GetPendingFriendRequestsAsync(Guid userId);
-    
-    /// <summary>
-    /// Updates the status of a friend request.
-    /// </summary>
-    /// <param name="dto">The data for updating the friendship status.</param>
-    Task UpdateFriendRequestAsync(UpdateFriendship dto);
+    /// <param name="friendshipId">The ID of the user.</param>
+    Task RemoveFriendAsync(Guid friendshipId);
 }
 
 /// <summary>
@@ -48,11 +41,11 @@ public class FriendsService : IFriendsService
     private readonly IFriendsRepository _friendsRepository;
     private readonly IUserRepository _userRepository;
     private readonly INotificationSender _notificationSender;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="FriendsService"/> class.
     /// </summary>
-    /// <param name="friendsRepository">The friends repository.</param>
+    /// <param name="friendsRepository">The friends' repository.</param>
     /// <param name="userRepository">The user repository.</param>
     /// <param name="notificationSender">The notification sender.</param>
     public FriendsService(IFriendsRepository friendsRepository, IUserRepository userRepository, INotificationSender notificationSender)
@@ -73,17 +66,17 @@ public class FriendsService : IFriendsService
             GameLogger.Warning($"Add friend failed: User '{dto.FriendUsername}' not found.");
             throw new UserNotFound();
         }
-        
+
         await _friendsRepository.AddFriendshipAsync(dto.UserId, friend.Id);
         GameLogger.Info($"Friend request sent from {dto.UserId} to {friend.Id}");
 
         // Send notification to the friend if online
         await _notificationSender.SendNotificationAsync(friend.Id, new WebSocketMessage
         {
-            Type = MessageType.FetchFriendRequest
+            Type = MessageType.FetchFriends
         });
     }
-    
+
     /// <inheritdoc/>
     public async Task<List<Friend>> GetFriendsAsync(Guid userId)
     {
@@ -91,7 +84,7 @@ public class FriendsService : IFriendsService
         var friendships = await _friendsRepository.GetFriendsAsync(userId);
 
         var friends = new List<Friend>();
-        
+
         foreach (var f in friendships)
         {
             var friendId = f.UserId1 == userId ? f.UserId2 : f.UserId1;
@@ -105,44 +98,16 @@ public class FriendsService : IFriendsService
                 });
             }
         }
-        
+
         GameLogger.Info($"Found {friends.Count} friends for user {userId}");
         return friends;
     }
 
     /// <inheritdoc/>
-    public async Task<List<PendingFriendRequest>> GetPendingFriendRequestsAsync(Guid userId)
+    public async Task RemoveFriendAsync(Guid friendshipId)
     {
-        GameLogger.Info($"Fetching pending friend requests for user {userId}");
-        var pendingRequests = await _friendsRepository.GetPendingFriendRequestsAsync(userId);
-        
-        var result = new List<PendingFriendRequest>();
-        
-        foreach (var pr in pendingRequests)
-        {
-            var requesterId = pr.InitiatedBy;
-            var requester = await _userRepository.GetUserByIdAsync(requesterId);
-            
-            if (requester != null)
-            {
-                result.Add(new PendingFriendRequest
-                {
-                    RequestId = pr.Id,
-                    FromUsername = requester.Username,
-                    Status = pr.Status
-                });
-            }
-        }
-        
-        GameLogger.Info($"Found {result.Count} pending friend requests for user {userId}");
-        return result;
-    }
-
-    /// <inheritdoc/>
-    public async Task UpdateFriendRequestAsync(UpdateFriendship dto)
-    {
-        GameLogger.Info($"Updating friend request {dto.FriendshipId} to status {dto.Status}");
-        await _friendsRepository.UpdateFriendshipStatusAsync(dto);
-        GameLogger.Info($"Friend request {dto.FriendshipId} updated successfully.");
+        GameLogger.Info($"Removing friendship with ID {friendshipId}");
+        await _friendsRepository.RemoveFriendshipAsync(friendshipId);
+        GameLogger.Info($"Friendship with ID {friendshipId} removed");
     }
 }

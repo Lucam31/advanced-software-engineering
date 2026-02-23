@@ -19,7 +19,21 @@ public static class ConsoleHelper
 |     Games(G)     |
 --------------------
 |     Quit(Q)      |
---------------------";
+--------------------
+";
+    
+    /// <summary>
+    /// A string representing the friendship menu text.
+    /// </summary>
+    public const string FriendsMenu = @"
+--------------------
+|     Search(S)    |
+--------------------
+|     List(L)      |
+--------------------
+|     Quit(Q)      |
+--------------------
+";
     
     /// <summary>
     /// A string representing the login menu text.
@@ -31,6 +45,7 @@ public static class ConsoleHelper
 |     Register(R)  |
 --------------------
 |     Quit(Q)      |
---------------------";
+--------------------
+";
     
 }

@@ -21,11 +21,6 @@ public class Friendship
     public Guid UserId2 { get; set; }
     
     /// <summary>
-    /// Gets or sets the status of the friendship (e.g., "pending", "accepted").
-    /// </summary>
-    public string Status { get; set; } = "pending";
-    
-    /// <summary>
     /// Gets or sets the ID of the user who initiated the friendship.
     /// </summary>
     public Guid InitiatedBy { get; set; }
