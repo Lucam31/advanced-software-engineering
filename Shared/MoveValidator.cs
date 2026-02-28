@@ -52,7 +52,7 @@ public static class MoveValidator
         {
             // Pawn Promotion
             if (colDiff > 1 && movePiece.Moved) return MoveValidationResult.Invalid;
-            if (colDiff == 1 && rawRowDiff == 1) // Pawns can't move sideways unless capturing
+            if (colDiff == 1 && rowDiff == 1) // Pawns can't move sideways unless capturing
             {
                 if (targetPiece is not null || CheckEnPassant(startRow, startCol, endRow, endCol, gameboard))
                 {
@@ -68,7 +68,7 @@ public static class MoveValidator
                 return MoveValidationResult.Valid;
             }
 
-            if (colDiff == 0 && rawRowDiff > 0 && rowDiff is < 2 && ValidateTilesBetween(startRow, startCol, endRow, endCol, movePiece, gameboard))
+            if (colDiff == 0 && rowDiff > 0 && rowDiff is < 2 && ValidateTilesBetween(startRow, startCol, endRow, endCol, movePiece, gameboard))
             {
                 pawn.EnPassantEligible = false;
                 return MoveValidationResult.Valid;
