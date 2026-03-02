@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="chess-server-client" type="com.intellij.execution.configurations.multilaunch" factoryName="MultiLaunchConfiguration">
+  <configuration default="false" name="Play" type="com.intellij.execution.configurations.multilaunch" factoryName="MultiLaunchConfiguration">
     <rows>
       <ExecutableRowSnapshot>
         <option name="condition">
@@ -9,17 +9,14 @@
         </option>
         <option name="executable">
           <ExecutableSnapshot>
-            <option name="id" value="runConfig:.NET Project.chess-server/file+cli" />
+            <option name="id" value="runConfig:Docker.chess-server/db" />
           </ExecutableSnapshot>
         </option>
       </ExecutableRowSnapshot>
       <ExecutableRowSnapshot>
         <option name="condition">
           <ConditionSnapshot>
-            <attributes>
-              <entry key="port" value="8080" />
-            </attributes>
-            <option name="type" value="waitPortOpened" />
+            <option name="type" value="afterPreviousFinished" />
           </ConditionSnapshot>
         </option>
         <option name="executable">
