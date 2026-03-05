@@ -67,7 +67,7 @@ public class GameLogic
 
             // Send CreateGame message to the server
             // not sure if these are set correctly yet, any more data needed?
-            var createGamePayload = new CreateGamePayload {  };
+            var createGamePayload = new CreateGamePayload { };
             await webSocketService.SendAsync(new WebSocketMessage
             {
                 Type = MessageType.CreateGame,
@@ -112,7 +112,7 @@ public class GameLogic
                 if (MoveValidator.IsStalemate(currentIsWhite, _gameboard))
                 {
                     CliOutput.PrintConsoleNewline($"Stalemate! Noone wins!");
-                    GameLogger.Info($"Stalemate detected. Noone wins.");
+                    GameLogger.Info("Stalemate detected. Noone wins.");
                     _gameOver = true;
                     break;
                 }
@@ -126,35 +126,40 @@ public class GameLogic
                 Move move;
                 MoveValidator.MoveValidationResult validationResult;
 
+                var inputWasValid = true;
+                CliOutput.PrintConsoleNewline("Your turn. Enter your move (e.g. E2E4): ");
                 while (true)
                 {
                     try
                     {
-                        CliOutput.PrintConsoleNewline("Your turn. Enter your move (e.g. E2E4): ");
                         move = InputParser.ReadMove();
                     }
                     catch (Exception)
                     {
-                        CliOutput.PrintConsoleNewline("Invalid input. Use format like E2E4.");
+                        CliOutput.OverwriteLineRelativeKeepCursorAtEnd(1,
+                            "Your input is invalid. Enter your move using the format E2E4: ");
                         continue;
                     }
 
                     var piece = _gameboard.GetPieceAtPosition(move.From);
                     if (piece == null)
                     {
-                        CliOutput.PrintConsoleNewline("No piece at the selected position.");
+                        CliOutput.OverwriteLineRelativeKeepCursorAtEnd(1,
+                            "Your input is invalid. No piece at the selected position. Try again: ");
                         continue;
                     }
 
                     if (!test && piece.IsWhite != _isWhite)
                     {
-                        CliOutput.PrintConsoleNewline("You can only move your own pieces.");
+                        CliOutput.OverwriteLineRelativeKeepCursorAtEnd(1,
+                            "Your input is invalid. You can only move your own pieces. Try again: ");
                         continue;
                     }
 
                     if (test && piece.IsWhite != _isWhiteTurn)
                     {
-                        CliOutput.PrintConsoleNewline("You can only move your own pieces.");
+                        CliOutput.OverwriteLineRelativeKeepCursorAtEnd(1,
+                            "Your input is invalid. You can only move your own pieces. Try again: ");
                         continue;
                     }
 
@@ -171,14 +176,15 @@ public class GameLogic
 
                     if (validationResult == MoveValidator.MoveValidationResult.Invalid)
                     {
-                        CliOutput.PrintConsoleNewline("Invalid move. Try again.");
+                        CliOutput.OverwriteLineRelativeKeepCursorAtEnd(1, "Your move is invalid. Try again: ");
                         continue;
                     }
 
                     // Verify the move does not leave the own king in check
                     if (!MoveValidator.TryMoveEscapesCheck(move, validationResult, currentIsWhite, _gameboard))
                     {
-                        CliOutput.PrintConsoleNewline("This move leaves your king in check. Try again.");
+                        CliOutput.OverwriteLineRelativeKeepCursorAtEnd(1,
+                            "This move leaves your king in check. Try again: ");
                         continue;
                     }
 
@@ -246,7 +252,6 @@ public class GameLogic
         CliOutput.PrintConsoleNewline("Game over! Returning to main menu...");
         GameLogger.Info("Game ended.");
     }
-    
 
     /// <summary>
     /// Draws the current state of the gameboard to the console

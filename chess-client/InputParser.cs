@@ -106,7 +106,6 @@ public static class InputParser
         if (move?.Length != 4)
         {
             GameLogger.Warning("Move input not length 4.");
-            CliOutput.WriteErrorMessage("Input must be in the format 'e2e4'.");
         }
 
         try
@@ -127,7 +126,6 @@ public static class InputParser
         if (fromRow == -1 || fromCol == -1 || toRow == -1 || toCol == -1)
         {
             GameLogger.Error("Parsed move contains invalid -1 values.");
-            CliOutput.WriteErrorMessage("Input must be in the format 'e2e4'.");
         }
 
         if (fromCol is > 64 and < 73 && fromRow is > 0 and < 9 && toCol is > 64 and < 73 && toRow is > 0 and < 9)
