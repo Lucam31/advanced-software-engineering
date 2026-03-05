@@ -62,24 +62,24 @@ public class Gameboard
 
                 piece = r switch
                 {
-                    1 => new Pawn(position, false),
-                    6 => new Pawn(position, true),
+                    1 => new Pawn(position, true),
+                    6 => new Pawn(position, false),
                     0 => c switch
-                    {
-                        0 or 7 => new Rook(position, false),
-                        1 or 6 => new Knight(position, false),
-                        2 or 5 => new Bishop(position, false),
-                        3 => new Queen(position, false),
-                        4 => new King(position, false),
-                        _ => null
-                    },
-                    7 => c switch
                     {
                         0 or 7 => new Rook(position, true),
                         1 or 6 => new Knight(position, true),
                         2 or 5 => new Bishop(position, true),
                         3 => new Queen(position, true),
                         4 => new King(position, true),
+                        _ => null
+                    },
+                    7 => c switch
+                    {
+                        0 or 7 => new Rook(position, false),
+                        1 or 6 => new Knight(position, false),
+                        2 or 5 => new Bishop(position, false),
+                        3 => new Queen(position, false),
+                        4 => new King(position, false),
                         _ => null
                     },
                     _ => piece
@@ -103,32 +103,34 @@ public class Gameboard
     }
 
     /// <summary>
-    /// Prints the current state of the board to the console, including pieces and coordinates.
+    /// Prints the current state of the board to the console, including pieces and coordinates
     /// </summary>
-    public void PrintBoard()
+    /// <param name="whitePlayer">If true, prints the board from white's perspective (reversed orientation)</param>
+    public void PrintBoard(bool whitePlayer = true)
     {
         const int cellWidth = 3;
         var leftPad = new string(' ', cellWidth);
 
         Console.Write(leftPad);
-        for (var file = 0; file < 8; file++)
+        for (var i = 0; i < 8; i++)
         {
-            var fileChar = (char)('A' + file);
+            var fileChar = whitePlayer ? (char)('A' + i) : (char)('H' - i);
             Console.Write($" {fileChar} ");
         }
 
         Console.WriteLine();
 
-        for (var rank = 8; rank >= 1; rank--)
+        for (var i = 0; i < 8; i++)
         {
+            var rank = whitePlayer ? 8 - i : i + 1;
             Console.Write($" {rank} ");
 
-            for (var file = 0; file < 8; file++)
+            for (var j = 0; j < 8; j++)
             {
+                var file = whitePlayer ? j : 7 - j;
                 var isDark = (file + rank) % 2 == 0;
 
                 Console.BackgroundColor = isDark ? ConsoleColor.Gray : ConsoleColor.DarkGray;
-
 
                 var tile = _tiles[rank - 1, file];
                 if (tile.CurrentPiece != null)
@@ -147,9 +149,9 @@ public class Gameboard
         }
 
         Console.Write(leftPad);
-        for (var file = 0; file < 8; file++)
+        for (var i = 0; i < 8; i++)
         {
-            var fileChar = (char)('A' + file);
+            var fileChar = whitePlayer ? (char)('A' + i) : (char)('H' - i);
             Console.Write($" {fileChar} ");
         }
     }
@@ -169,33 +171,77 @@ public class Gameboard
     /// </summary>
     /// <param name="move">The move to be executed</param>
     /// <param name="enPassant">The move was an en passant</param>
+    /// <param name="castling">The move was a castling</param>
     /// <returns>True if the move was successfully executed</returns>
-    public bool Move(Move move, bool enPassant = false)
+    public bool Move(Move move, bool enPassant = false, bool castling = false)
     {
-        var fromIndexLetter = move.From[0] - 'A';
-        var fromIndexNumber = move.From[1] - '1';
-        var toIndexLetter = move.To[0] - 'A';
-        var toIndexNumber = move.To[1] - '1';
+        var fromCol = move.From[0] - 'A';
+        var fromRow = move.From[1] - '1';
+        var toCol = move.To[0] - 'A';
+        var toRow = move.To[1] - '1';
 
-        _moves.Add(new Move(move.From, move.To, _tiles[fromIndexNumber, fromIndexLetter].CurrentPiece, enPassant ? $"{toIndexLetter}{toIndexNumber+1}" : $"{toIndexLetter}{toIndexNumber}"));
-        // If the tile is occupied, the piece must be captured
-        if (_tiles[toIndexNumber, toIndexLetter].CurrentPiece != null)
+        if (enPassant)
         {
-            _tiles[toIndexNumber, toIndexLetter].CurrentPiece!.IsCaptured = true;
-
-            // Add the captured piece to the captured pieces array
-            if (_tiles[toIndexNumber, toIndexLetter].CurrentPiece!.IsWhite)
+            // The captured pawn is on the destination column but on the starting row
+            var capturedPawn = _tiles[fromRow, toCol].CurrentPiece;
+            if (capturedPawn != null)
             {
-                _capturedWhitePieces.Add(_tiles[toIndexNumber, toIndexLetter].CurrentPiece!);
+                capturedPawn.IsCaptured = true;
+                if (capturedPawn.IsWhite)
+                    _capturedWhitePieces.Add(capturedPawn);
+                else
+                    _capturedBlackPieces.Add(capturedPawn);
+
+                _tiles[fromRow, toCol].CurrentPiece = null;
+            }
+
+            _moves.Add(new Move(move.From, move.To, capturedPawn, $"{(char)('A' + toCol)}{fromRow + 1}"));
+        }
+        else
+        {
+            _moves.Add(new Move(move.From, move.To, _tiles[toRow, toCol].CurrentPiece, $"{(char)('A' + toCol)}{toRow + 1}"));
+
+            // If the destination tile is occupied, capture the piece
+            if (_tiles[toRow, toCol].CurrentPiece != null)
+            {
+                _tiles[toRow, toCol].CurrentPiece!.IsCaptured = true;
+
+                if (_tiles[toRow, toCol].CurrentPiece!.IsWhite)
+                    _capturedWhitePieces.Add(_tiles[toRow, toCol].CurrentPiece!);
+                else
+                    _capturedBlackPieces.Add(_tiles[toRow, toCol].CurrentPiece!);
+            }
+        }
+
+        // Move the piece to the destination
+        _tiles[toRow, toCol].CurrentPiece = _tiles[fromRow, fromCol].CurrentPiece;
+        _tiles[toRow, toCol].CurrentPiece?.Move(move.To);
+        _tiles[fromRow, fromCol].CurrentPiece = null;
+
+        if (castling)
+        {
+            // Determine rook positions based on castling direction
+            var row = fromRow; // King and rook are on the same row
+            if (toCol > fromCol)
+            {
+                // Kingside castling: rook moves from H to F
+                var rookFromCol = 7; // H
+                var rookToCol = 5;   // F
+                _tiles[row, rookToCol].CurrentPiece = _tiles[row, rookFromCol].CurrentPiece;
+                _tiles[row, rookToCol].CurrentPiece?.Move($"{(char)('A' + rookToCol)}{row + 1}");
+                _tiles[row, rookFromCol].CurrentPiece = null;
             }
             else
             {
-                _capturedBlackPieces.Add(_tiles[toIndexNumber, toIndexLetter].CurrentPiece!);
+                // Queenside castling: rook moves from A to D
+                var rookFromCol = 0; // A
+                var rookToCol = 3;   // D
+                _tiles[row, rookToCol].CurrentPiece = _tiles[row, rookFromCol].CurrentPiece;
+                _tiles[row, rookToCol].CurrentPiece?.Move($"{(char)('A' + rookToCol)}{row + 1}");
+                _tiles[row, rookFromCol].CurrentPiece = null;
             }
         }
-        _tiles[toIndexNumber, toIndexLetter].CurrentPiece = _tiles[fromIndexNumber, fromIndexLetter].CurrentPiece;
-        _tiles[toIndexNumber, toIndexLetter].CurrentPiece?.Move(move.To);
-        _tiles[fromIndexNumber, fromIndexLetter].CurrentPiece = null;
+
         return true;
     }
 

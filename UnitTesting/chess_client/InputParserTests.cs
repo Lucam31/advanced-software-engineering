@@ -70,7 +70,7 @@ public sealed class InputParserTest
     {
         // simulate user input: first invalid (x), then valid (C) (\n represents Enter)
         Console.SetIn(new StringReader("x\nC\n"));
-        string prompt = "Test input: ";
+        const string prompt = "Test input: ";
 
         var result = InputParser.ReadInput(prompt, false, "A", "B", "C");
         
@@ -85,7 +85,7 @@ public sealed class InputParserTest
     public void TestReadInput_PromptIsPrintedToConsole()
     {
         Console.SetIn(new StringReader("C\n"));
-        string prompt = "Test input: ";
+        const string prompt = "Test input: ";
         
         var result = InputParser.ReadInput(prompt, false, "A", "B", "C");
         
@@ -98,11 +98,9 @@ public sealed class InputParserTest
     /// when no validInputs array is provided
     /// </summary>
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException),
-        "validInputs must contain at least one valid input.")]
     public void TestReadInput_NoValidInputs_ThrowsException()
     {
-        var result = InputParser.ReadInput("Test input: ", false, []);
+        Assert.ThrowsExactly<ArgumentException>(() => InputParser.ReadInput("Test input: ", false, []));
     }
     
     /// <summary>
@@ -127,13 +125,10 @@ public sealed class InputParserTest
     /// when an invalid coordinate (here x2x4) is entered
     /// </summary>
     [TestMethod]
-    [ExpectedException(typeof(ArgumentException),
-        "Input was not valid")]
     public void TestReadMove_InvalidMove_ThrowsException()
     {
         // simulate user input x2x4 (\n represents Enter)
         Console.SetIn(new StringReader("x2x4\n"));
-
-        var move = InputParser.ReadMove();
+        Assert.ThrowsExactly<ArgumentException>(() => InputParser.ReadMove());
     }
 }

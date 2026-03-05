@@ -96,21 +96,19 @@ public class AuthServiceApiTests
     }
 
     [TestMethod]
-    [ExpectedException(typeof(Exception))]
     public async Task Login_ThrowsException_OnServerError()
     {
         _mockHandler.EnqueueResponse(HttpStatusCode.InternalServerError);
 
-        await _authService.Login("user", "password");
+        await Assert.ThrowsExactlyAsync<Exception>(() => _authService.Login("user", "password"));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(Exception))]
     public async Task Login_ThrowsException_OnUnauthorized()
     {
         _mockHandler.EnqueueResponse(HttpStatusCode.Unauthorized);
 
-        await _authService.Login("user", "wrongPassword");
+        await Assert.ThrowsExactlyAsync<Exception>(() => _authService.Login("user", "wrongPassword"));
     }
 
     [TestMethod]
@@ -118,8 +116,7 @@ public class AuthServiceApiTests
     {
         _mockHandler.EnqueueResponse(HttpStatusCode.OK, "not-valid-json");
 
-        await Assert.ThrowsExceptionAsync<JsonException>(
-            () => _authService.Login("user", "password"));
+        await Assert.ThrowsExactlyAsync<JsonException>(() => _authService.Login("user", "password"));
     }
 
     // =====================================================================
@@ -176,21 +173,19 @@ public class AuthServiceApiTests
     }
 
     [TestMethod]
-    [ExpectedException(typeof(Exception))]
     public async Task Register_ThrowsException_OnServerError()
     {
         _mockHandler.EnqueueResponse(HttpStatusCode.InternalServerError);
 
-        await _authService.Register("user", "password");
+        await Assert.ThrowsExactlyAsync<Exception>(() => _authService.Register("user", "password"));
     }
 
     [TestMethod]
-    [ExpectedException(typeof(Exception))]
     public async Task Register_ThrowsException_OnConflict()
     {
         _mockHandler.EnqueueResponse(HttpStatusCode.Conflict);
 
-        await _authService.Register("existingUser", "password");
+        await Assert.ThrowsExactlyAsync<Exception>(() => _authService.Register("existingUser", "password"));
     }
 
     // =====================================================================
@@ -219,14 +214,12 @@ public class AuthServiceApiTests
 
         _mockHandler.Clear();
 
-        Assert.AreEqual(0, _mockHandler.RecordedRequests.Count);
+        Assert.IsEmpty(_mockHandler.RecordedRequests);
     }
 
     [TestMethod]
-    [ExpectedException(typeof(InvalidOperationException))]
     public async Task MockHandler_ThrowsException_WhenNoResponseEnqueued()
     {
-        await _httpClient.GetAsync("http://localhost:8080/api/test");
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => _httpClient.GetAsync("http://localhost:8080/api/test"));
     }
 }
-

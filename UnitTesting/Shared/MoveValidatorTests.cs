@@ -10,6 +10,7 @@ namespace UnitTesting.Shared;
 /// captures, and special moves (en passant, castling)
 /// </summary>
 [TestClass]
+[DoNotParallelize]
 public class MoveValidatorTests
 {
     /// <summary>

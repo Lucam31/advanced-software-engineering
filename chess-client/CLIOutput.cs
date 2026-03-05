@@ -115,4 +115,85 @@ public static class CliOutput
         ClearCurrentConsoleLine();
         _console.Write("Enter your next move: ");
     }
+
+    public static void OverwriteLineRelativeKeepCursorAtEnd(int targetLine, string message)
+    {
+        if (targetLine < 0 || targetLine >= _console.WindowHeight)
+        {
+            GameLogger.Error(
+                $"OverwriteLineRelative out of range: targetLine={targetLine}, WindowHeight={_console.WindowHeight}");
+            throw new ArgumentOutOfRangeException(nameof(targetLine));
+        }
+
+        GameLogger.Debug($"OverwriteLineRelative targetLine={targetLine}, message='{message}'");
+
+        var targetTop = _console.CursorTop - targetLine;
+        if (targetTop < 0) targetTop = 0;
+
+        int width;
+        try
+        {
+            width = _console.WindowWidth;
+        }
+        catch
+        {
+            width = 80;
+        }
+
+        _console.SetCursorPosition(0, targetTop);
+        var maxContentWidth = Math.Max(0, width - 1);
+        var toWrite = message.Length <= maxContentWidth
+            ? message.PadRight(maxContentWidth)
+            : message[..maxContentWidth];
+        try
+        {
+            dynamic d = _console;
+            d.Write(toWrite);
+        }
+        catch
+        {
+            Console.Write(toWrite);
+        }
+
+        var left = Math.Min(message.Length, maxContentWidth);
+        _console.SetCursorPosition(left, targetTop);
+    }
+
+    public static void ClearTerminal()
+    {
+        Console.Clear();
+        Console.SetCursorPosition(0, 0);
+    }
+
+    public static string ReadPassword(string prompt)
+    {
+        Console.Write(prompt);
+
+        var password = "";
+
+        while (true)
+        {
+            var keyInfo = Console.ReadKey(intercept: true);
+
+            if (keyInfo.Key == ConsoleKey.Enter)
+            {
+                Console.WriteLine();
+                break;
+            }
+
+            if (keyInfo.Key == ConsoleKey.Backspace)
+            {
+                if (password.Length <= 0) continue;
+                password = password[..^1];
+                Console.Write("\b \b");
+            }
+            else if (!char.IsControl(keyInfo.KeyChar))
+            {
+                password += keyInfo.KeyChar;
+                Console.Write("*");
+            }
+        }
+
+        return password;
+    }
 }
