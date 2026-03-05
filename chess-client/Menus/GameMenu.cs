@@ -5,7 +5,7 @@ using Shared.Logger;
 namespace chess_client.Menus;
 
 /// <summary>
-/// Manages the main menu of the game.
+/// Manages the main menu of the game
 /// </summary>
 public class GameMenu
 {
@@ -14,11 +14,11 @@ public class GameMenu
     private readonly WebSocketService _webSocketService;
     
     /// <summary>
-    /// Initializes a new instance of the GameMenu class.
+    /// Initializes a new instance of the GameMenu class
     /// </summary>
-    /// <param name="userContainer">The user container.</param>
-    /// <param name="friendshipMenu">The friendship menu.</param>
-    /// <param name="webSocketService">The WebSocket service.</param>
+    /// <param name="userContainer">The user container</param>
+    /// <param name="friendshipMenu">The friendship menu</param>
+    /// <param name="webSocketService">The WebSocket service</param>
     public GameMenu(UserContainer userContainer, FriendshipMenu friendshipMenu, WebSocketService webSocketService)
     {
         _userContainer = userContainer;
@@ -27,7 +27,7 @@ public class GameMenu
     }
     
     /// <summary>
-    /// Displays the main menu and handles user input.
+    /// Displays the main menu and handles user input
     /// </summary>
     public async Task DisplayMainMenu()
     {
@@ -46,6 +46,13 @@ public class GameMenu
 
             switch (input)
             {
+                case "P":
+                case "PLAY":
+                    GameLogger.Info("User selected 'Play'.");
+                    var gameLogic = new GameLogic();
+                    await gameLogic.StartGame(_webSocketService);
+                    _webSocketService.TransitionTo(new MainMenuState());
+                    break;
                 case "F":
                 case "FRIENDS":
                     GameLogger.Info("User selected 'Friends'.");
@@ -62,5 +69,4 @@ public class GameMenu
             }
         }
     }
-    
 }
