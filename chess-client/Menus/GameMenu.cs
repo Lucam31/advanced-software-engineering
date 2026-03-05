@@ -38,6 +38,7 @@ public class GameMenu
         {
             GameLogger.Info("Displaying main menu.");
 
+            CliOutput.ClearTerminal();
             CliOutput.PrintConsoleNewline(ConsoleHelper.GameMenu);
             CliOutput.PrintConsoleNewline("Please enter your choice: ");
             var input = Console.ReadLine()?.Trim().ToUpper();

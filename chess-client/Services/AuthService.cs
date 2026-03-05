@@ -16,7 +16,7 @@ public interface IAuthService
     /// <param name="password">The password.</param>
     /// <returns>The user ID.</returns>
     Task<Guid> Login(string username, string password);
-    
+
     /// <summary>
     /// Registers a new user with the given credentials.
     /// </summary>
@@ -28,54 +28,55 @@ public interface IAuthService
 /// <summary>
 /// Provides authentication services for the client.
 /// </summary>
-public class AuthService : IAuthService
+public class AuthService(HttpClient client) : IAuthService
 {
-    private readonly HttpClient _client;
     private readonly JsonParser _jsonParser = new();
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AuthService"/> class with a default HttpClient
-    /// </summary>
-    public AuthService() : this(new HttpClient()) { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AuthService"/> class with a custom HttpClient
-    /// </summary>
-    /// <param name="client">The HttpClient to use for API calls</param>
-    public AuthService(HttpClient client)
+    public AuthService() : this(new HttpClient())
     {
-        _client = client;
     }
-    
+
     /// <inheritdoc/>
     public async Task<Guid> Login(string username, string password)
     {
-        
         var loginDto = new UserDto
         {
             Username = username,
             Password = password
         };
-        
-        var content = new StringContent(_jsonParser.SerializeJson(loginDto), System.Text.Encoding.UTF8, "application/json");
 
-        var res = await _client.PostAsync("http://localhost:8080/api/user/login", content);
-        
+        var content = new StringContent(_jsonParser.SerializeJson(loginDto), System.Text.Encoding.UTF8,
+            "application/json");
+
+        var res = await client.PostAsync("http://localhost:8080/api/user/login", content);
+
         if (!res.IsSuccessStatusCode)
         {
-            throw new Exception("Login failed.");
+            var errorContent = await res.Content.ReadAsStringAsync();
+            var errorMessage = "Unknown error occurred.";
+
+            try
+            {
+                var errorDto = _jsonParser.DeserializeJson<ErrorResponseDto>(errorContent);
+                if (!string.IsNullOrEmpty(errorDto?.Error))
+                {
+                    errorMessage = TranslateServerErrorCode(errorDto.Error);
+                }
+            }
+            catch
+            {
+                errorMessage = errorContent;
+            }
+
+            throw new Exception(errorMessage);
         }
-        
+
         var responseContent = await res.Content.ReadAsStringAsync();
-        
         var dto = _jsonParser.DeserializeJson<LoginResponseDto>(responseContent);
-        
-        if (dto == null)
-            throw new Exception("Failed to parse login response.");
-        
-        return dto.UserId;
+
+        return dto?.UserId ?? throw new Exception("Failed to parse login response.");
     }
-    
+
     /// <inheritdoc/>
     public async Task Register(string username, string password)
     {
@@ -84,14 +85,49 @@ public class AuthService : IAuthService
             Username = username,
             Password = password
         };
-        
-        var content = new StringContent(_jsonParser.SerializeJson(loginDto), System.Text.Encoding.UTF8, "application/json");
 
-        var res = await _client.PostAsync("http://localhost:8080/api/user/register", content);
-        
+        var content = new StringContent(_jsonParser.SerializeJson(loginDto), System.Text.Encoding.UTF8,
+            "application/json");
+
+        var res = await client.PostAsync("http://localhost:8080/api/user/register", content);
+
         if (!res.IsSuccessStatusCode)
         {
-            throw new Exception("Registration failed.");
+            var errorContent = await res.Content.ReadAsStringAsync();
+            var errorMessage = "Unknown error occurred.";
+
+            try
+            {
+                var errorDto = _jsonParser.DeserializeJson<ErrorResponseDto>(errorContent);
+                if (!string.IsNullOrEmpty(errorDto?.Error))
+                {
+                    errorMessage = TranslateServerErrorCode(errorDto.Error);
+                }
+            }
+            catch
+            {
+                errorMessage = errorContent;
+            }
+
+            throw new Exception(errorMessage);
         }
+    }
+
+    /// <summary>
+    /// Translate server error codes to user-friendly messages.
+    /// </summary>
+    /// <param name="errorCode"></param>
+    /// <returns></returns>
+    private string TranslateServerErrorCode(string errorCode)
+    {
+        return errorCode.ToUpper() switch
+        {
+            "USER_ALREADY_EXISTS" => "This username is already taken. Please choose another one.",
+            "USER_NOT_FOUND" => "We couldn't find an account with that username.",
+            "INVALID_CREDENTIALS" => "The username or password you entered is incorrect.",
+            "PASSWORD_TOO_WEAK" => "Your password is too weak. It needs to be longer.",
+
+            _ => $"An unexpected error occurred ({errorCode}). Please try again."
+        };
     }
 }

@@ -158,4 +158,42 @@ public static class CliOutput
         var left = Math.Min(message.Length, maxContentWidth);
         _console.SetCursorPosition(left, targetTop);
     }
+
+    public static void ClearTerminal()
+    {
+        Console.Clear();
+        Console.SetCursorPosition(0, 0);
+    }
+
+    public static string ReadPassword(string prompt)
+    {
+        Console.Write(prompt);
+
+        var password = "";
+
+        while (true)
+        {
+            var keyInfo = Console.ReadKey(intercept: true);
+
+            if (keyInfo.Key == ConsoleKey.Enter)
+            {
+                Console.WriteLine();
+                break;
+            }
+
+            if (keyInfo.Key == ConsoleKey.Backspace)
+            {
+                if (password.Length <= 0) continue;
+                password = password[..^1];
+                Console.Write("\b \b");
+            }
+            else if (!char.IsControl(keyInfo.KeyChar))
+            {
+                password += keyInfo.KeyChar;
+                Console.Write("*");
+            }
+        }
+
+        return password;
+    }
 }

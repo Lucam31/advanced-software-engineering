@@ -17,4 +17,11 @@ public static class Results
     /// <param name="value">The content to format in the entity body.</param>
     /// <returns>The created <see cref="OkResult"/>.</returns>
     public static OkResult Ok(object value) => new(value);
+
+    /// <summary>
+    /// Creates a <see cref="BadRequestResult"/> that produces an HTTP 400 Bad Request response with the specified error message.
+    /// </summary>
+    /// <param name="message">The error message to return to the client.</param>
+    /// <returns>The created <see cref="BadRequestResult"/>.</returns>
+    public static BadRequestResult BadRequest(string message) => new(message);
 }
