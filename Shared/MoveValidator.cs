@@ -1,3 +1,4 @@
+using Shared.Logger;
 using Shared.Pieces;
 
 namespace Shared;
@@ -50,7 +51,10 @@ public static class MoveValidator
 
         if (movePiece is Pawn pawn)
         {
-            // Pawn Promotion
+            // Enforce pawn direction: white moves up, black moves down
+            if (pawn.IsWhite && rawRowDiff <= 0) return MoveValidationResult.Invalid;
+            if (!pawn.IsWhite && rawRowDiff >= 0) return MoveValidationResult.Invalid;
+            
             if (colDiff > 1 && movePiece.Moved) return MoveValidationResult.Invalid;
             if (colDiff == 1 && rowDiff == 1) // Pawns can't move sideways unless capturing
             {
@@ -107,12 +111,12 @@ public static class MoveValidator
         {
             if (colDiff == 2 && rowDiff == 0)
             {
-                return (CheckCastling(startRow, startCol, endRow, endCol, gameboard) && !CheckCheck(newPosition, gameboard)) ? MoveValidationResult.Castling : MoveValidationResult.Invalid;
+                return (CheckCastling(startRow, startCol, endRow, endCol, gameboard) && !IsCheck(newPosition, gameboard)) ? MoveValidationResult.Castling : MoveValidationResult.Invalid;
             }
 
             if (colDiff <= 1 && rowDiff <= 1)
             {
-                return CheckCheck(newPosition, gameboard) ? MoveValidationResult.Check : MoveValidationResult.Valid;
+                return IsCheck(newPosition, gameboard) ? MoveValidationResult.Check : MoveValidationResult.Valid;
             }
         }
 
@@ -311,7 +315,7 @@ public static class MoveValidator
         // Temporarily flip WhitePlayer to check from the king's perspective
         var originalWhitePlayer = WhitePlayer;
         WhitePlayer = isWhite;
-        var inCheck = CheckCheck(kingPos, gameboard);
+        var inCheck = IsCheck(kingPos, gameboard);
         WhitePlayer = originalWhitePlayer;
         return inCheck;
     }
@@ -322,14 +326,15 @@ public static class MoveValidator
     /// </summary>
     /// <param name="isWhite">True to check if white is in checkmate, false for black</param>
     /// <param name="gameboard">The current game board state</param>
+    /// <param name="stalemateCheck">Set to true for Stalemate Check</param>
     /// <returns>True if the king is in checkmate; otherwise, false</returns>
-    public static bool IsCheckmate(bool isWhite, Gameboard gameboard)
+    public static bool IsCheckmate(bool isWhite, Gameboard gameboard, bool stalemateCheck = false)
     {
         // First check: the king must be in check
-        if (!IsKingInCheck(isWhite, gameboard)) return false;
+        if (!IsKingInCheck(isWhite, gameboard) && !stalemateCheck) return false;
 
-        // Try every possible move for every piece of the given color.
-        // If any move results in the king no longer being in check, it's not checkmate.
+        // Try every possible move for every piece of the given color
+        // If any move results in the king no longer being in check, it's not checkmate
         for (var row = 1; row <= 8; row++)
         {
             for (var col = 'A'; col <= 'H'; col++)
@@ -360,6 +365,7 @@ public static class MoveValidator
                         // Simulate the move on a copy of the board
                         if (TryMoveEscapesCheck(testMove, result, isWhite, gameboard))
                         {
+                            GameLogger.Info($"Escaping {testMove}");
                             return false; // Found a legal move that escapes check
                         }
                     }
@@ -367,10 +373,22 @@ public static class MoveValidator
             }
         }
 
-        // No legal move can escape check — checkmate
+        // No legal move can escape check —> checkmate
         return true;
     }
 
+    /// <summary>
+    /// Checks whether there is a stalemate for the given color
+    /// A stalemate occurs when the player is not in check but has no legal moves available
+    /// </summary>
+    /// <param name="isWhite">True to check if white is in checkmate, false for black</param>
+    /// <param name="gameboard">The current game board state</param>
+    /// <returns>True if it is a stalemate; otherwise, false</returns>
+    public static bool IsStalemate(bool isWhite, Gameboard gameboard)
+    {
+        return IsCheckmate(isWhite, gameboard, true);
+    }
+    
     /// <summary>
     /// Simulates a move on a copy of the gameboard and checks if the king is still in check afterwards
     /// </summary>
@@ -379,28 +397,15 @@ public static class MoveValidator
     /// <param name="isWhite">The color of the player making the move</param>
     /// <param name="gameboard">The current game board state</param>
     /// <returns>True if the move results in the king no longer being in check</returns>
-    private static bool TryMoveEscapesCheck(Move move, MoveValidationResult result, bool isWhite, Gameboard gameboard)
+    public static bool TryMoveEscapesCheck(Move move, MoveValidationResult result, bool isWhite, Gameboard gameboard)
     {
         // Create a copy of the board via DTO round-trip
         var boardCopy = Gameboard.FromDto(gameboard.ToDto());
 
         // Execute the move on the copy
         var isEnPassant = result == MoveValidationResult.EnPassant;
-        boardCopy.Move(move, isEnPassant);
-
-        // For castling, also move the rook
-        if (result == MoveValidationResult.Castling)
-        {
-            var row = move.From[1];
-            if (move.To[0] > move.From[0])
-            {
-                boardCopy.Move(new Move($"H{row}", $"F{row}"));
-            }
-            else
-            {
-                boardCopy.Move(new Move($"A{row}", $"D{row}"));
-            }
-        }
+        var isCastling = result == MoveValidationResult.Castling;
+        boardCopy.Move(move, isEnPassant, isCastling);
 
         // Check if the king is still in check after the move
         return !IsKingInCheck(isWhite, boardCopy);
@@ -409,7 +414,7 @@ public static class MoveValidator
     /// <summary>
     /// Checks if the passed tile is under attack by an opponent piece
     /// </summary>
-    private static bool CheckCheck(string position, Gameboard gameboard)
+    private static bool IsCheck(string position, Gameboard gameboard)
     {
         // Pawn attack positions
         if (CheckPawnAttack(position, gameboard)) return true;
@@ -465,20 +470,40 @@ public static class MoveValidator
         var col = position[0];
         var row = position[1];
 
-        // Check diagonal attack from the left
-        if (col > 'A' && row > '1')
+        // Black pawns sit above and attack downward into this square
+        if (row < '8')
         {
-            var piecePos1 = gameboard.GetPieceAtPosition($"{(char)(col - 1)}{(char)(row - 1)}");
-            if (piecePos1 is Pawn && (WhitePlayer ? !piecePos1.IsWhite : piecePos1.IsWhite))
-                return true;
+            if (col > 'A')
+            {
+                var piece = gameboard.GetPieceAtPosition($"{(char)(col - 1)}{(char)(row + 1)}");
+                if (piece is Pawn && !piece.IsWhite && WhitePlayer)
+                    return true;
+            }
+
+            if (col < 'H')
+            {
+                var piece = gameboard.GetPieceAtPosition($"{(char)(col + 1)}{(char)(row + 1)}");
+                if (piece is Pawn && !piece.IsWhite && WhitePlayer)
+                    return true;
+            }
         }
 
-        // Check diagonal attack from the right
-        if (col < 'H' && row > '1')
+        // White pawns sit below and attack upward into this square
+        if (row > '1')
         {
-            var piecePos2 = gameboard.GetPieceAtPosition($"{(char)(col + 1)}{(char)(row - 1)}");
-            if (piecePos2 is Pawn && (WhitePlayer ? !piecePos2.IsWhite : piecePos2.IsWhite))
-                return true;
+            if (col > 'A')
+            {
+                var piece = gameboard.GetPieceAtPosition($"{(char)(col - 1)}{(char)(row - 1)}");
+                if (piece is Pawn && piece.IsWhite && !WhitePlayer)
+                    return true;
+            }
+
+            if (col < 'H')
+            {
+                var piece = gameboard.GetPieceAtPosition($"{(char)(col + 1)}{(char)(row - 1)}");
+                if (piece is Pawn && piece.IsWhite && !WhitePlayer)
+                    return true;
+            }
         }
 
         return false;
@@ -542,7 +567,7 @@ public static class MoveValidator
             for (var col = newCol; col is >= 'A' and <= 'H'; col = (char)(col + i)) 
             {
                var piece = gameboard.GetPieceAtPosition($"{col}{position[1]}");
-               if (piece is Rook or Queen && (WhitePlayer ? !piece.IsWhite : piece.IsWhite))
+               if (piece is (Rook or Queen) && (WhitePlayer ? !piece.IsWhite : piece.IsWhite))
                {
                    return true;
                }
@@ -552,7 +577,7 @@ public static class MoveValidator
             for (var row = newRow; row is >= '1' and <= '8'; row = (char)(row + i)) 
             {
                var piece = gameboard.GetPieceAtPosition($"{position[0]}{row}");
-               if (piece is Rook or Queen && (WhitePlayer ? !piece.IsWhite : piece.IsWhite))
+               if (piece is (Rook or Queen) && (WhitePlayer ? !piece.IsWhite : piece.IsWhite))
                {
                    return true;
                }
