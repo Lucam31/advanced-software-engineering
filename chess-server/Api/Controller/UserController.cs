@@ -41,45 +41,67 @@ public class UserController : IUserController
 {
     private readonly IUserService _userService;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="UserController"/> class.
-    /// </summary>
-    /// <param name="userService">The user service.</param>
     public UserController(IUserService userService)
     {
         _userService = userService;
     }
 
-    /// <inheritdoc/>
     [HttpMethod("POST")]
     [Route("/register")]
     public async Task<IActionResult> Register([FromBody] UserDto dto)
     {
         GameLogger.Info($"HTTP POST /api/user/register for '{dto.Username}'");
-        await _userService.RegisterAsync(dto);
-        GameLogger.Info($"Registration successful for '{dto.Username}'");
-        return Results.Ok();
+        
+        try
+        {
+            await _userService.RegisterAsync(dto);
+            GameLogger.Info($"Registration successful for '{dto.Username}'");
+            return Results.Ok();
+        }
+        catch (Exception ex)
+        {
+            GameLogger.Warning($"Registration failed for '{dto.Username}': {ex.Message}");
+            
+            return Results.BadRequest(ex.Message); 
+        }
     }
 
-    /// <inheritdoc/>
     [HttpMethod("POST")]
     [Route("/login")]
     public async Task<IActionResult> Login([FromBody] UserDto dto)
     {
         GameLogger.Info($"HTTP POST /api/user/login for '{dto.Username}'");
-        var userId = await _userService.LoginAsync(dto);
-        GameLogger.Info($"Login successful for '{dto.Username}' (Id: {userId})");
-        return Results.Ok(new { userId });
+        
+        try
+        {
+            var userId = await _userService.LoginAsync(dto);
+            GameLogger.Info($"Login successful for '{dto.Username}' (Id: {userId})");
+            return Results.Ok(new { userId });
+        }
+        catch (Exception ex)
+        {
+            GameLogger.Warning($"Login failed for '{dto.Username}': {ex.Message}");
+            
+            return Results.BadRequest(ex.Message); 
+        }
     }
 
-    /// <inheritdoc/>
     [HttpMethod("GET")]
     [Route("/search")]
     public async Task<IActionResult> SearchUsers([FromQuery] string query)
     {
         GameLogger.Info($"HTTP GET /api/user/search?query={query}");
-        var usernames = await _userService.SearchUsersAsync(query);
-        GameLogger.Info($"Search returned {usernames.Count} users for query '{query}'");
-        return Results.Ok(new { usernames });
+        
+        try
+        {
+            var usernames = await _userService.SearchUsersAsync(query);
+            GameLogger.Info($"Search returned {usernames.Count} users for query '{query}'");
+            return Results.Ok(new { usernames });
+        }
+        catch (Exception ex)
+        {
+            GameLogger.Error($"Search failed: {ex.Message}");
+            return Results.BadRequest(ex.Message);
+        }
     }
 }

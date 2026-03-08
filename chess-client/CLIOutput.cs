@@ -1,4 +1,3 @@
-using System;
 using Shared.Logger;
 
 namespace chess_client;
@@ -7,6 +6,10 @@ using Shared;
 
 /// <summary>
 /// Provides helper methods for command-line interface output.
+///
+/// Central place for all console write operations used by the CLI client. Methods
+/// are thin wrappers around an <see cref="IConsoleAdapter"/> allowing the
+/// console to be mocked in tests.
 /// </summary>
 public static class CliOutput
 {
@@ -114,5 +117,101 @@ public static class CliOutput
         _console.SetCursorPosition(0, prevLine);
         ClearCurrentConsoleLine();
         _console.Write("Enter your next move: ");
+    }
+
+    /// <summary>
+    /// Overwrites a line relative to the cursor position while keeping the
+    /// cursor at the end of the written content.
+    /// </summary>
+    /// <param name="targetLine">The relative line to overwrite.</param>
+    /// <param name="message">The message to write.</param>
+    public static void OverwriteLineRelativeKeepCursorAtEnd(int targetLine, string message)
+    {
+        if (targetLine < 0 || targetLine >= _console.WindowHeight)
+        {
+            GameLogger.Error(
+                $"OverwriteLineRelative out of range: targetLine={targetLine}, WindowHeight={_console.WindowHeight}");
+            throw new ArgumentOutOfRangeException(nameof(targetLine));
+        }
+
+        GameLogger.Debug($"OverwriteLineRelative targetLine={targetLine}, message='{message}'");
+
+        var targetTop = _console.CursorTop - targetLine;
+        if (targetTop < 0) targetTop = 0;
+
+        int width;
+        try
+        {
+            width = _console.WindowWidth;
+        }
+        catch
+        {
+            width = 80;
+        }
+
+        _console.SetCursorPosition(0, targetTop);
+        var maxContentWidth = Math.Max(0, width - 1);
+        var toWrite = message.Length <= maxContentWidth
+            ? message.PadRight(maxContentWidth)
+            : message[..maxContentWidth];
+        try
+        {
+            dynamic d = _console;
+            d.Write(toWrite);
+        }
+        catch
+        {
+            Console.Write(toWrite);
+        }
+
+        var left = Math.Min(message.Length, maxContentWidth);
+        _console.SetCursorPosition(left, targetTop);
+    }
+
+    /// <summary>
+    /// Clears the terminal using the current console adapter and resets the
+    /// cursor to the top-left corner (0,0).
+    /// </summary>
+    public static void ClearTerminal()
+    {
+        Console.Clear();
+        Console.SetCursorPosition(0, 0);
+    }
+
+    /// <summary>
+    /// Reads a password from the console without echoing the characters.
+    /// </summary>
+    /// <param name="prompt">The prompt to show before reading the password.</param>
+    /// <returns>The entered password.</returns>
+    public static string ReadPassword(string prompt)
+    {
+        Console.Write(prompt);
+
+        var password = "";
+
+        while (true)
+        {
+            var keyInfo = Console.ReadKey(intercept: true);
+
+            if (keyInfo.Key == ConsoleKey.Enter)
+            {
+                Console.WriteLine();
+                break;
+            }
+
+            if (keyInfo.Key == ConsoleKey.Backspace)
+            {
+                if (password.Length <= 0) continue;
+                password = password[..^1];
+                Console.Write("\b \b");
+            }
+            else if (!char.IsControl(keyInfo.KeyChar))
+            {
+                password += keyInfo.KeyChar;
+                Console.Write("*");
+            }
+        }
+
+        return password;
     }
 }

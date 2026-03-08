@@ -21,7 +21,7 @@
         </option>
         <option name="executable">
           <ExecutableSnapshot>
-            <option name="id" value="runConfig:.NET Project.chess-client/file" />
+            <option name="id" value="runConfig:.NET Project.chess-client" />
           </ExecutableSnapshot>
         </option>
       </ExecutableRowSnapshot>

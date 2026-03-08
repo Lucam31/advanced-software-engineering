@@ -30,6 +30,7 @@ public class LoginMenu
     {
         while (true)
         {
+            CliOutput.ClearTerminal(); 
             GameLogger.Info("Displaying login menu.");
 
             CliOutput.PrintConsoleNewline(ConsoleHelper.LoginMenu);
@@ -43,19 +44,26 @@ public class LoginMenu
                 case "L":
                 case "LOGIN":
                     GameLogger.Info("User selected 'Login'.");
-                    return await LoginView();
+                    
+                    var loginSuccess = await LoginView();
+                    if (loginSuccess) return true; 
+                    continue;
+
                 case "R":
                 case "REGISTER":
                     GameLogger.Info("User selected 'Register'.");
                     await RegisterView();
                     continue;
+
                 case "Q":
                 case "QUIT":
                     GameLogger.Info("User selected 'Quit'.");
                     return false;
+
                 default:
                     GameLogger.Warning($"Invalid menu input: '{input}'");
-                    CliOutput.PrintConsoleNewline("Invalid input. Please try again.");
+                    CliOutput.PrintConsoleNewline("Invalid input. Press any key to try again...");
+                    Console.ReadKey(true);
                     continue;
             }
         }
@@ -69,45 +77,50 @@ public class LoginMenu
     {
         GameLogger.Info("Displaying login view.");
 
-        string username;
-        string password;
+        string? username;
+        var usernamePrompt = "Please enter your username:\n> ";
 
         while (true)
         {
-            CliOutput.PrintConsoleNewline("Please enter your username: ");
-            var input = Console.ReadLine()?.Trim();
-            
-            GameLogger.Debug($"User entered username: '{input}'");
-            if (input == null)
-            {
-                GameLogger.Warning("User entered null username.");
-                CliOutput.PrintConsoleNewline("Username cannot be empty. Please try again.");
-                continue;
-            }
-            username = input;
-            break;
+            CliOutput.ClearTerminal();
+            CliOutput.PrintConsoleNewline(usernamePrompt);
+            username = Console.ReadLine()?.Trim();
+
+            if (!string.IsNullOrEmpty(username)) break;
+
+            usernamePrompt = "Username cannot be empty. Please try again:\n> ";
         }
-        
+
+        string password;
+        var passwordPrompt = "Please enter your password:\n> ";
+
         while (true)
         {
-            CliOutput.PrintConsoleNewline("Please enter your password: ");
-            var input = Console.ReadLine()?.Trim();
-            
-            GameLogger.Debug($"User entered password: '{input}'");
-            if (input == null)
-            {
-                GameLogger.Warning("User entered null password.");
-                CliOutput.PrintConsoleNewline("Password cannot be empty. Please try again.");
-                continue;
-            }
-            password = input;
-            break;
+            CliOutput.ClearTerminal();
+            password = CliOutput.ReadPassword(passwordPrompt);
+
+            if (!string.IsNullOrEmpty(password)) break;
+
+            passwordPrompt = "Password cannot be empty. Please try again:\n> ";
         }
+
+        GameLogger.Info($"Attempting login for user '{username}'...");
         
-        var id = await _authService.Login(username, password);
-        _userContainer.Id = id;
-        
-        return true;
+        try
+        {
+            var id = await _authService.Login(username, password);
+            _userContainer.Id = id;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            GameLogger.Warning($"Login failed: {ex.Message}");
+            CliOutput.ClearTerminal();
+            CliOutput.PrintConsoleNewline($"Login failed: {ex.Message}");
+            CliOutput.PrintConsoleNewline("Press any key to return to the menu...");
+            Console.ReadKey(true);
+            return false;
+        }
     }
 
     /// <summary>
@@ -117,43 +130,51 @@ public class LoginMenu
     {
         GameLogger.Info("Displaying registration view.");
 
-        string username;
-        string password;
+        string? username;
+        var usernamePrompt = "Please enter your desired username:\n> ";
 
         while (true)
         {
-            CliOutput.PrintConsoleNewline("Please enter your desired username: ");
-            var input = Console.ReadLine()?.Trim();
-            
-            GameLogger.Debug($"User entered username: '{input}'");
-            if (input == null)
-            {
-                GameLogger.Warning("User entered null username.");
-                CliOutput.PrintConsoleNewline("Username cannot be empty. Please try again.");
-                continue;
-            }
-            username = input;
-            break;
+            CliOutput.ClearTerminal();
+            CliOutput.PrintConsoleNewline(usernamePrompt);
+            username = Console.ReadLine()?.Trim();
+
+            if (!string.IsNullOrEmpty(username)) break;
+
+            usernamePrompt = "Username cannot be empty. Please try again:\n> ";
         }
-        
+
+        string password;
+        var passwordPrompt = "Please enter your desired password:\n> ";
+
         while (true)
         {
-            CliOutput.PrintConsoleNewline("Please enter your desired password: ");
-            var input = Console.ReadLine()?.Trim();
-            
-            GameLogger.Debug($"User entered password: '{input}'");
-            if (input == null)
-            {
-                GameLogger.Warning("User entered null password.");
-                CliOutput.PrintConsoleNewline("Password cannot be empty. Please try again.");
-                continue;
-            }
-            password = input;
-            break;
+            CliOutput.ClearTerminal();
+            password = CliOutput.ReadPassword(passwordPrompt);
+
+            if (!string.IsNullOrEmpty(password)) break;
+
+            passwordPrompt = "Password cannot be empty. Please try again:\n> ";
         }
+
+        GameLogger.Info($"Registering new user '{username}'...");
         
-        await _authService.Register(username, password);
-        
-        CliOutput.PrintConsoleNewline("Registration successful! You can now log in with your credentials.");
+        try
+        {
+            await _authService.Register(username, password);
+            
+            CliOutput.ClearTerminal();
+            CliOutput.PrintConsoleNewline("Registration successful! You can now log in with your credentials.");
+            CliOutput.PrintConsoleNewline("Press any key to continue...");
+            Console.ReadKey(true);
+        }
+        catch (Exception ex)
+        {
+            GameLogger.Warning($"Registration failed: {ex.Message}");
+            CliOutput.ClearTerminal();
+            CliOutput.PrintConsoleNewline($"Registration failed: {ex.Message}");
+            CliOutput.PrintConsoleNewline("Press any key to return to the menu...");
+            Console.ReadKey(true);
+        }
     }
 }
