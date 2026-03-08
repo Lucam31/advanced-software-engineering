@@ -1,11 +1,10 @@
 using System.Text.Json;
 using chess_client.States;
 using Shared.Logger;
-
-namespace chess_client;
-
 using Shared;
 using Shared.WebSocketMessages;
+
+namespace chess_client;
 
 /// <summary>
 /// Manages the core logic of the chess game
@@ -13,6 +12,7 @@ using Shared.WebSocketMessages;
 public class GameLogic
 {
     private Gameboard _gameboard;
+    private readonly GameStats _gameStats;
     private bool _isWhiteTurn;
     private bool _gameOver;
     private bool _isWhite;
@@ -23,6 +23,7 @@ public class GameLogic
     public GameLogic()
     {
         _gameboard = new Gameboard();
+        _gameStats = new GameStats();
         _isWhiteTurn = true;
         _gameOver = false;
         _isWhite = true;
@@ -35,6 +36,7 @@ public class GameLogic
     public GameLogic(Gameboard gameboard)
     {
         _gameboard = gameboard;
+        _gameStats = new GameStats();
         _isWhiteTurn = true;
         _gameOver = false;
         _isWhite = true;
@@ -55,6 +57,8 @@ public class GameLogic
         if (test)
         {
             _isWhite = true;
+            _gameStats.WhitePlayerName = "Local Player (White) (temp)";
+            _gameStats.BlackPlayerName = "Local Player (Black) (temp)";
             CliOutput.PrintConsoleNewline("Test mode: starting local game as white.");
             GameLogger.Info("Test mode enabled. Skipping server communication.");
         }
@@ -81,6 +85,9 @@ public class GameLogic
             gameId = startPayload.GameId;
             _isWhite = startPayload.Color.Equals("white", StringComparison.OrdinalIgnoreCase);
 
+            _gameStats.WhitePlayerName = _isWhite ? "You" : "Opponent";
+            _gameStats.BlackPlayerName = !_isWhite ? "You" : "Opponent";
+
             CliOutput.PrintConsoleNewline($"Game started! You are playing as {startPayload.Color}.");
             GameLogger.Info($"Game {gameId} started. Playing as {startPayload.Color}.");
         }
@@ -93,40 +100,47 @@ public class GameLogic
 
         while (!_gameOver)
         {
+            var currentPlayer = _isWhiteTurn ? "White" : "Black";
+            _gameStats.StatusMessage = $"Waiting for {currentPlayer}...";
+
             DrawBoard();
-            PrintCapturedPieces();
 
             if (test || isMyTurn)
             {
                 // Check if the current player's king is in checkmate or check
                 var currentIsWhite = test ? _isWhiteTurn : _isWhite;
+
+                // Checkmate Check
                 if (MoveValidator.IsCheckmate(currentIsWhite, _gameboard))
                 {
                     var winner = currentIsWhite ? "Black" : "White";
-                    CliOutput.PrintConsoleNewline($"Checkmate! {winner} wins!");
+                    _gameStats.StatusMessage = $"CHECKMATE! {winner} wins!";
+                    DrawBoard();
                     GameLogger.Info($"Checkmate detected. {winner} wins.");
                     _gameOver = true;
                     break;
                 }
 
+                // Stalemate Check
                 if (MoveValidator.IsStalemate(currentIsWhite, _gameboard))
                 {
-                    CliOutput.PrintConsoleNewline($"Stalemate! Noone wins!");
-                    GameLogger.Info("Stalemate detected. Noone wins.");
+                    _gameStats.StatusMessage = "STALEMATE! No one wins!";
+                    DrawBoard();
+                    GameLogger.Info("Stalemate detected. No one wins.");
                     _gameOver = true;
                     break;
                 }
 
+                // Check Check
                 if (MoveValidator.IsKingInCheck(currentIsWhite, _gameboard))
                 {
-                    CliOutput.PrintConsoleNewline("Your king is in check! You must resolve it.");
+                    _gameStats.StatusMessage = "CHECK! Protect your King!";
+                    DrawBoard();
                 }
 
-                PrintTurnInfo();
                 Move move;
                 MoveValidator.MoveValidationResult validationResult;
 
-                var inputWasValid = true;
                 CliOutput.PrintConsoleNewline("Your turn. Enter your move (e.g. E2E4): ");
                 while (true)
                 {
@@ -163,14 +177,7 @@ public class GameLogic
                         continue;
                     }
 
-                    if (test)
-                    {
-                        MoveValidator.WhitePlayer = _isWhiteTurn;
-                    }
-                    else
-                    {
-                        MoveValidator.WhitePlayer = _isWhite;
-                    }
+                    MoveValidator.WhitePlayer = test ? _isWhiteTurn : _isWhite;
 
                     validationResult = MoveValidator.ValidateMove(move, _gameboard);
 
@@ -191,6 +198,9 @@ public class GameLogic
                     break;
                 }
 
+                // Save move to the history
+                _gameStats.AddMoveToHistory(move.From, move.To, currentIsWhite);
+
                 // Execute the move locally
                 ExecuteMove(move, validationResult);
 
@@ -199,13 +209,9 @@ public class GameLogic
                 if (MoveValidator.IsCheckmate(opponentIsWhite, _gameboard))
                 {
                     var winner = opponentIsWhite ? "Black" : "White";
-                    CliOutput.PrintConsoleNewline($"Checkmate! {winner} wins!");
+                    _gameStats.StatusMessage = $"CHECKMATE! {winner} wins!";
                     GameLogger.Info($"Checkmate detected. {winner} wins.");
                     _gameOver = true;
-                }
-                else if (MoveValidator.IsKingInCheck(opponentIsWhite, _gameboard))
-                {
-                    CliOutput.PrintConsoleNewline("Check!");
                 }
 
                 if (test)
@@ -236,58 +242,35 @@ public class GameLogic
             else
             {
                 // Opponent's turn: wait for server response
-                CliOutput.PrintConsoleNewline("Waiting for opponent's move...");
+                _gameStats.StatusMessage = "Waiting for opponent's move...";
+                DrawBoard();
 
                 var opponentTurn = await gameplayState!.WaitForOpponentTurnAsync();
                 _gameboard = Gameboard.FromDto(opponentTurn.CurrentBoard);
 
+                var fromMove = opponentTurn.LastMove[..2];
+                var toMove = opponentTurn.LastMove.Substring(2, 2);
+                _gameStats.AddMoveToHistory(fromMove, toMove, !_isWhite);
+
                 GameLogger.Info($"Received opponent move: {opponentTurn.LastMove}");
-                CliOutput.PrintConsoleNewline($"Opponent played: {opponentTurn.LastMove}");
 
                 isMyTurn = true;
             }
         }
 
+        _gameStats.StatusMessage = "Game Over!";
         DrawBoard();
+
         CliOutput.PrintConsoleNewline("Game over! Returning to main menu...");
         GameLogger.Info("Game ended.");
     }
 
     /// <summary>
-    /// Draws the current state of the gameboard to the console
+    /// Nutzt die GameUi-Klasse, um das Spielbrett und das Dashboard zu zeichnen.
     /// </summary>
     private void DrawBoard()
     {
-        Console.Clear();
-        _gameboard.PrintBoard(_isWhite);
-        Console.WriteLine();
-    }
-
-    /// <summary>
-    /// Prints information about whose turn it is
-    /// </summary>
-    private void PrintTurnInfo()
-    {
-        var currentPlayer = _isWhiteTurn ? "White" : "Black";
-        CliOutput.PrintConsoleNewline($"{currentPlayer}'s turn.");
-    }
-
-    /// <summary>
-    /// Prints the captured pieces for both sides
-    /// </summary>
-    private void PrintCapturedPieces()
-    {
-        if (_gameboard.CapturedWhitePieces.Count > 0)
-        {
-            var whitePieces = string.Join(" ", _gameboard.CapturedWhitePieces.Select(p => p.UnicodeSymbol));
-            CliOutput.PrintConsoleNewline($"Captured white pieces: {whitePieces}");
-        }
-
-        if (_gameboard.CapturedBlackPieces.Count > 0)
-        {
-            var blackPieces = string.Join(" ", _gameboard.CapturedBlackPieces.Select(p => p.UnicodeSymbol));
-            CliOutput.PrintConsoleNewline($"Captured black pieces: {blackPieces}");
-        }
+        GameUi.DrawGameScreen(_gameboard, _gameStats, _isWhite);
     }
 
     /// <summary>

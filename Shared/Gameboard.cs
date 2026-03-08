@@ -16,7 +16,7 @@ public class Gameboard
     /// Gets the number of rows on the game board.
     /// </summary>
     private int Rows => _tiles.GetLength(0);
-    
+
     /// <summary>
     /// Gets the number of columns on the game board.
     /// </summary>
@@ -30,7 +30,7 @@ public class Gameboard
     /// Gets a list of all captured white pieces.
     /// </summary>
     public List<Piece> CapturedWhitePieces => [.._capturedWhitePieces];
-    
+
     /// <summary>
     /// Gets a list of all captured black pieces.
     /// </summary>
@@ -199,7 +199,8 @@ public class Gameboard
         }
         else
         {
-            _moves.Add(new Move(move.From, move.To, _tiles[toRow, toCol].CurrentPiece, $"{(char)('A' + toCol)}{toRow + 1}"));
+            _moves.Add(new Move(move.From, move.To, _tiles[toRow, toCol].CurrentPiece,
+                $"{(char)('A' + toCol)}{toRow + 1}"));
 
             // If the destination tile is occupied, capture the piece
             if (_tiles[toRow, toCol].CurrentPiece != null)
@@ -225,8 +226,8 @@ public class Gameboard
             if (toCol > fromCol)
             {
                 // Kingside castling: rook moves from H to F
-                var rookFromCol = 7; // H
-                var rookToCol = 5;   // F
+                const int rookFromCol = 7; // H
+                const int rookToCol = 5; // F
                 _tiles[row, rookToCol].CurrentPiece = _tiles[row, rookFromCol].CurrentPiece;
                 _tiles[row, rookToCol].CurrentPiece?.Move($"{(char)('A' + rookToCol)}{row + 1}");
                 _tiles[row, rookFromCol].CurrentPiece = null;
@@ -234,8 +235,8 @@ public class Gameboard
             else
             {
                 // Queenside castling: rook moves from A to D
-                var rookFromCol = 0; // A
-                var rookToCol = 3;   // D
+                const int rookFromCol = 0; // A
+                const int rookToCol = 3; // D
                 _tiles[row, rookToCol].CurrentPiece = _tiles[row, rookFromCol].CurrentPiece;
                 _tiles[row, rookToCol].CurrentPiece?.Move($"{(char)('A' + rookToCol)}{row + 1}");
                 _tiles[row, rookFromCol].CurrentPiece = null;
@@ -249,7 +250,7 @@ public class Gameboard
     {
         if (_moves.Count == 0) return;
     }
-    
+
     /// <summary>
     /// Create a Data Transfer Object (DTO) representation of the Gameboard.
     /// </summary>
@@ -257,22 +258,22 @@ public class Gameboard
     public GameboardDto ToDto()
     {
         var dto = new GameboardDto();
-    
-        for (int r = 0; r < Rows; r++)
+
+        for (var r = 0; r < Rows; r++)
         {
-            for (int c = 0; c < Cols; c++)
+            for (var c = 0; c < Cols; c++)
             {
                 var tile = _tiles[r, c];
                 dto.Tiles[r, c] = tile.ToDto();
             }
         }
-    
+
         dto.CapturedWhitePieces = _capturedWhitePieces.Select(p => p.ToDto()).ToList();
         dto.CapturedBlackPieces = _capturedBlackPieces.Select(p => p.ToDto()).ToList();
-    
+
         return dto;
     }
-    
+
     /// <summary>
     /// Creates a Gameboard instance from a Data Transfer Object (DTO).
     /// </summary>
@@ -281,20 +282,20 @@ public class Gameboard
     public static Gameboard FromDto(GameboardDto dto)
     {
         var gameboard = new Gameboard();
-    
-        for (int r = 0; r < 8; r++)
+
+        for (var r = 0; r < 8; r++)
         {
-            for (int c = 0; c < 8; c++)
+            for (var c = 0; c < 8; c++)
             {
                 var tileDto = dto.Tiles[r, c];
                 var piece = tileDto.CurrentPiece != null ? Piece.FromDto(tileDto.CurrentPiece) : null;
                 gameboard._tiles[r, c] = new Tile(tileDto.Row, tileDto.Col, tileDto.IsWhite, piece);
             }
         }
-    
+
         gameboard._capturedWhitePieces.AddRange(dto.CapturedWhitePieces.Select(Piece.FromDto));
         gameboard._capturedBlackPieces.AddRange(dto.CapturedBlackPieces.Select(Piece.FromDto));
-    
+
         return gameboard;
     }
 }
