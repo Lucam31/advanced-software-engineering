@@ -46,7 +46,7 @@ internal static class Program
             var webSocketService = new WebSocketService();
 
             var loginMenu = new LoginMenu(new AuthService(), userContainer);
-            var friendshipMenu = new FriendshipMenu(userContainer, new FriendshipServices(), webSocketService);
+            var friendshipMenu = new FriendshipMenu(userContainer, new FriendshipServices(), new GameService(userContainer, webSocketService), webSocketService);
             var gameMenu = new GameMenu(userContainer, friendshipMenu, webSocketService);
             
             while (true)

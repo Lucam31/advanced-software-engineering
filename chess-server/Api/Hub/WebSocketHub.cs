@@ -182,11 +182,6 @@ public class WebSocketHub : IWebSocketHub
         _clients.TryGetValue(clientId, out var client);
         _clients.TryGetValue(createGamePayload.OpponentId, out var opp);
         
-        var gameCreatedMessage = new WebSocketMessage
-        {
-            Type = MessageType.GameCreated
-        };
-
         var inviteMessage= new WebSocketMessage
         {
             Type = MessageType.GameInvitation,
@@ -203,7 +198,6 @@ public class WebSocketHub : IWebSocketHub
             return;
         }
         
-        await client.SendAsync(gameCreatedMessage);
         await opp.SendAsync(inviteMessage);
     }
     

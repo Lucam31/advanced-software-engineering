@@ -107,7 +107,7 @@ public class WebSocketClient : IWebSocketClient
                if (message?.Type != null)
                {
                    if (MessageReceived != null)
-                       await MessageReceived.Invoke(message.Type, message.Payload,Id);
+                       await MessageReceived.Invoke(message.Type, message.Payload, Id);
                }
            }
            catch (Exception ex)

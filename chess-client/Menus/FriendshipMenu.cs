@@ -12,7 +12,7 @@ public class FriendshipMenu
     private readonly UserContainer _userContainer;
     private readonly FriendshipServices _friendshipServices;
     private readonly WebSocketService _webSocketService;
-
+    private readonly IGameService _gameService;
     
     private volatile bool _refreshRequested = false;
     
@@ -22,10 +22,11 @@ public class FriendshipMenu
     /// <param name="userContainer">The user container.</param>
     /// <param name="friendshipServices">The friendship services.</param>
     /// <param name="webSocketService">The web socket service.</param>
-    public FriendshipMenu(UserContainer userContainer, FriendshipServices friendshipServices, WebSocketService webSocketService)
+    public FriendshipMenu(UserContainer userContainer, FriendshipServices friendshipServices, IGameService gameService, WebSocketService webSocketService)
     {
         _userContainer = userContainer;
         _friendshipServices = friendshipServices;
+        _gameService = gameService;
         _webSocketService = webSocketService;
     }
     
@@ -199,8 +200,8 @@ public class FriendshipMenu
                     friends = await _friendshipServices.ListFriends(_userContainer.Id);
                     break;
                 case 'P':
-                    GameLogger.Info($"Play action selected for '{selected.Name}' — not yet implemented.");
-                    CliOutput.PrintConsoleNewline($"Play with {selected.Name} — coming soon!");
+                    GameLogger.Info($"Create Game with player '{selected.Name}'.");
+                    await _gameService.CreateGame(selected.FriendshipId);
                     break;
                 default:
                     CliOutput.PrintConsoleNewline("Unknown action. Use D to delete or P to play.");

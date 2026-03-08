@@ -12,7 +12,10 @@ public class MainMenuState : IGameState
     {
         switch (message.Type)
         {
-                // Hier könnten weitere Nachrichten behandelt werden, z.B. Benachrichtigungen über neue Freundschaftsanfragen
+                case MessageType.GameInvitation:
+                    GameLogger.Info("Received game invitation while in MainMenu state.");
+                    
+                    break;
                 default:
                     GameLogger.Debug($"MainMenuState received unhandled message type: {message.Type}");
                     break;

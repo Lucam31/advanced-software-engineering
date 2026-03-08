@@ -88,7 +88,7 @@ public class GameService : IGameService
         if (user == null)
             throw new UserNotFound();
 
-        var player = new Player(clientId, user.Username, true, user.Rating);
+        var player = new Player(clientId, user.Username, false, user.Rating);
         
         game.JoinGame(player);
     }

@@ -49,6 +49,7 @@ public class GameMenu
             {
                 case "P":
                 case "PLAY":
+                    // TODO: Implement real gameplay logic and transition to gameplay state
                     GameLogger.Info("User selected 'Play'.");
                     var gameLogic = new GameLogic();
                     await gameLogic.StartGame(_webSocketService);
