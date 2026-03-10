@@ -42,6 +42,10 @@ public class WebSocketHub : IWebSocketHub
     /// </summary>
     private readonly ConcurrentDictionary<Guid, ActiveGame> _games = new();
     /// <summary>
+    /// The list of clients that are currently waiting for a game to play, used for matchmaking purposes.
+    /// </summary>
+    private readonly List<Guid> _waitingClients = new();
+    /// <summary>
     /// The JSON parser used for serializing and deserializing messages.
     /// </summary>
     private readonly JsonParser _jsonParser = new();
@@ -80,7 +84,7 @@ public class WebSocketHub : IWebSocketHub
     private Task RegisterClient(WebSocketClient client)
     {
         _clients.TryAdd(client.Id, client);
-        GameLogger.Info($"Registered client {client.Id}");
+        GameLogger.Info($"Registered client {client.Id} in websocket");
         return Task.CompletedTask;
     }
     
@@ -140,25 +144,114 @@ public class WebSocketHub : IWebSocketHub
     /// <param name="payload">The payload of the message as a JSON element.</param>
     /// <param name="clientId">The id of the client who send the message</param>
     /// <returns>A task that represents the asynchronous dispatch operation.</returns>
-    private async Task DispatchToService(string messageType, JsonElement payload, Guid clientId)
+    private async Task DispatchToService(string messageType, JsonElement? payload, Guid clientId)
     {
+        GameLogger.Debug($"Dispatching {messageType} message to service for client {clientId}");
         switch (messageType)
         {
             case MessageType.CreateGame:
-                await HandleCreateGame(payload, clientId);
+                await HandleCreateGame(payload!.Value, clientId);
                 break;
             case MessageType.JoinGame:
-                await HandleJoinGame(payload, clientId);
+                await HandleJoinGame(payload!.Value, clientId);
                 break;
             case MessageType.GameTurn:
-                await HandleMakeMove(payload, clientId);
+                await HandleMakeMove(payload!.Value, clientId);
                 break;
             case MessageType.GameOver:
-                await HandleGameOver(payload, clientId);
+                await HandleGameOver(payload!.Value, clientId);
+                break;
+            case MessageType.SearchGame:
+                await HandleSearchGame(clientId);
+                break;
+            default:
+                GameLogger.Error($"Unknown message type {messageType}");
                 break;
         }
         
         await Task.CompletedTask;
+    }
+    
+    private async Task HandleSearchGame(Guid clientId)
+    {
+        GameLogger.Debug($"Client {clientId} is searching for a game");
+
+        Guid opponentId = Guid.Empty;
+        bool matchFound = false;
+
+        lock (_waitingClients)
+        {
+            if (_waitingClients.Count > 0)
+            {
+                opponentId = _waitingClients[0];
+                _waitingClients.RemoveAt(0);
+                matchFound = true;
+                GameLogger.Debug($"Found opponent {opponentId} for client {clientId}");
+            }
+            else
+            {
+                _waitingClients.Add(clientId);
+                GameLogger.Debug($"No opponent found for client {clientId}, added to waiting list");
+            }
+        }
+
+        if (!matchFound) return;
+        
+        await StartGameBetween(clientId, opponentId);
+    }
+
+    /// <summary>
+    /// Creates a game directly between two connected clients and notifies both with a StartGame message.
+    /// Used for matchmaking where no invitation flow is needed.
+    /// </summary>
+    /// <param name="whiteClientId">The client that will play as white.</param>
+    /// <param name="blackClientId">The client that will play as black.</param>
+    private async Task StartGameBetween(Guid whiteClientId, Guid blackClientId)
+    {
+        if (!_clients.TryGetValue(whiteClientId, out var whiteClient))
+        {
+            GameLogger.Error($"White client {whiteClientId} not found when starting game");
+            return;
+        }
+
+        if (!_clients.TryGetValue(blackClientId, out var blackClient))
+        {
+            GameLogger.Error($"Black client {blackClientId} not found when starting game");
+            return;
+        }
+
+        var game = await _gameService.CreateGame(whiteClientId);
+
+        lock (game.SyncRoot)
+        {
+            _gameService.JoinGame(game, blackClientId);
+        }
+
+        _games.TryAdd(game.Id, game);
+        GameLogger.Info($"Matchmaking: created game {game.Id} between {whiteClientId} (white) and {blackClientId} (black)");
+
+        var whiteStartMessage = new WebSocketMessage
+        {
+            Type = MessageType.StartGame,
+            Payload = _jsonParser.SerializeToJsonElement(new StartGamePayload
+            {
+                GameId = game.Id,
+                Color = "white"
+            })
+        };
+
+        var blackStartMessage = new WebSocketMessage
+        {
+            Type = MessageType.StartGame,
+            Payload = _jsonParser.SerializeToJsonElement(new StartGamePayload
+            {
+                GameId = game.Id,
+                Color = "black"
+            })
+        };
+
+        await whiteClient.SendAsync(whiteStartMessage);
+        await blackClient.SendAsync(blackStartMessage);
     }
 
     /// <summary>
@@ -168,6 +261,7 @@ public class WebSocketHub : IWebSocketHub
     /// <param name="clientId">The id of the sender</param>
     private async Task HandleCreateGame(JsonElement payload, Guid clientId)
     {
+        GameLogger.Debug($"Creating game {clientId}");
         var createGamePayload = _jsonParser.DeserializeJsonElement<CreateGamePayload>(payload);
         if (createGamePayload == null)
         {
@@ -177,10 +271,13 @@ public class WebSocketHub : IWebSocketHub
         
         var game = await _gameService.CreateGame(clientId);
         _games.TryAdd(game.Id, game);
-        GameLogger.Info($"Created new game {game.Id} by client {clientId}");
-        
-        _clients.TryGetValue(clientId, out var client);
-        _clients.TryGetValue(createGamePayload.OpponentId, out var opp);
+        GameLogger.Debug($"Created new game {game.Id} by client {clientId}");
+
+        if (!_clients.TryGetValue(createGamePayload.OpponentId, out var opp))
+        {
+            GameLogger.Error($"Opponent client with id {clientId} not found in clients dictionary");
+            return;
+        }
         
         var inviteMessage= new WebSocketMessage
         {
@@ -192,13 +289,9 @@ public class WebSocketHub : IWebSocketHub
             })
         };
         
-        if (client == null || opp == null)
-        {
-            GameLogger.Error("One of the clients is null when sending GameCreated message");
-            return;
-        }
         
         await opp.SendAsync(inviteMessage);
+        GameLogger.Info($"Client {clientId} joined game {game.Id} and invited opponent {createGamePayload.OpponentId}");
     }
     
     /// <summary>
@@ -208,6 +301,7 @@ public class WebSocketHub : IWebSocketHub
     /// <param name="clientId">The id of the sender</param>
     private async Task HandleJoinGame(JsonElement payload, Guid clientId)
     {
+        GameLogger.Debug($"Joining game {clientId}");
         var joinGamePayload = _jsonParser.DeserializeJsonElement<JoinGamePayload>(payload);
         if (joinGamePayload == null)
         {

@@ -16,6 +16,7 @@ public class GameLogic
     private bool _isWhiteTurn;
     private bool _gameOver;
     private bool _isWhite;
+    private JsonParser _parser = new JsonParser();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GameLogic"/> class with a fresh gameboard
@@ -46,10 +47,11 @@ public class GameLogic
     /// Starts a new online game by sending a CreateGame message and running the game loop
     /// </summary>
     /// <param name="webSocketService">The WebSocket service for server communication</param>
-    public async Task StartGame(WebSocketService webSocketService)
+    /// <param name="startGamePayload">The payload which contains informations to start the game</param>
+    public async Task StartGame(WebSocketService webSocketService, StartGamePayload startGamePayload)
     {
         // Set to true to play locally without server communication
-        var test = true;
+        var test = false;
 
         GameplayState? gameplayState = null;
         var gameId = Guid.Empty;
@@ -64,32 +66,17 @@ public class GameLogic
         }
         else
         {
-            // Work in progress, add server communication to create game and receive game start info
-            // create GameplayState and transition to it
             gameplayState = new GameplayState();
             webSocketService.TransitionTo(gameplayState);
-
-            // Send CreateGame message to the server
-            // not sure if these are set correctly yet, any more data needed?
-            var createGamePayload = new CreateGamePayload { };
-            await webSocketService.SendAsync(new WebSocketMessage
-            {
-                Type = MessageType.CreateGame,
-                Payload = JsonSerializer.SerializeToElement(createGamePayload)
-            });
-
-            CliOutput.PrintConsoleNewline("Waiting for game to start...");
-
-            // Wait for the server to respond with StartGame
-            var startPayload = await gameplayState.WaitForGameStartAsync();
-            gameId = startPayload.GameId;
-            _isWhite = startPayload.Color.Equals("white", StringComparison.OrdinalIgnoreCase);
+            
+            gameId = startGamePayload.GameId;
+            _isWhite = startGamePayload.Color.Equals("white", StringComparison.OrdinalIgnoreCase);
 
             _gameStats.WhitePlayerName = _isWhite ? "You" : "Opponent";
             _gameStats.BlackPlayerName = !_isWhite ? "You" : "Opponent";
 
-            CliOutput.PrintConsoleNewline($"Game started! You are playing as {startPayload.Color}.");
-            GameLogger.Info($"Game {gameId} started. Playing as {startPayload.Color}.");
+            CliOutput.PrintConsoleNewline($"Game started! You are playing as {startGamePayload.Color}.");
+            GameLogger.Info($"Game {gameId} started. Playing as {startGamePayload.Color}.");
         }
 
         // Initialize the gameboard and run the game loop
@@ -110,6 +97,7 @@ public class GameLogic
                 // Check if the current player's king is in checkmate or check
                 var currentIsWhite = test ? _isWhiteTurn : _isWhite;
 
+                /*
                 // Checkmate Check
                 if (MoveValidator.IsCheckmate(currentIsWhite, _gameboard))
                 {
@@ -120,6 +108,7 @@ public class GameLogic
                     _gameOver = true;
                     break;
                 }
+                */
 
                 // Stalemate Check
                 if (MoveValidator.IsStalemate(currentIsWhite, _gameboard))
@@ -208,10 +197,30 @@ public class GameLogic
                 var opponentIsWhite = test ? !_isWhiteTurn : !_isWhite;
                 if (MoveValidator.IsCheckmate(opponentIsWhite, _gameboard))
                 {
-                    var winner = opponentIsWhite ? "Black" : "White";
-                    _gameStats.StatusMessage = $"CHECKMATE! {winner} wins!";
-                    GameLogger.Info($"Checkmate detected. {winner} wins.");
+                    // send checkmate message to server
+                    var gameFinishedMessage = new WebSocketMessage
+                    {
+                        Type = MessageType.GameOver,
+                        Payload = _parser.SerializeToJsonElement(new GameOverPayload
+                        {
+                            GameId = gameId,
+                            Winner = _isWhite ? "White" : "Black",
+                        })
+                    };
+
+                    await webSocketService.SendAsync(gameFinishedMessage);
+                    
+                    // then wait for game over message from server to update the UI and end the game loop
+                    var gameOverMessage = await gameplayState!.WaitForGameOverAsync();
+                    
+                    _gameStats.StatusMessage = $"CHECKMATE! {gameOverMessage.Winner} wins!";
+                    GameLogger.Info($"Checkmate detected. {gameOverMessage.Winner} wins.");
+
+                    CliOutput.PrintConsoleNewline("Press ENTER to return...");
+                    Console.ReadLine(); 
+                    
                     _gameOver = true;
+                    break;
                 }
 
                 if (test)
@@ -232,7 +241,7 @@ public class GameLogic
                     await webSocketService.SendAsync(new WebSocketMessage
                     {
                         Type = MessageType.GameTurn,
-                        Payload = JsonSerializer.SerializeToElement(turnPayload)
+                        Payload = _parser.SerializeToJsonElement(turnPayload)
                     });
 
                     GameLogger.Info($"Sent move {move.From}{move.To} to server.");
@@ -241,11 +250,30 @@ public class GameLogic
             }
             else
             {
-                // Opponent's turn: wait for server response
+                // Opponent's turn: wait for server response, this can either be a new turn or a game over message if the opponent's move caused checkmate
                 _gameStats.StatusMessage = "Waiting for opponent's move...";
                 DrawBoard();
 
-                var opponentTurn = await gameplayState!.WaitForOpponentTurnAsync();
+                var opponentTurnTask = gameplayState!.WaitForOpponentTurnAsync();
+                var gameOverTask = gameplayState!.WaitForGameOverAsync();
+
+                var completedTask = await Task.WhenAny(opponentTurnTask, gameOverTask);
+
+                if (completedTask == gameOverTask)
+                {
+                    var gameOverMessage = await gameOverTask;
+                    _gameStats.StatusMessage = $"CHECKMATE! {gameOverMessage.Winner} wins!";
+                    DrawBoard();
+                    GameLogger.Info($"Opponent caused checkmate. {gameOverMessage.Winner} wins.");
+
+                    CliOutput.PrintConsoleNewline("Press ENTER to return...");
+                    Console.ReadLine();
+
+                    _gameOver = true;
+                    break;
+                }
+
+                var opponentTurn = await opponentTurnTask;
                 _gameboard = Gameboard.FromDto(opponentTurn.CurrentBoard);
 
                 var fromMove = opponentTurn.LastMove[..2];
@@ -266,7 +294,7 @@ public class GameLogic
     }
 
     /// <summary>
-    /// Nutzt die GameUi-Klasse, um das Spielbrett und das Dashboard zu zeichnen.
+    /// Uses the GameUi to draw the current state of the gameboard and game statistics
     /// </summary>
     private void DrawBoard()
     {

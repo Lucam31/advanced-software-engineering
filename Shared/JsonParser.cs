@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Shared.Dtos;
 
 namespace Shared;
 
@@ -53,33 +54,38 @@ public interface IJsonParser
 /// </summary>
 public class JsonParser : IJsonParser
 {
+    private static readonly JsonSerializerOptions Options = new()
+    {
+        Converters = { new TwoDimensionalArrayConverter<TileDto>() }
+    };
+    
     /// <inheritdoc/>
     public string SerializeJson<T>(T obj)
     {
-        return JsonSerializer.Serialize(obj);
+        return JsonSerializer.Serialize(obj,Options);
     }
 
     /// <inheritdoc/>
     public JsonElement SerializeToJsonElement<T>(T obj)
     {
-        return JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(obj));
+        return JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(obj,Options));
     }
     
     /// <inheritdoc/>
     public byte[] SerializeToBytes<T>(T obj)
     {
-        return JsonSerializer.SerializeToUtf8Bytes(obj);
+        return JsonSerializer.SerializeToUtf8Bytes(obj,Options);
     }
     
    /// <inheritdoc/>
     public T? DeserializeJson<T>(string json)
     {
-        return JsonSerializer.Deserialize<T>(json);
+        return JsonSerializer.Deserialize<T>(json,Options);
     }
 
     /// <inheritdoc/>
     public T? DeserializeJsonElement<T>(JsonElement element)
     {
-        return element.Deserialize<T>();
+        return element.Deserialize<T>(Options);
     }
 }

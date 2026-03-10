@@ -17,5 +17,5 @@ public class WebSocketMessage
     /// The payload of the WebSocket message.
     /// </summary>
     [JsonPropertyName("payload")]
-    public JsonElement Payload { get; set; }
+    public JsonElement? Payload { get; set; }
 }

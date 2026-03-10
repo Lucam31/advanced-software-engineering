@@ -10,7 +10,7 @@ public class GameOverPayload
     /// </summary>
     public Guid GameId { get; set; }
     /// <summary>
-    /// The username of the player who won the game. This can be null or empty if the game ended in a draw or if the winner is not determined.
+    /// The username of the player who won the game. This can be null if the game ended in a draw or if the winner is not determined.
     /// </summary>
     public string? Winner { get; set; } 
 }

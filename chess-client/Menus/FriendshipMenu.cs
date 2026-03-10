@@ -141,7 +141,8 @@ public class FriendshipMenu
     private async Task ListView()
     {
         var friends = await _friendshipServices.ListFriends(_userContainer.Id);
-
+        
+        var startedGame = false;
         while (true)
         {
             GameLogger.Info("Displaying ListView in friendship menu.");
@@ -201,12 +202,16 @@ public class FriendshipMenu
                     break;
                 case 'P':
                     GameLogger.Info($"Create Game with player '{selected.Name}'.");
-                    await _gameService.CreateGame(selected.FriendshipId);
+                    await _gameService.CreateGame(selected.UserId);
+                    startedGame = true;
                     break;
                 default:
                     CliOutput.PrintConsoleNewline("Unknown action. Use D to delete or P to play.");
                     break;
             }
+            
+            if (startedGame)
+                return;
         }
     }
 }

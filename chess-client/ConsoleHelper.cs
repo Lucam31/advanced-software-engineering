@@ -13,8 +13,6 @@ public static class ConsoleHelper
         ┌────────────────────┐
         │      Play (P)      │
         ├────────────────────┤
-        │     Search (S)     │
-        ├────────────────────┤
         │    Friends (F)     │
         ├────────────────────┤
         │     Games (G)      │
