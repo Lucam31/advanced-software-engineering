@@ -9,6 +9,7 @@ public static class MessageType
     public const string ResyncGame = "RESYNC_GAME";
     public const string CreateGame = "CREATE_GAME";
     public const string SearchGame = "SEARCH_GAME";
+    public const string CancelSearch = "CANCEL_SEARCH";
     public const string GameInvitation = "GAME_INVITATION";
     public const string JoinGame = "JOIN_GAME";
     public const string StartGame = "START_GAME";

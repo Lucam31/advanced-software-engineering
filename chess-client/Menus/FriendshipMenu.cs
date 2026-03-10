@@ -201,6 +201,7 @@ public class FriendshipMenu
                     friends = await _friendshipServices.ListFriends(_userContainer.Id);
                     break;
                 case 'P':
+                    // todo: implement logic to start game with friend
                     GameLogger.Info($"Create Game with player '{selected.Name}'.");
                     await _gameService.CreateGame(selected.UserId);
                     startedGame = true;

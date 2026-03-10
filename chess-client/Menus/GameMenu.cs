@@ -87,15 +87,42 @@ public class GameMenu
                     
                     while (true)
                     {
-                        
-                        // TODO: Implement quiting matchmaking queue
-                        // start the game when the server sends the start game message
-                        if (pendingStartGame != null)
+                        CliOutput.PrintConsoleNewline("Press Q to quit matchmaking queue.");
+                        input = null;
+                        try
                         {
-                            GameLogger.Info("Starting game with ID " + pendingStartGame.GameId);
-                            var game = new GameLogic();
-                            await game.StartGame(_webSocketService, pendingStartGame);
-                            break;
+                            // start a task to read user input and another to wait for cancellation (e.g., game found)
+                            var readTask = Task.Run(() => Console.ReadLine()?.ToUpper());
+                            var cancelTask = Task.Delay(Timeout.Infinite, cts.Token);
+
+                            var completed = await Task.WhenAny(readTask, cancelTask);
+
+                            if (completed == cancelTask)
+                            {
+                                // found game
+                                throw new OperationCanceledException();
+                            }
+
+                            input = await readTask;if (input?.Trim().ToUpper() == "Q")
+                            {
+                                var cancelMessage = new WebSocketMessage
+                                {
+                                    Type = MessageType.CancelSearch,
+                                    Payload = null
+                                };
+                                await _webSocketService.SendAsync(cancelMessage);
+                                break;
+                            }
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            if (pendingStartGame != null)
+                            {
+                                GameLogger.Info("Starting game with ID " + pendingStartGame.GameId);
+                                var game = new GameLogic();
+                                await game.StartGame(_webSocketService, pendingStartGame);
+                                break;
+                            }
                         }
                     }
                     break;

@@ -164,6 +164,10 @@ public class WebSocketHub : IWebSocketHub
             case MessageType.SearchGame:
                 await HandleSearchGame(clientId);
                 break;
+            case MessageType.CancelSearch:
+                _waitingClients.Remove(clientId);
+                GameLogger.Debug($"Client {clientId} cancelled search");
+                break;
             default:
                 GameLogger.Error($"Unknown message type {messageType}");
                 break;
