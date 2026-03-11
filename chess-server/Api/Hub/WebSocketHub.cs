@@ -226,10 +226,7 @@ public class WebSocketHub : IWebSocketHub
 
         var game = await _gameService.CreateGame(whiteClientId);
 
-        lock (game.SyncRoot)
-        {
-            _gameService.JoinGame(game, blackClientId);
-        }
+        await _gameService.JoinGame(game, blackClientId);
 
         _games.TryAdd(game.Id, game);
         GameLogger.Info($"Matchmaking: created game {game.Id} between {whiteClientId} (white) and {blackClientId} (black)");
@@ -319,15 +316,19 @@ public class WebSocketHub : IWebSocketHub
             return;
         }
         
-        lock (game.SyncRoot) 
-        {
-            _gameService.JoinGame(game, clientId);
-        }
+        await _gameService.JoinGame(game, clientId);
         
         GameLogger.Info($"Client {clientId} joined game {joinGamePayload.GameId}");
         
+        var blackPlayerId = game.GetBlackPlayerId();
+        if (blackPlayerId == null)
+        {
+            GameLogger.Error("Black player has not joined yet when sending StartGame message");
+            return;
+        }
+
         _clients.TryGetValue(game.GetWhitePlayerId(), out var whiteClient);
-        _clients.TryGetValue(game.GetBlackPlayerId(), out var blackClient);
+        _clients.TryGetValue(blackPlayerId.Value, out var blackClient);
         
         if (whiteClient == null || blackClient == null)
         {
@@ -383,9 +384,9 @@ public class WebSocketHub : IWebSocketHub
         {
             opponentId = game.GetWhitePlayerId();
         }
-        else if (game.GetBlackPlayerId() != clientId)
+        else if (game.GetBlackPlayerId() != null && game.GetBlackPlayerId() != clientId)
         {
-            opponentId = game.GetBlackPlayerId();
+            opponentId = game.GetBlackPlayerId()!.Value;
         }
         else
         {
@@ -434,7 +435,7 @@ public class WebSocketHub : IWebSocketHub
         {
             Id = game.Id,
             WhitePlayerId = game.GetWhitePlayerId(),
-            BlackPlayerId = game.GetBlackPlayerId(),
+            BlackPlayerId = game.GetBlackPlayerId() ?? Guid.Empty,
             Moves = game.GetMoveHistory()
         };
         
@@ -449,7 +450,8 @@ public class WebSocketHub : IWebSocketHub
         if (_clients.TryGetValue(game.GetWhitePlayerId(), out var white))
             await white.SendAsync(message);
     
-        if (_clients.TryGetValue(game.GetBlackPlayerId(), out var black))
+        var blackId = game.GetBlackPlayerId();
+        if (blackId.HasValue && _clients.TryGetValue(blackId.Value, out var black))
             await black.SendAsync(message);
     
         // remove game from active games

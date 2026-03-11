@@ -72,8 +72,20 @@ public class GameMenu
             }
             catch (OperationCanceledException)
             {
-                GameLogger.Info("Input abgebrochen — Einladung erhalten.");
-                _gameService.AcceptGameInvitation(pendingInvitation.GameId);
+                GameLogger.Info("Received game invitation.");
+                await _gameService.AcceptGameInvitation(pendingInvitation.GameId);
+                
+                // wait for start game message
+                while (true)
+                {
+                    if (pendingStartGame != null)
+                    {
+                        GameLogger.Info("Starting game with ID " + pendingStartGame.GameId);
+                        var game = new GameLogic();
+                        await game.StartGame(_webSocketService, pendingStartGame);
+                        break;
+                    }
+                }
                 continue;
             }
             GameLogger.Debug($"User entered menu input: '{input}'");

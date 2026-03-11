@@ -78,8 +78,8 @@ public class ActiveGame(Guid id, Player whitePlayer) : IActiveGame
     /// <returns>Id</returns>
     public Guid GetWhitePlayerId () => WhitePlayer.Id;
     /// <summary>
-    /// Gets the unique identifier of the black player.
+    /// Gets the unique identifier of the black player, or null if no black player has joined yet.
     /// </summary>
-    /// <returns>Id</returns>
-    public Guid GetBlackPlayerId () => BlackPlayer?.Id ?? throw new InvalidOperationException("Black player has not joined yet.");
+    /// <returns>Id or null</returns>
+    public Guid? GetBlackPlayerId () => BlackPlayer?.Id;
 }
