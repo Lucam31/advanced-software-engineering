@@ -28,10 +28,10 @@ public class WebSocketClient : IWebSocketClient
     /// <summary>
     /// The underlying <see cref="WebSocket"/> connection instance.
     /// </summary>
-    public WebSocket Conn { get; set; }
+    private WebSocket Conn { get; set; }
     
     public event Func<Guid, Task>? ClientDisconnected;
-    public event Func<string, JsonElement,Guid, Task>? MessageReceived;
+    public event Func<string, JsonElement?,Guid, Task>? MessageReceived;
 
     
     private readonly Channel<WebSocketMessage> _sendChan = Channel.CreateUnbounded<WebSocketMessage>();
@@ -83,37 +83,48 @@ public class WebSocketClient : IWebSocketClient
     /// </summary>
     /// <returns>A task that represents the asynchronous read operation.</returns>
     private async Task ProcessRead()
-   {
-       var buffer = new byte[1024 * 4]; 
-       var segment = new ArraySegment<byte>(buffer);
-       while (Conn.State == WebSocketState.Open)
-       {
-           try
-           {
-               var result = await Conn.ReceiveAsync(segment, CancellationToken.None);
-               if (result.MessageType == WebSocketMessageType.Close)
-               {
-                   if (ClientDisconnected != null) 
-                       await ClientDisconnected.Invoke(Id);
+    {
+        var buffer = new byte[1024 * 4];
+        var segment = new ArraySegment<byte>(buffer);
 
-                   await Conn.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
-                   _sendChan.Writer.TryComplete();
-                   break;
-               }
-               
-               var messageJson = Encoding.UTF8.GetString(buffer, 0, result.Count);
-               var message = _jsonParser.DeserializeJson<WebSocketMessage>(messageJson);
-                
-               if (message?.Type != null)
-               {
-                   if (MessageReceived != null)
-                       await MessageReceived.Invoke(message.Type, message.Payload,Id);
-               }
-           }
-           catch (Exception ex)
-           {
-               GameLogger.Error($"Failed to parse message: {ex.Message}");
-           }
-       }
-   }
+        while (Conn.State == WebSocketState.Open)
+        {
+            try
+            {
+                using var ms = new MemoryStream();
+                WebSocketReceiveResult result;
+
+                do
+                {
+                    result = await Conn.ReceiveAsync(segment, CancellationToken.None);
+                    ms.Write(buffer, 0, result.Count);
+                } while (!result.EndOfMessage);
+
+                if (result.MessageType == WebSocketMessageType.Close)
+                {
+                    if (ClientDisconnected != null)
+                        await ClientDisconnected.Invoke(Id);
+
+                    await Conn.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
+                    _sendChan.Writer.TryComplete();
+                    break;
+                }
+
+                var messageJson = Encoding.UTF8.GetString(ms.ToArray());
+                var message = _jsonParser.DeserializeJson<WebSocketMessage>(messageJson);
+
+                GameLogger.Debug("Received message from client " + Id + ": " + messageJson);
+                if (message?.Type != null)
+                {
+                    if (MessageReceived != null)
+                        await MessageReceived.Invoke(message.Type, message.Payload, Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                GameLogger.Error($"Failed to parse message: {ex.Message}");
+            }
+        }
+    }
+
 }

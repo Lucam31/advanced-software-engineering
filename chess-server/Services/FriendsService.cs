@@ -94,7 +94,8 @@ public class FriendsService : IFriendsService
                 friends.Add(new Friend
                 {
                     FriendshipId = f.Id,
-                    Name = friendUser.Username
+                    Name = friendUser.Username,
+                    UserId = friendUser.Id
                 });
             }
         }

@@ -1,6 +1,7 @@
 using chess_client.Services;
 using chess_client.States;
 using Shared.Logger;
+using Shared.WebSocketMessages;
 
 namespace chess_client.Menus;
 
@@ -12,7 +13,7 @@ public class FriendshipMenu
     private readonly UserContainer _userContainer;
     private readonly FriendshipServices _friendshipServices;
     private readonly WebSocketService _webSocketService;
-
+    private readonly IGameService _gameService;
     
     private volatile bool _refreshRequested = false;
     
@@ -22,10 +23,11 @@ public class FriendshipMenu
     /// <param name="userContainer">The user container.</param>
     /// <param name="friendshipServices">The friendship services.</param>
     /// <param name="webSocketService">The web socket service.</param>
-    public FriendshipMenu(UserContainer userContainer, FriendshipServices friendshipServices, WebSocketService webSocketService)
+    public FriendshipMenu(UserContainer userContainer, FriendshipServices friendshipServices, IGameService gameService, WebSocketService webSocketService)
     {
         _userContainer = userContainer;
         _friendshipServices = friendshipServices;
+        _gameService = gameService;
         _webSocketService = webSocketService;
     }
     
@@ -61,7 +63,7 @@ public class FriendshipMenu
                 case "L":
                 case "LIST":
                     GameLogger.Info("User selected 'List'.");
-                    await ListView();
+                    await ListView(state);
                     continue;
                 case "Q":
                 case "QUIT":
@@ -137,10 +139,10 @@ public class FriendshipMenu
     /// <summary>
     /// Displays the list of friends and handles user input for the list view.
     /// </summary>
-    private async Task ListView()
+    private async Task ListView(FriendshipMenuState state)
     {
         var friends = await _friendshipServices.ListFriends(_userContainer.Id);
-
+        
         while (true)
         {
             GameLogger.Info("Displaying ListView in friendship menu.");
@@ -199,8 +201,45 @@ public class FriendshipMenu
                     friends = await _friendshipServices.ListFriends(_userContainer.Id);
                     break;
                 case 'P':
-                    GameLogger.Info($"Play action selected for '{selected.Name}' — not yet implemented.");
-                    CliOutput.PrintConsoleNewline($"Play with {selected.Name} — coming soon!");
+                    GameLogger.Info($"Create Game with player '{selected.Name}'.");
+                    await _gameService.CreateGame(selected.UserId);
+                    
+                    // Wait for the server to send StartGame, meanwhile let the user cancel with Q
+                    using (var cts = new CancellationTokenSource())
+                    {
+                        StartGamePayload? pendingStartGame = null;
+                        state.OnStartGame += payload =>
+                        {
+                            GameLogger.Info("Game Start as color " + payload.Color);
+                            pendingStartGame = payload;
+                            cts.Cancel();
+                        };
+
+                        CliOutput.PrintConsoleNewline("Waiting for opponent to accept... Press Q to cancel.");
+
+                        try
+                        {
+                            var cancelInput = (await ConsoleHelper.ReadLineAsync(cts.Token))?.Trim().ToUpper();
+                            if (cancelInput == "Q")
+                            {
+                                GameLogger.Info("User cancelled game invitation.");
+                                // TODO: Send cancel message to server in the future
+                                CliOutput.PrintConsoleNewline("Game invitation cancelled.");
+                                break;
+                            }
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            // Server sent StartGame → start the game
+                            if (pendingStartGame != null)
+                            {
+                                GameLogger.Info("Starting game with ID " + pendingStartGame.GameId);
+                                var game = new GameLogic();
+                                await game.StartGame(_webSocketService, pendingStartGame);
+                                return;
+                            }
+                        }
+                    }
                     break;
                 default:
                     CliOutput.PrintConsoleNewline("Unknown action. Use D to delete or P to play.");

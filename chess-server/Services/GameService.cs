@@ -88,7 +88,8 @@ public class GameService : IGameService
         if (user == null)
             throw new UserNotFound();
 
-        var player = new Player(clientId, user.Username, true, user.Rating);
+        var player = new Player(clientId, user.Username, false, user.Rating);
+        GameLogger.Debug($"User {user.Username} is joining game {game.Id} as black player.");
         
         game.JoinGame(player);
     }
@@ -96,7 +97,7 @@ public class GameService : IGameService
     /// <inheritdoc/>
     public async Task InsertGameAsync(GameDto dto)
     {
-        GameLogger.Info(
+        GameLogger.Debug(
             $"Inserting game {dto.Id} (White={dto.WhitePlayerId}, Black={dto.BlackPlayerId}), Moves={dto.Moves?.Count ?? 0}");
         var game = new Game
         {
@@ -113,7 +114,7 @@ public class GameService : IGameService
     /// <inheritdoc/>
     public async Task<List<PlayedGame>> GetLastGlobalPlayedGamesAsync()
     {
-        GameLogger.Info("Fetching last global played games");
+        GameLogger.Debug("Fetching last global played games");
         var games = await _gameRepository.GetRecentGamesAsync();
 
         var playedGames = new List<PlayedGame>();
@@ -145,7 +146,7 @@ public class GameService : IGameService
     /// <inheritdoc/>
     public async Task<List<PlayedGame>> GetLastUserPlayedGamesAsync(Guid userId)
     {
-        GameLogger.Info($"Fetching last games for user {userId}");
+        GameLogger.Debug($"Fetching last games for user {userId}");
         var games = await _gameRepository.GetGamesByUserIdAsync(userId);
 
         var playedGames = new List<PlayedGame>();

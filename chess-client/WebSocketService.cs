@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json;
 using Shared.Logger;
 using Shared.WebSocketMessages;
-using chess_client.States;
+using States;
 
 public class WebSocketService : IAsyncDisposable
 {
@@ -45,9 +45,28 @@ public class WebSocketService : IAsyncDisposable
 
     public async Task SendAsync(WebSocketMessage message)
     {
-        var json = JsonSerializer.Serialize(message);
+        string json;
+        try
+        {
+            json = JsonSerializer.Serialize(message);
+        }
+        catch (Exception e)
+        {
+            GameLogger.Error($"SendAsync error: {e.Message}");
+            throw;
+        }
+        
         var bytes = Encoding.UTF8.GetBytes(json);
-        await _ws.SendAsync(bytes, WebSocketMessageType.Text, true, _cts.Token);
+        
+        try
+        {
+            await _ws.SendAsync(bytes, WebSocketMessageType.Text, true, _cts.Token);
+        }
+        catch (Exception e)
+        {
+            GameLogger.Error($"SendAsync error: {e.Message}");
+            throw;
+        }
         GameLogger.Debug($"Sent message: {message.Type}");
     }
 
@@ -63,10 +82,16 @@ public class WebSocketService : IAsyncDisposable
         {
             while (!_cts.Token.IsCancellationRequested && _ws.State == WebSocketState.Open)
             {
-                GameLogger.Debug("ReceiveLoop loop started.");
-                var result = await _ws.ReceiveAsync(buffer, _cts.Token);
-                
-                GameLogger.Debug($"Received: {result.Count} bytes");
+                using var ms = new System.IO.MemoryStream();
+                WebSocketReceiveResult result;
+
+                do
+                {
+                    result = await _ws.ReceiveAsync(buffer, _cts.Token);
+                    ms.Write(buffer, 0, result.Count);
+                } while (!result.EndOfMessage);
+
+                GameLogger.Debug($"Received: {ms.Length} bytes");
 
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
@@ -74,9 +99,9 @@ public class WebSocketService : IAsyncDisposable
                     break;
                 }
 
-                var json = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                var json = Encoding.UTF8.GetString(ms.ToArray());
                 GameLogger.Debug($"Raw message: {json}");
-                
+
                 var message = JsonSerializer.Deserialize<WebSocketMessage>(json);
 
                 if (message is null)
@@ -84,7 +109,7 @@ public class WebSocketService : IAsyncDisposable
                     GameLogger.Warning($"Deserialized message was null. Raw: {json}");
                     continue;
                 }
-                
+   
                 if (_currentState is null)
                 {
                     GameLogger.Warning($"Received '{message.Type}' but no state is active — message dropped!");
@@ -104,7 +129,7 @@ public class WebSocketService : IAsyncDisposable
             GameLogger.Error($"ReceiveLoop error: {ex.Message}");
         }
     }
-
+    
     public async ValueTask DisposeAsync()
     {
         _cts.Cancel();

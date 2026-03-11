@@ -14,4 +14,9 @@ public class Friend
     /// Gets or sets the name of the friend.
     /// </summary>
     public string Name { get; set; } = "";
+    
+    /// <summary>
+    /// Gets or sets the ID of the user who is the friend.
+    /// </summary>
+    public Guid UserId { get; set; }
 }

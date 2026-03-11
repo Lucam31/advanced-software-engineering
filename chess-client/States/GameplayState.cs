@@ -1,4 +1,4 @@
-using System.Text.Json;
+using Shared;
 using Shared.Logger;
 using Shared.WebSocketMessages;
 
@@ -11,6 +11,8 @@ public class GameplayState : IGameState
 {
     private TaskCompletionSource<StartGamePayload>? _startGameTcs;
     private TaskCompletionSource<GameTurnPayload>? _gameTurnTcs;
+    private TaskCompletionSource<GameOverPayload>? _gameOverTcs;
+    private JsonParser _parser = new JsonParser();
 
     /// <summary>
     /// Returns a task that completes when the server sends a StartGame message
@@ -30,6 +32,12 @@ public class GameplayState : IGameState
         return _gameTurnTcs.Task;
     }
 
+    public Task<GameOverPayload> WaitForGameOverAsync()
+    {
+        _gameOverTcs = new TaskCompletionSource<GameOverPayload>();
+        return _gameOverTcs.Task;
+    }
+
     public void OnEnter() => GameLogger.Info("Entered Gameplay state.");
     public void OnExit() => GameLogger.Info("Leaving Gameplay state.");
 
@@ -39,7 +47,7 @@ public class GameplayState : IGameState
         {
             case MessageType.StartGame:
                 GameLogger.Info("Received StartGame from server.");
-                var startPayload = JsonSerializer.Deserialize<StartGamePayload>(message.Payload.GetRawText());
+                var startPayload = _parser.DeserializeJson<StartGamePayload>(message.Payload!.Value.GetRawText());
                 if (startPayload != null)
                 {
                     _startGameTcs?.TrySetResult(startPayload);
@@ -48,7 +56,7 @@ public class GameplayState : IGameState
 
             case MessageType.GameTurn:
                 GameLogger.Info("Received GameTurn from server.");
-                var turnPayload = JsonSerializer.Deserialize<GameTurnPayload>(message.Payload.GetRawText());
+                var turnPayload = _parser.DeserializeJson<GameTurnPayload>(message.Payload!.Value.GetRawText());
                 if (turnPayload != null)
                 {
                     _gameTurnTcs?.TrySetResult(turnPayload);
@@ -57,9 +65,10 @@ public class GameplayState : IGameState
 
             case MessageType.GameOver:
                 GameLogger.Info("Received GameOver from server.");
-                var gameOverPayload = JsonSerializer.Deserialize<GameOverPayload>(message.Payload.GetRawText());
+                var gameOverPayload = _parser.DeserializeJson<GameOverPayload>(message.Payload!.Value.GetRawText());
                 if (gameOverPayload != null)
                 {
+                    _gameOverTcs?.TrySetResult(gameOverPayload);
                     CliOutput.PrintConsoleNewline(gameOverPayload.Winner != null
                         ? $"Game over! Winner: {gameOverPayload.Winner}"
                         : "Game over! It's a draw!");
