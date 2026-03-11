@@ -101,27 +101,27 @@ public static class InputParser
     {
         GameLogger.Debug("Reading move from console input.");
         int fromCol, fromRow, toCol, toRow;
-        var move = Console.ReadLine()?.Trim().ToUpper();
-        GameLogger.Debug($"Raw move string: '{move}'");
-        if (move?.Length != 4)
+
+        // Console.Clear() can leave a stray newline in the input buffer on macOS,
+        // so we skip any empty / whitespace-only lines before reading the real input.
+        string? move;
+        do
         {
-            GameLogger.Warning("Move input not length 4.");
+            move = Console.ReadLine()?.Trim().ToUpper();
+        } while (string.IsNullOrWhiteSpace(move));
+
+        GameLogger.Debug($"Raw move string: '{move}'");
+        if (move.Length != 4)
+        {
+            GameLogger.Warning($"Move input not length 4: '{move}'");
+            throw new ArgumentException("Input was not valid");
         }
 
-        try
-        {
-            fromCol = move![0];
-            fromRow = move[1] - '0';
-            toCol = move[2];
-            toRow = move[3] - '0';
-            GameLogger.Debug($"Parsed move: {Convert.ToChar(fromCol)}{fromRow} -> {Convert.ToChar(toCol)}{toRow}");
-        }
-        catch (Exception e)
-        {
-            GameLogger.Error("Exception while parsing move input.", e);
-            CliOutput.WriteErrorMessage(e.Message);
-            throw;
-        }
+        fromCol = move[0];
+        fromRow = move[1] - '0';
+        toCol = move[2];
+        toRow = move[3] - '0';
+        GameLogger.Debug($"Parsed move: {Convert.ToChar(fromCol)}{fromRow} -> {Convert.ToChar(toCol)}{toRow}");
 
         if (fromRow == -1 || fromCol == -1 || toRow == -1 || toCol == -1)
         {

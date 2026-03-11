@@ -97,29 +97,6 @@ public class GameLogic
                 // Check if the current player's king is in checkmate or check
                 var currentIsWhite = test ? _isWhiteTurn : _isWhite;
 
-                /*
-                // Checkmate Check
-                if (MoveValidator.IsCheckmate(currentIsWhite, _gameboard))
-                {
-                    var winner = currentIsWhite ? "Black" : "White";
-                    _gameStats.StatusMessage = $"CHECKMATE! {winner} wins!";
-                    DrawBoard();
-                    GameLogger.Info($"Checkmate detected. {winner} wins.");
-                    _gameOver = true;
-                    break;
-                }
-                */
-
-                // Stalemate Check
-                if (MoveValidator.IsStalemate(currentIsWhite, _gameboard))
-                {
-                    _gameStats.StatusMessage = "STALEMATE! No one wins!";
-                    DrawBoard();
-                    GameLogger.Info("Stalemate detected. No one wins.");
-                    _gameOver = true;
-                    break;
-                }
-
                 // Check Check
                 if (MoveValidator.IsKingInCheck(currentIsWhite, _gameboard))
                 {

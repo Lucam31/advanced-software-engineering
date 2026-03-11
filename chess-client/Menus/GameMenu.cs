@@ -68,7 +68,7 @@ public class GameMenu
             string? input = null;
             try
             {
-                input = await Task.Run(() => Console.ReadLine().ToUpper(), cts.Token);
+                input = (await ConsoleHelper.ReadLineAsync(cts.Token))?.ToUpper();
             }
             catch (OperationCanceledException)
             {
@@ -91,19 +91,8 @@ public class GameMenu
                         input = null;
                         try
                         {
-                            // start a task to read user input and another to wait for cancellation (e.g., game found)
-                            var readTask = Task.Run(() => Console.ReadLine()?.ToUpper());
-                            var cancelTask = Task.Delay(Timeout.Infinite, cts.Token);
-
-                            var completed = await Task.WhenAny(readTask, cancelTask);
-
-                            if (completed == cancelTask)
-                            {
-                                // found game
-                                throw new OperationCanceledException();
-                            }
-
-                            input = await readTask;if (input?.Trim().ToUpper() == "Q")
+                            input = (await ConsoleHelper.ReadLineAsync(cts.Token))?.Trim().ToUpper();
+                            if (input == "Q")
                             {
                                 var cancelMessage = new WebSocketMessage
                                 {
