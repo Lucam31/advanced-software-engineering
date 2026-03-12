@@ -132,6 +132,12 @@ public class GameMenu
                     GameLogger.Info("User selected 'Friends'.");
                     await _friendshipMenu.DisplayMenu();
                     continue;
+                case "G":
+                case "GAMES":
+                    GameLogger.Info("User selected 'Games'.");
+                    var replayMenu = new ReplayMenu(_userContainer, _webSocketService);
+                    await replayMenu.DisplayMenu();
+                    continue;
                 case "Q":
                 case "QUIT":
                     GameLogger.Info("User selected 'Quit'.");

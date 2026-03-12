@@ -1,4 +1,4 @@
-namespace chess_server.OutputDtos;
+namespace Shared.Dtos;
 
 /// <summary>
 /// Represents a data transfer object for a played game.

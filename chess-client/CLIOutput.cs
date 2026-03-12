@@ -110,7 +110,7 @@ public static class CliOutput
     public static void RewriteBoard(Gameboard board)
     {
         GameLogger.Debug("RewriteBoard called.");
-        var prevLine = _console.CursorTop - 1;
+        var prevLine = _console.CursorTop;
 
         _console.SetCursorPosition(0, 0);
         board.PrintBoard();
