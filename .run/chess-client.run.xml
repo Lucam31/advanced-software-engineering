@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="chess-client" type="DotNetProject" factoryName=".NET Project" folderName="client">
+  <configuration default="false" name="chess-client" type="DotNetProject" factoryName=".NET Project" folderName="client" singleton="false">
     <log_file alias="chess-client-logs" path="$PROJECT_DIR$/chess-client/bin/Debug/net9.0/logs/client_log.txt" show_all="true" />
     <option name="EXE_PATH" value="$PROJECT_DIR$/chess-client/bin/Debug/net9.0/chess-client" />
     <option name="PROGRAM_PARAMETERS" value="" />
