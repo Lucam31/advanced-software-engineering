@@ -78,6 +78,19 @@ public static class ConsoleHelper
         │      Quit (Q)      │
         └────────────────────┘
         """;
+    
+    /// <summary>
+    /// A string representing the replay menu text
+    /// </summary>
+    public const string ReplayMenu = 
+        """
+        ┌────────────────────┐
+        │     Replays (R)    │
+        ├────────────────────┤
+        │      Quit (Q)      │
+        └────────────────────┘
+        """;
+
 
     public const string LoginMenu =
         """

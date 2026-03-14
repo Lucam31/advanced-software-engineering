@@ -35,7 +35,7 @@ public interface IGameController
 /// <summary>
 /// API controller for game-related actions.
 /// </summary>
-[Route("api/games")]
+[Route("/api/games")]
 public class GameController : IGameController
 {
     private readonly IGameService _gameService;
