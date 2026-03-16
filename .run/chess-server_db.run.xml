@@ -3,7 +3,6 @@
     <deployment type="docker-compose.yml">
       <settings>
         <option name="removeOrphansOnComposeDown" value="false" />
-        <option name="removeVolumesOnComposeDown" value="true" />
         <option name="sourceFilePath" value="compose.yaml" />
       </settings>
     </deployment>
