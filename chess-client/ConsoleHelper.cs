@@ -52,9 +52,6 @@ public static class ConsoleHelper
         return null;
     }
 
-    // Die erste leere Zeile beim @-String weglassen, damit es im Terminal nicht 
-    // ungewollt nach unten rutscht.
-
     public const string GameMenu =
         """
         ┌────────────────────┐
@@ -78,11 +75,11 @@ public static class ConsoleHelper
         │      Quit (Q)      │
         └────────────────────┘
         """;
-    
+
     /// <summary>
     /// A string representing the replay menu text
     /// </summary>
-    public const string ReplayMenu = 
+    public const string ReplayMenu =
         """
         ┌────────────────────┐
         │     Replays (R)    │
