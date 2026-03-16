@@ -22,5 +22,5 @@ public class GameTurnPayload
     /// The move that was just made.
     /// </summary>
     [JsonPropertyName("lastMove")]
-    public required String LastMove { get; set; }
+    public required string LastMove { get; set; }
 }
