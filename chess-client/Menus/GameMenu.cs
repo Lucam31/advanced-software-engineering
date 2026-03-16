@@ -3,8 +3,17 @@ using chess_client.States;
 using Shared.Logger;
 using Shared.WebSocketMessages;
 using chess_client.UserInterface;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace chess_client.Menus;
+
+public enum GameMenuResult
+{
+    Logout,
+    Quit
+}
 
 /// <summary>
 /// Manages the main menu logic, state transitions, and server communication.
@@ -20,7 +29,7 @@ public class GameMenu(
     /// <summary>
     /// Displays the main menu and handles user input
     /// </summary>
-    public async Task DisplayMainMenu()
+    public async Task<GameMenuResult> DisplayMainMenu()
     {
         string? currentErrorMessage = null;
 
@@ -52,10 +61,10 @@ public class GameMenu(
             _ui.DrawMainMenu(currentErrorMessage);
             currentErrorMessage = null;
 
-            string? input = null;
+            ConsoleKeyInfo input;
             try
             {
-                input = (await _ui.ReadInputAsync(cts.Token))?.ToUpper();
+                input = await _ui.ReadKeyAsync(cts.Token);
             }
             catch (OperationCanceledException)
             {
@@ -84,48 +93,54 @@ public class GameMenu(
                 continue;
             }
 
-            GameLogger.Debug($"User entered menu input: '{input}'");
+            GameLogger.Debug($"User pressed key: '{input.Key}'");
 
-            switch (input)
+            switch (input.Key)
             {
-                case "P":
-                case "PLAY":
-                    // NEU: Vollständig gekapselter Aufruf des Matchmaking-Menüs
+                case ConsoleKey.P:
+                    GameLogger.Info("User selected 'Play'.");
                     var matchmakingMenu = new MatchmakingMenu(gameService, webSocketService);
-                    
-                    // Wir übergeben das Token und eine Funktion, um im Abbruchs-Fall an den Payload zu kommen
+
                     var startGamePayload = await matchmakingMenu.EnterQueueAsync(cts.Token, () => pendingStartGame);
 
-                    // Wenn ein Spiel gefunden wurde (Rückgabe ist nicht null)
                     if (startGamePayload != null)
                     {
                         GameLogger.Info("Starting game with ID " + startGamePayload.GameId);
                         var game = new GameLogic();
                         await game.StartGame(webSocketService, startGamePayload);
                     }
+
                     break;
 
-                case "F":
-                case "FRIENDS":
+                case ConsoleKey.F:
                     GameLogger.Info("User selected 'Friends'.");
-                    await friendshipMenu.DisplayMenu();
+
+                    var friendResult = await friendshipMenu.DisplayMenu();
+
+                    if (friendResult == FriendshipMenuResult.Quit)
+                    {
+                        return GameMenuResult.Quit;
+                    }
+
                     break;
 
-                case "G":
-                case "GAMES":
+                case ConsoleKey.G:
                     GameLogger.Info("User selected 'Games'.");
                     var replayMenu = new ReplayMenu(userContainer, webSocketService);
                     await replayMenu.DisplayMenu();
                     break;
 
-                case "Q":
-                case "QUIT":
+                case ConsoleKey.L:
+                    GameLogger.Info("User selected 'Logout'.");
+                    return GameMenuResult.Logout;
+
+                case ConsoleKey.Q:
                     GameLogger.Info("User selected 'Quit'.");
-                    return;
+                    return GameMenuResult.Quit;
 
                 default:
-                    GameLogger.Warning($"Invalid menu input: '{input}'");
-                    currentErrorMessage = "Invalid input. Please try again.";
+                    GameLogger.Warning($"Invalid menu input: '{input.Key}'");
+                    currentErrorMessage = "Invalid input. Please press P, F, G, L, or Q.";
                     break;
             }
         }

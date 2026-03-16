@@ -1,3 +1,8 @@
+using Shared;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace chess_client.UserInterface;
 
 /// <summary>
@@ -6,32 +11,35 @@ namespace chess_client.UserInterface;
 public class GameMenuUi
 {
     /// <summary>
-    /// Clears the screen and draws the main menu, optionally displaying an error message.
+    /// Clears the screen and draws the main menu with a clean boxed layout.
     /// </summary>
-    /// <param name="errorMessage">An optional error message to display in red.</param>
     public void DrawMainMenu(string? errorMessage = null)
     {
         CliOutput.ClearTerminal();
-        CliOutput.PrintConsoleNewline(ConsoleHelper.GameMenu);
-        
+        Console.WriteLine();
+        CliOutput.PrintConsoleNewline("       === CHESS DASHBOARD ===");
+        Console.WriteLine();
+
+        CliOutput.PrintConsoleNewline("   ┌──────────────────────────────┐");
+        CliOutput.PrintConsoleNewline("   │          MAIN MENU           │");
+        CliOutput.PrintConsoleNewline("   ├──────────────────────────────┤");
+        CliOutput.PrintConsoleNewline("   │  [P] Play                    │");
+        CliOutput.PrintConsoleNewline("   │  [F] Friends                 │");
+        CliOutput.PrintConsoleNewline("   │  [G] Games and Replays       │");
+        CliOutput.PrintConsoleNewline("   │  [L] Logout                  │");
+        CliOutput.PrintConsoleNewline("   │  [Q] Quit Game               │");
+        CliOutput.PrintConsoleNewline("   └──────────────────────────────┘");
+        Console.WriteLine();
+
         if (!string.IsNullOrEmpty(errorMessage))
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            CliOutput.PrintConsoleNewline(errorMessage);
+            CliOutput.PrintConsoleNewline($"   ⚠ {errorMessage}");
             Console.ResetColor();
             Console.WriteLine();
         }
-        
-        CliOutput.PrintConsoleNewline("Please enter your choice or press Enter to refresh: ");
-    }
 
-    /// <summary>
-    /// Displays the state when the user enters the matchmaking queue.
-    /// </summary>
-    public void ShowMatchmakingState()
-    {
-        CliOutput.PrintConsoleNewline("Entering matchmaking queue...");
-        CliOutput.PrintConsoleNewline("Press Q to quit matchmaking queue.");
+        CliOutput.PrintConsoleNewline("   Your choice: ");
     }
 
     /// <summary>
@@ -39,14 +47,26 @@ public class GameMenuUi
     /// </summary>
     public void ShowMessage(string message)
     {
-        CliOutput.PrintConsoleNewline(message);
+        Console.WriteLine();
+        CliOutput.PrintConsoleNewline($"   ℹ {message}");
     }
 
     /// <summary>
-    /// Reads user input asynchronously, supporting cancellation.
+    /// Reads a key press asynchronously, allowing the action to be cancelled by background events.
     /// </summary>
-    public async Task<string?> ReadInputAsync(CancellationToken token)
+    public async Task<ConsoleKeyInfo> ReadKeyAsync(CancellationToken token)
     {
-        return await ConsoleHelper.ReadLineAsync(token);
+        while (!token.IsCancellationRequested)
+        {
+            if (Console.KeyAvailable)
+            {
+                return Console.ReadKey(true);
+            }
+
+            await Task.Delay(20, token);
+        }
+
+        token.ThrowIfCancellationRequested();
+        return default;
     }
 }
