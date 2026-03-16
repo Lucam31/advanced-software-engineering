@@ -18,7 +18,7 @@ public class MatchmakingUi
         CliOutput.PrintConsoleNewline("   Searching for an opponent...");
         CliOutput.PrintConsoleNewline("   Please wait.");
         Console.WriteLine();
-        
+
         if (!string.IsNullOrEmpty(errorMessage))
         {
             Console.ForegroundColor = ConsoleColor.Red;
@@ -50,5 +50,24 @@ public class MatchmakingUi
     public static async Task<string?> ReadInputAsync(CancellationToken token)
     {
         return await ConsoleHelper.ReadLineAsync(token);
+    }
+
+    /// <summary>
+    /// Reads a key press asynchronously, allowing the action to be cancelled by background events (like finding a match).
+    /// </summary>
+    public async Task<ConsoleKeyInfo> ReadKeyAsync(CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            if (Console.KeyAvailable)
+            {
+                return Console.ReadKey(true);
+            }
+
+            await Task.Delay(20, token);
+        }
+
+        token.ThrowIfCancellationRequested();
+        return default;
     }
 }

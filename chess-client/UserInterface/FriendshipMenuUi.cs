@@ -12,12 +12,10 @@ public class FriendshipMenuUi
     public static void DrawMainMenu(string? errorMessage = null)
     {
         CliOutput.ClearTerminal();
+        CliOutput.PrintConsoleNewline("            === FRIENDS ===");
         Console.WriteLine();
-        CliOutput.PrintConsoleNewline("        === FRIENDS ===");
-        Console.WriteLine();
-
         CliOutput.PrintConsoleNewline("   ┌──────────────────────────────┐");
-        CliOutput.PrintConsoleNewline("   │       FRIEND MENU            │");
+        CliOutput.PrintConsoleNewline("   │          FRIEND MENU         │");
         CliOutput.PrintConsoleNewline("   ├──────────────────────────────┤");
         CliOutput.PrintConsoleNewline("   │  [S] Search Users            │");
         CliOutput.PrintConsoleNewline("   │  [L] Friend List             │");

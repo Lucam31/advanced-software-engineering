@@ -40,9 +40,9 @@ public class MatchmakingMenu(
 
             try
             {
-                var input = (await MatchmakingUi.ReadInputAsync(token))?.Trim().ToUpper();
+                var input = await _ui.ReadKeyAsync(token);
                 
-                if (input == "Q")
+                if (input.Key == ConsoleKey.Q)
                 {
                     var cancelMessage = new WebSocketMessage
                     {
@@ -52,7 +52,7 @@ public class MatchmakingMenu(
                     await webSocketService.SendAsync(cancelMessage);
                     
                     MatchmakingUi.ShowMessage("Matchmaking cancelled. Returning to menu...");
-                    await Task.Delay(1000, token);
+                    await Task.Delay(1000, token); 
                     return null;
                 }
                 else
