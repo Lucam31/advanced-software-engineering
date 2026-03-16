@@ -1,5 +1,3 @@
-using Shared;
-
 namespace chess_client.UserInterface;
 
 /// <summary>
@@ -8,9 +6,10 @@ namespace chess_client.UserInterface;
 public class MatchmakingUi
 {
     /// <summary>
-    /// Clears the screen and draws the matchmaking queue screen.
+    /// Clears the screen and draws the matchmaking queue view.
     /// </summary>
-    public void DrawQueueScreen(string? errorMessage = null)
+    /// <param name="errorMessage">Optional error message shown above the queue input prompt.</param>
+    public static void DrawQueueScreen(string? errorMessage = null)
     {
         CliOutput.ClearTerminal();
         Console.WriteLine();
@@ -36,16 +35,19 @@ public class MatchmakingUi
     /// <summary>
     /// Displays a temporary message before transitioning away.
     /// </summary>
-    public void ShowMessage(string message)
+    /// <param name="message">Message text to display.</param>
+    public static void ShowMessage(string message)
     {
         Console.WriteLine();
         CliOutput.PrintConsoleNewline($"   {message}");
     }
 
     /// <summary>
-    /// Reads user input asynchronously.
+    /// Reads queue input asynchronously and supports cancellation.
     /// </summary>
-    public async Task<string?> ReadInputAsync(CancellationToken token)
+    /// <param name="token">Cancellation token used to interrupt waiting for input.</param>
+    /// <returns>The entered input, or <c>null</c> when no input is available.</returns>
+    public static async Task<string?> ReadInputAsync(CancellationToken token)
     {
         return await ConsoleHelper.ReadLineAsync(token);
     }

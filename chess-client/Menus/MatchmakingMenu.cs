@@ -6,8 +6,10 @@ using Shared.WebSocketMessages;
 namespace chess_client.Menus;
 
 /// <summary>
-/// Manages the logic and server communication for the matchmaking queue.
+/// Coordinates queue-based matchmaking, including queue cancellation and start-game handoff.
 /// </summary>
+/// <param name="gameService">Service used to enter matchmaking.</param>
+/// <param name="webSocketService">WebSocket connection used to send queue cancellation messages.</param>
 public class MatchmakingMenu(
     IGameService gameService,
     WebSocketService webSocketService)
@@ -15,28 +17,30 @@ public class MatchmakingMenu(
     private readonly MatchmakingUi _ui = new();
 
     /// <summary>
-    /// Enters the matchmaking queue and handles user input/cancellation.
+    /// Enters the matchmaking queue and waits for either user cancellation or a game start event.
     /// </summary>
-    /// <returns>The StartGamePayload if a game is found, otherwise null.</returns>
+    /// <param name="token">Cancellation token triggered when external realtime events interrupt queue input.</param>
+    /// <param name="getPendingStartGame">Callback returning the latest pending start-game payload, if available.</param>
+    /// <returns>The <see cref="StartGamePayload"/> when a game is found; otherwise <c>null</c>.</returns>
     public async Task<StartGamePayload?> EnterQueueAsync(CancellationToken token, Func<StartGamePayload?> getPendingStartGame)
     {
         GameLogger.Info("Entering matchmaking queue...");
         string? queueError = null;
         
-        _ui.DrawQueueScreen();
+        MatchmakingUi.DrawQueueScreen();
         await gameService.SearchGame();
 
         while (true)
         {
             if (queueError != null)
             {
-                _ui.DrawQueueScreen(queueError);
+                MatchmakingUi.DrawQueueScreen(queueError);
                 queueError = null;
             }
 
             try
             {
-                var input = (await _ui.ReadInputAsync(token))?.Trim().ToUpper();
+                var input = (await MatchmakingUi.ReadInputAsync(token))?.Trim().ToUpper();
                 
                 if (input == "Q")
                 {
@@ -47,7 +51,7 @@ public class MatchmakingMenu(
                     };
                     await webSocketService.SendAsync(cancelMessage);
                     
-                    _ui.ShowMessage("Matchmaking cancelled. Returning to menu...");
+                    MatchmakingUi.ShowMessage("Matchmaking cancelled. Returning to menu...");
                     await Task.Delay(1000, token);
                     return null;
                 }
@@ -58,15 +62,8 @@ public class MatchmakingMenu(
             }
             catch (OperationCanceledException)
             {
-                // Dieser Block feuert, wenn über WebSockets ein Gegner gefunden wurde
                 var pendingGame = getPendingStartGame();
-                if (pendingGame != null)
-                {
-                    return pendingGame;
-                }
-                
-                // Fallback, falls die Cancellation aus einem anderen Grund geworfen wurde
-                return null;
+                return pendingGame ?? null;
             }
         }
     }

@@ -5,7 +5,11 @@ namespace chess_client.UserInterface;
 /// </summary>
 public class MainMenuUi
 {
-    public void DrawMenu(string? errorMessage = null)
+    /// <summary>
+    /// Draws the startup menu and optionally shows an error message.
+    /// </summary>
+    /// <param name="errorMessage">Optional error message shown above the input prompt.</param>
+    public static void DrawMenu(string? errorMessage = null)
     {
         CliOutput.ClearTerminal();
         CliOutput.PrintConsoleNewline("       === WELCOME TO CHESS ===");
@@ -29,7 +33,11 @@ public class MainMenuUi
         CliOutput.PrintConsoleNewline("   Your choice: ");
     }
 
-    public ConsoleKeyInfo ReadKey()
+    /// <summary>
+    /// Reads a single key press without echoing it to the console.
+    /// </summary>
+    /// <returns>The pressed key information.</returns>
+    public static ConsoleKeyInfo ReadKey()
     {
         return Console.ReadKey(true);
     }

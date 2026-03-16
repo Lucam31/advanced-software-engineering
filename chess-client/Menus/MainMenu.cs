@@ -5,17 +5,19 @@ using chess_client.UserInterface;
 namespace chess_client.Menus;
 
 /// <summary>
-/// Manages the very first menu the user sees when starting the application.
+/// Controls the startup menu and routes users into authentication or client exit.
 /// </summary>
+/// <param name="authService">Authentication service used by the nested auth menu.</param>
+/// <param name="userContainer">Shared user state container passed into authentication flows.</param>
 public class MainMenu(IAuthService authService, UserContainer userContainer)
 {
     private readonly MainMenuUi _ui = new();
     private readonly AuthMenu _authMenu = new(authService, userContainer);
 
     /// <summary>
-    /// Displays the startup menu.
+    /// Displays the startup menu until the user authenticates successfully or quits.
     /// </summary>
-    /// <returns>True if the user successfully logged in, false if they want to quit.</returns>
+    /// <returns><c>true</c> when authentication succeeds; otherwise <c>false</c> when the user quits.</returns>
     public async Task<bool> DisplayMenu()
     {
         string? currentErrorMessage = null;
@@ -24,10 +26,10 @@ public class MainMenu(IAuthService authService, UserContainer userContainer)
         {
             GameLogger.Info("Displaying startup menu.");
 
-            _ui.DrawMenu(currentErrorMessage);
+            MainMenuUi.DrawMenu(currentErrorMessage);
             currentErrorMessage = null;
 
-            var input = _ui.ReadKey();
+            var input = MainMenuUi.ReadKey();
             GameLogger.Debug($"User pressed key: '{input.Key}'");
 
             switch (input.Key)

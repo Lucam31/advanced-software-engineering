@@ -1,19 +1,15 @@
-using Shared;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace chess_client.UserInterface;
 
 /// <summary>
-/// Handles the visual representation and console interactions for the main menu.
+/// Renders the dashboard menu and handles related console input/output interactions.
 /// </summary>
 public class GameMenuUi
 {
     /// <summary>
-    /// Clears the screen and draws the main menu with a clean boxed layout.
+    /// Clears the screen and draws the dashboard menu.
     /// </summary>
-    public void DrawMainMenu(string? errorMessage = null)
+    /// <param name="errorMessage">Optional error message shown above the input prompt.</param>
+    public static void DrawMainMenu(string? errorMessage = null)
     {
         CliOutput.ClearTerminal();
         Console.WriteLine();
@@ -45,15 +41,18 @@ public class GameMenuUi
     /// <summary>
     /// Displays a generic status message to the user.
     /// </summary>
-    public void ShowMessage(string message)
+    /// <param name="message">Message text to display.</param>
+    public static void ShowMessage(string message)
     {
         Console.WriteLine();
         CliOutput.PrintConsoleNewline($"   ℹ {message}");
     }
 
     /// <summary>
-    /// Reads a key press asynchronously, allowing the action to be cancelled by background events.
+    /// Reads a key press asynchronously and supports cancellation for realtime background events.
     /// </summary>
+    /// <param name="token">Cancellation token used to interrupt waiting for input.</param>
+    /// <returns>The pressed key information.</returns>
     public async Task<ConsoleKeyInfo> ReadKeyAsync(CancellationToken token)
     {
         while (!token.IsCancellationRequested)

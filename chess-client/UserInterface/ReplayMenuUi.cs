@@ -10,9 +10,11 @@ namespace chess_client.UserInterface;
 public class ReplayMenuUi
 {
     /// <summary>
-    /// Clears the screen and draws the replay menu with a list of available games.
+    /// Clears the screen and draws the replay menu with selectable game entries.
     /// </summary>
-    public void DrawMenu(List<string> gameDisplays, string? errorMessage = null)
+    /// <param name="gameDisplays">Formatted game labels shown as numbered options.</param>
+    /// <param name="errorMessage">Optional error message shown above the input prompt.</param>
+    public static void DrawMenu(List<string> gameDisplays, string? errorMessage = null)
     {
         CliOutput.ClearTerminal();
         Console.WriteLine();
@@ -52,7 +54,8 @@ public class ReplayMenuUi
     /// <summary>
     /// Reads a single key press from the user without echoing it to the console.
     /// </summary>
-    public ConsoleKeyInfo ReadKey()
+    /// <returns>The pressed key information.</returns>
+    public static ConsoleKeyInfo ReadKey()
     {
         return Console.ReadKey(true);
     }

@@ -7,12 +7,12 @@ using LogLevel = Shared.Logger.LogLevel;
 namespace chess_client;
 
 /// <summary>
-/// The main entry point for the chess client application.
+/// Provides the console application entry point and orchestrates client startup and shutdown.
 /// </summary>
 internal static class Program
 {
     /// <summary>
-    /// The main method that runs the client application.
+    /// Configures logging, initializes services and menus, and runs the main application loop.
     /// </summary>
     private static async Task Main()
     {

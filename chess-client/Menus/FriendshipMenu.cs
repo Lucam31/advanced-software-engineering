@@ -3,22 +3,32 @@ using chess_client.States;
 using Shared.Logger;
 using Shared.WebSocketMessages;
 using chess_client.UserInterface;
-using System.Linq;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace chess_client.Menus;
 
+/// <summary>
+/// Represents the possible outcomes when leaving the friendship menu.
+/// </summary>
 public enum FriendshipMenuResult
 {
+    /// <summary>
+    /// User returned to the previous menu.
+    /// </summary>
     Back,
+
+    /// <summary>
+    /// User requested to quit the client.
+    /// </summary>
     Quit
 }
 
 /// <summary>
-/// Manages the friendship menu of the game.
+/// Coordinates friendship features such as searching users, listing friends, and creating friend games.
 /// </summary>
+/// <param name="userContainer">Shared user state that contains the active user id.</param>
+/// <param name="friendshipServices">Service for searching users and managing friendships.</param>
+/// <param name="gameService">Service used to create games against friends.</param>
+/// <param name="webSocketService">WebSocket connection used for realtime friendship and game events.</param>
 public class FriendshipMenu(
     UserContainer userContainer,
     FriendshipServices friendshipServices,
@@ -29,6 +39,13 @@ public class FriendshipMenu(
 
     private volatile bool _refreshRequested = false;
 
+    /// <summary>
+    /// Displays the friendship menu and routes user actions to search or list flows.
+    /// </summary>
+    /// <returns>
+    /// <see cref="FriendshipMenuResult.Back"/> when the user navigates back,
+    /// or <see cref="FriendshipMenuResult.Quit"/> when the user exits the client.
+    /// </returns>
     public async Task<FriendshipMenuResult> DisplayMenu()
     {
         var state = new FriendshipMenuState();
@@ -45,10 +62,10 @@ public class FriendshipMenu(
         {
             GameLogger.Info("Displaying friendship menu.");
 
-            _ui.DrawMainMenu(currentErrorMessage);
+            FriendshipMenuUi.DrawMainMenu(currentErrorMessage);
             currentErrorMessage = null;
 
-            var input = _ui.ReadKey();
+            var input = FriendshipMenuUi.ReadKey();
             GameLogger.Debug($"User pressed key: '{input.Key}'");
 
             switch (input.Key)
@@ -82,6 +99,13 @@ public class FriendshipMenu(
         }
     }
 
+    /// <summary>
+    /// Displays the user search flow and optionally sends a friend request.
+    /// </summary>
+    /// <returns>
+    /// <see cref="FriendshipMenuResult.Back"/> when the flow finishes or the user goes back,
+    /// or <see cref="FriendshipMenuResult.Quit"/> when the user exits the client.
+    /// </returns>
     private async Task<FriendshipMenuResult> SearchView()
     {
         string? currentErrorMessage = null;
@@ -90,10 +114,10 @@ public class FriendshipMenu(
         {
             GameLogger.Info("Displaying SearchView in friendship menu.");
 
-            _ui.DrawSearchPrompt(currentErrorMessage);
+            FriendshipMenuUi.DrawSearchPrompt(currentErrorMessage);
             currentErrorMessage = null;
 
-            var input = _ui.ReadInput();
+            var input = FriendshipMenuUi.ReadInput();
             GameLogger.Debug($"User entered search input: '{input}'");
 
             if (input?.ToUpper() == "Q" || input?.ToUpper() == "QUIT") return FriendshipMenuResult.Quit;
@@ -108,12 +132,12 @@ public class FriendshipMenu(
                 _ui.DrawSearchResults(users, searchResultError);
                 searchResultError = null;
 
-                var num = _ui.ReadInput();
+                var num = FriendshipMenuUi.ReadInput();
                 GameLogger.Debug($"User entered list selection: '{num}'");
 
                 if (num?.ToUpper() == "Q" || num?.ToUpper() == "QUIT") return FriendshipMenuResult.Quit;
                 if (num?.ToUpper() == "B" || num?.ToUpper() == "BACK" || string.IsNullOrEmpty(num))
-                    break; // Bricht die Schleife ab, geht zurück zur Such-Eingabe
+                    break;
 
                 if (int.TryParse(num, out var index) && index > 0 && index <= users.Count)
                 {
@@ -121,8 +145,8 @@ public class FriendshipMenu(
                     GameLogger.Info($"User selected to add friend: '{selectedUser}'");
 
                     await friendshipServices.SendFriendRequest(userContainer.Id, selectedUser);
-                    _ui.ShowMessageAndWait($"Friend request sent to {selectedUser}.");
-                    return FriendshipMenuResult.Back; // Nach erfolgreicher Anfrage zurück ins Friends-Hauptmenü
+                    FriendshipMenuUi.ShowMessageAndWait($"Friend request sent to {selectedUser}.");
+                    return FriendshipMenuResult.Back;
                 }
                 else
                 {
@@ -133,6 +157,14 @@ public class FriendshipMenu(
         }
     }
 
+    /// <summary>
+    /// Displays the friend list flow and handles delete/play actions for selected friends.
+    /// </summary>
+    /// <param name="state">Active friendship menu state used to receive realtime start-game events.</param>
+    /// <returns>
+    /// <see cref="FriendshipMenuResult.Back"/> when the user returns to the previous menu,
+    /// or <see cref="FriendshipMenuResult.Quit"/> when the user exits the client.
+    /// </returns>
     private async Task<FriendshipMenuResult> ListView(FriendshipMenuState state)
     {
         var friends = await friendshipServices.ListFriends(userContainer.Id);
@@ -144,10 +176,10 @@ public class FriendshipMenu(
 
             var friendNames = friends.Select(f => (string)f.Name).ToList();
 
-            _ui.DrawListView(friendNames, currentErrorMessage);
+            FriendshipMenuUi.DrawListView(friendNames, currentErrorMessage);
             currentErrorMessage = null;
 
-            var input = _ui.ReadInput()?.ToUpper();
+            var input = FriendshipMenuUi.ReadInput()?.ToUpper();
 
             if (string.IsNullOrEmpty(input))
             {
@@ -182,7 +214,7 @@ public class FriendshipMenu(
                 case 'D':
                     GameLogger.Info($"Removing friend '{selected.Name}'.");
                     await friendshipServices.RemoveFriend(selected);
-                    _ui.ShowMessageAndWait($"Removed {selected.Name}.");
+                    FriendshipMenuUi.ShowMessageAndWait($"Removed {selected.Name}.");
                     friends = await friendshipServices.ListFriends(userContainer.Id);
                     break;
                 case 'P':
@@ -199,17 +231,17 @@ public class FriendshipMenu(
                             cts.Cancel();
                         };
 
-                        _ui.ShowMessage("Waiting for opponent to accept... Press B to cancel.");
+                        FriendshipMenuUi.ShowMessage("Waiting for opponent to accept... Press B to cancel.");
 
                         try
                         {
-                            var cancelInput = (await _ui.ReadInputAsync(cts.Token))?.ToUpper();
+                            var cancelInput = (await FriendshipMenuUi.ReadInputAsync(cts.Token))?.ToUpper();
                             if (cancelInput == "Q") return FriendshipMenuResult.Quit;
                             if (cancelInput == "B" || cancelInput == "BACK")
                             {
                                 GameLogger.Info("User cancelled game invitation.");
                                 // TODO: Send cancel message to server
-                                _ui.ShowMessageAndWait("Game invitation cancelled.");
+                                FriendshipMenuUi.ShowMessageAndWait("Game invitation cancelled.");
                                 break;
                             }
                         }
@@ -220,7 +252,7 @@ public class FriendshipMenu(
                                 GameLogger.Info("Starting game with ID " + pendingStartGame.GameId);
                                 var game = new GameLogic();
                                 await game.StartGame(webSocketService, pendingStartGame);
-                                return FriendshipMenuResult.Back; // Nach dem Spiel zurück ins Friends-Menü
+                                return FriendshipMenuResult.Back;
                             }
                         }
                     }

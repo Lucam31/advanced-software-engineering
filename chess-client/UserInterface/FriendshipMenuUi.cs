@@ -1,9 +1,3 @@
-using Shared;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace chess_client.UserInterface;
 
 /// <summary>
@@ -11,7 +5,11 @@ namespace chess_client.UserInterface;
 /// </summary>
 public class FriendshipMenuUi
 {
-    public void DrawMainMenu(string? errorMessage = null)
+    /// <summary>
+    /// Draws the friendship main menu.
+    /// </summary>
+    /// <param name="errorMessage">Optional error message shown above the input prompt.</param>
+    public static void DrawMainMenu(string? errorMessage = null)
     {
         CliOutput.ClearTerminal();
         Console.WriteLine();
@@ -39,7 +37,11 @@ public class FriendshipMenuUi
         CliOutput.PrintConsoleNewline("   Your choice: ");
     }
 
-    public void DrawSearchPrompt(string? errorMessage = null)
+    /// <summary>
+    /// Draws the user search prompt in the friendship section.
+    /// </summary>
+    /// <param name="errorMessage">Optional error message shown above the input prompt.</param>
+    public static void DrawSearchPrompt(string? errorMessage = null)
     {
         CliOutput.ClearTerminal();
         Console.WriteLine();
@@ -59,6 +61,11 @@ public class FriendshipMenuUi
         Console.Write("   > ");
     }
 
+    /// <summary>
+    /// Displays search results and prompts for selecting a user to add as a friend.
+    /// </summary>
+    /// <param name="users">Usernames returned by the current search.</param>
+    /// <param name="errorMessage">Optional error message shown above the input prompt.</param>
     public void DrawSearchResults(List<string> users, string? errorMessage = null)
     {
         CliOutput.ClearTerminal();
@@ -72,7 +79,7 @@ public class FriendshipMenuUi
         }
         else
         {
-            for (int i = 0; i < users.Count; i++)
+            for (var i = 0; i < users.Count; i++)
             {
                 CliOutput.PrintConsoleNewline($"   [{i + 1}] {users[i]}");
             }
@@ -93,7 +100,12 @@ public class FriendshipMenuUi
         Console.Write("   > ");
     }
 
-    public void DrawListView(List<string> friendNames, string? errorMessage = null)
+    /// <summary>
+    /// Displays the friend list and available actions for each entry.
+    /// </summary>
+    /// <param name="friendNames">Names of friends to display.</param>
+    /// <param name="errorMessage">Optional error message shown above the input prompt.</param>
+    public static void DrawListView(List<string> friendNames, string? errorMessage = null)
     {
         CliOutput.ClearTerminal();
         Console.WriteLine();
@@ -127,7 +139,12 @@ public class FriendshipMenuUi
         Console.Write("   > ");
     }
 
-    public void ShowMessage(string message, bool isError = false)
+    /// <summary>
+    /// Displays a message with optional error styling.
+    /// </summary>
+    /// <param name="message">Message to display.</param>
+    /// <param name="isError"><c>true</c> to display the message as an error; otherwise informational styling is used.</param>
+    public static void ShowMessage(string message, bool isError = false)
     {
         Console.WriteLine();
         if (isError) Console.ForegroundColor = ConsoleColor.Red;
@@ -135,7 +152,12 @@ public class FriendshipMenuUi
         Console.ResetColor();
     }
 
-    public void ShowMessageAndWait(string message, bool isError = false)
+    /// <summary>
+    /// Displays a message and waits for the user to press ENTER.
+    /// </summary>
+    /// <param name="message">Message to display.</param>
+    /// <param name="isError"><c>true</c> to display the message as an error; otherwise informational styling is used.</param>
+    public static void ShowMessageAndWait(string message, bool isError = false)
     {
         ShowMessage(message, isError);
         Console.WriteLine();
@@ -143,17 +165,30 @@ public class FriendshipMenuUi
         Console.ReadLine();
     }
 
-    public ConsoleKeyInfo ReadKey()
+    /// <summary>
+    /// Reads a single key press without echoing it to the console.
+    /// </summary>
+    /// <returns>The pressed key information.</returns>
+    public static ConsoleKeyInfo ReadKey()
     {
         return Console.ReadKey(true);
     }
 
-    public string? ReadInput()
+    /// <summary>
+    /// Reads a line of input and trims surrounding whitespace.
+    /// </summary>
+    /// <returns>The trimmed input or <c>null</c> when no input is available.</returns>
+    public static string? ReadInput()
     {
         return Console.ReadLine()?.Trim();
     }
 
-    public async Task<string?> ReadInputAsync(CancellationToken token)
+    /// <summary>
+    /// Reads a line of input asynchronously and supports cancellation.
+    /// </summary>
+    /// <param name="token">Cancellation token used to interrupt waiting for input.</param>
+    /// <returns>The entered input or <c>null</c>.</returns>
+    public static async Task<string?> ReadInputAsync(CancellationToken token)
     {
         return await ConsoleHelper.ReadLineAsync(token);
     }

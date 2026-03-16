@@ -2,14 +2,11 @@ using chess_client.Services;
 using chess_client.States;
 using Shared.Logger;
 using chess_client.UserInterface;
-using System.Linq;
-using System;
-using System.Threading.Tasks;
 
 namespace chess_client.Menus;
 
 /// <summary>
-/// Manages the menu of past games and the replay function.
+/// Displays past games and lets the user open a replay.
 /// </summary>
 public class ReplayMenu
 {
@@ -18,6 +15,11 @@ public class ReplayMenu
     private readonly ReplayService _replayService;
     private readonly ReplayMenuUi _ui = new();
 
+    /// <summary>
+    /// Initializes a replay menu for the currently authenticated user.
+    /// </summary>
+    /// <param name="userContainer">Shared user state containing the active user id.</param>
+    /// <param name="webSocketService">WebSocket connection used to transition into replay menu state.</param>
     public ReplayMenu(UserContainer userContainer, WebSocketService webSocketService)
     {
         _userContainer = userContainer;
@@ -26,7 +28,7 @@ public class ReplayMenu
     }
 
     /// <summary>
-    /// Displays the replay menu and handles user input.
+    /// Displays recent games and handles selection input until the user exits the replay menu.
     /// </summary>
     public async Task DisplayMenu()
     {
@@ -46,10 +48,10 @@ public class ReplayMenu
                 .Select(g => $"{g.WhitePlayerUsername} vs {g.BlackPlayerUsername}")
                 .ToList();
 
-            _ui.DrawMenu(gameStrings, currentErrorMessage);
+            ReplayMenuUi.DrawMenu(gameStrings, currentErrorMessage);
             currentErrorMessage = null;
 
-            var input = _ui.ReadKey();
+            var input = ReplayMenuUi.ReadKey();
 
             if (input.Key == ConsoleKey.Q)
             {

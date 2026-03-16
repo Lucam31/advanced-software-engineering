@@ -10,14 +10,38 @@ public class GameUi
     private const int BoardWidth = 36;
     private const int MiddleColumnWidth = 38;
 
+    /// <summary>
+    /// Gets or sets the display name for the white player.
+    /// </summary>
     public string WhitePlayerName { get; set; } = "Player 1 (White)";
+
+    /// <summary>
+    /// Gets or sets the display name for the black player.
+    /// </summary>
     public string BlackPlayerName { get; set; } = "Player 2 (Black)";
+
+    /// <summary>
+    /// Gets or sets the status message shown in the information column.
+    /// </summary>
     public string StatusMessage { get; set; } = "Game starting...";
     private List<string> WhiteMoves { get; } = [];
     private List<string> BlackMoves { get; } = [];
+    /// <summary>
+    /// Gets or sets the current error message displayed below the board.
+    /// </summary>
     public string ErrorMessage { get; set; } = "";
+
+    /// <summary>
+    /// Gets or sets the prompt text shown for the next user action.
+    /// </summary>
     public string PromptMessage { get; set; } = "";
 
+    /// <summary>
+    /// Adds a move to the local move history displayed in the side panel.
+    /// </summary>
+    /// <param name="from">Source square of the move (for example, e2).</param>
+    /// <param name="to">Destination square of the move (for example, e4).</param>
+    /// <param name="isWhite"><c>true</c> if the move belongs to white; otherwise it is added to black history.</param>
     public void AddMoveToHistory(string from, string to, bool isWhite)
     {
         var move = $"{from}{to}";
@@ -28,6 +52,11 @@ public class GameUi
             BlackMoves.Add(move);
     }
 
+    /// <summary>
+    /// Renders the full game screen, including board, status information, and move/capture history.
+    /// </summary>
+    /// <param name="board">Current board state to render.</param>
+    /// <param name="isWhitePerspective"><c>true</c> to render ranks/files from white's perspective; otherwise from black's perspective.</param>
     public void DrawGameScreen(Gameboard board, bool isWhitePerspective)
     {
         Console.Clear();

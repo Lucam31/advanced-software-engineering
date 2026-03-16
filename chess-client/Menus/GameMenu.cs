@@ -3,21 +3,32 @@ using chess_client.States;
 using Shared.Logger;
 using Shared.WebSocketMessages;
 using chess_client.UserInterface;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace chess_client.Menus;
 
+/// <summary>
+/// Represents the possible outcomes when leaving the dashboard menu.
+/// </summary>
 public enum GameMenuResult
 {
+    /// <summary>
+    /// User requested to log out and return to the startup flow.
+    /// </summary>
     Logout,
+
+    /// <summary>
+    /// User requested to quit the client.
+    /// </summary>
     Quit
 }
 
 /// <summary>
-/// Manages the main menu logic, state transitions, and server communication.
+/// Coordinates the dashboard menu, including navigation, WebSocket-driven events, and game starts.
 /// </summary>
+/// <param name="userContainer">Shared user state used by nested menus.</param>
+/// <param name="friendshipMenu">Friendship menu used when the user opens friend features.</param>
+/// <param name="gameService">Service for creating, accepting, and managing games.</param>
+/// <param name="webSocketService">WebSocket connection used for realtime invitations and game start events.</param>
 public class GameMenu(
     UserContainer userContainer,
     FriendshipMenu friendshipMenu,
@@ -27,8 +38,12 @@ public class GameMenu(
     private readonly GameMenuUi _ui = new();
 
     /// <summary>
-    /// Displays the main menu and handles user input
+    /// Displays the dashboard menu and processes user input until logout or quit.
     /// </summary>
+    /// <returns>
+    /// <see cref="GameMenuResult.Logout"/> when the user logs out,
+    /// or <see cref="GameMenuResult.Quit"/> when the user exits the client.
+    /// </returns>
     public async Task<GameMenuResult> DisplayMainMenu()
     {
         string? currentErrorMessage = null;
@@ -58,7 +73,7 @@ public class GameMenu(
 
             GameLogger.Info("Displaying main menu.");
 
-            _ui.DrawMainMenu(currentErrorMessage);
+            GameMenuUi.DrawMainMenu(currentErrorMessage);
             currentErrorMessage = null;
 
             ConsoleKeyInfo input;
@@ -71,7 +86,7 @@ public class GameMenu(
                 if (pendingInvitation != null)
                 {
                     GameLogger.Info("Received game invitation.");
-                    _ui.ShowMessage("Received game invitation. Accepting...");
+                    GameMenuUi.ShowMessage("Received game invitation. Accepting...");
                     await gameService.AcceptGameInvitation(pendingInvitation.GameId);
 
                     while (pendingStartGame == null)
