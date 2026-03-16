@@ -1,7 +1,4 @@
-using Shared;
-using System;
-
-namespace chess_client.UserInterface; // oder chess_client.Menus, je nach deiner Ordnerstruktur
+namespace chess_client.UserInterface;
 
 /// <summary>
 /// Handles the visual representation and console interactions for authentication (Login/Register).
@@ -9,101 +6,133 @@ namespace chess_client.UserInterface; // oder chess_client.Menus, je nach deiner
 public class AuthMenuUi
 {
     /// <summary>
-    /// Draws the main authentication menu.
+    /// Draws the main authentication menu with a clean boxed layout.
     /// </summary>
     public void DrawMainMenu(string? errorMessage = null)
     {
         CliOutput.ClearTerminal();
-        CliOutput.PrintConsoleNewline(ConsoleHelper.LoginMenu);
+        CliOutput.PrintConsoleNewline("        === AUTHENTICATION ===");
+        Console.WriteLine();
+
+        CliOutput.PrintConsoleNewline("   ┌──────────────────────────────┐");
+        CliOutput.PrintConsoleNewline("   │       LOGIN & REGISTER       │");
+        CliOutput.PrintConsoleNewline("   ├──────────────────────────────┤");
+        CliOutput.PrintConsoleNewline("   │  [L] Login                   │");
+        CliOutput.PrintConsoleNewline("   │  [R] Register                │");
+        CliOutput.PrintConsoleNewline("   │  [B] Back to Main Menu       │");
+        CliOutput.PrintConsoleNewline("   │  [Q] Quit Game               │");
+        CliOutput.PrintConsoleNewline("   └──────────────────────────────┘");
+        Console.WriteLine();
 
         if (!string.IsNullOrEmpty(errorMessage))
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            CliOutput.PrintConsoleNewline(errorMessage);
+            CliOutput.PrintConsoleNewline($"   ⚠ {errorMessage}");
             Console.ResetColor();
             Console.WriteLine();
         }
 
-        CliOutput.PrintConsoleNewline("Please enter your choice: ");
-    }
-
-    public string? ReadInput()
-    {
-        return Console.ReadLine()?.Trim();
+        CliOutput.PrintConsoleNewline("   Your choice: ");
     }
 
     /// <summary>
-    /// Prompts the user for a username until a non-empty string is provided.
+    /// Prompts the user for a username.
     /// </summary>
-    public string PromptForUsername(string prompt, string errorPrompt)
+    public string PromptForUsername(string actionTitle)
     {
-        string? username;
-        var currentPrompt = prompt;
+        string? username = null;
+        string? errorMessage = null;
 
         while (true)
         {
             CliOutput.ClearTerminal();
-            CliOutput.PrintConsoleNewline(currentPrompt);
+            Console.WriteLine();
+            CliOutput.PrintConsoleNewline($"   === {actionTitle.ToUpper()} ===");
+            Console.WriteLine();
+
+            if (!string.IsNullOrEmpty(errorMessage))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                CliOutput.PrintConsoleNewline($"   ⚠ {errorMessage}");
+                Console.ResetColor();
+                Console.WriteLine();
+            }
+
+            CliOutput.PrintConsoleNewline("   Username: ");
             username = Console.ReadLine()?.Trim();
 
             if (!string.IsNullOrEmpty(username)) break;
 
-            currentPrompt = errorPrompt;
+            errorMessage = "Username cannot be empty.";
         }
 
         return username;
     }
 
     /// <summary>
-    /// Prompts the user for a password until a non-empty string is provided.
+    /// Prompts the user for a password, showing the entered username.
     /// </summary>
-    public string PromptForPassword(string prompt, string errorPrompt)
+    public string PromptForPassword(string actionTitle, string enteredUsername)
     {
-        string? password;
-        var currentPrompt = prompt;
+        string? password = null;
+        string? errorMessage = null;
 
         while (true)
         {
             CliOutput.ClearTerminal();
-            password = CliOutput.ReadPassword(currentPrompt);
+            Console.WriteLine();
+            CliOutput.PrintConsoleNewline($"   === {actionTitle.ToUpper()} ===");
+            Console.WriteLine();
+
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            CliOutput.PrintConsoleNewline($"   Username: {enteredUsername}");
+            Console.ResetColor();
+            Console.WriteLine();
+
+            if (!string.IsNullOrEmpty(errorMessage))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                CliOutput.PrintConsoleNewline($"   ⚠ {errorMessage}");
+                Console.ResetColor();
+                Console.WriteLine();
+            }
+
+            password = CliOutput.ReadPassword("   Password: ");
 
             if (!string.IsNullOrEmpty(password)) break;
 
-            currentPrompt = errorPrompt;
+            errorMessage = "Password cannot be empty.";
         }
 
         return password;
     }
 
-    /// <summary>
-    /// Shows a message and waits for the user to press a key.
-    /// </summary>
     public void ShowMessageAndWait(string message, bool isError = false)
     {
-        CliOutput.ClearTerminal();
-        
-        if (isError) Console.ForegroundColor = ConsoleColor.Red;
-        CliOutput.PrintConsoleNewline(message);
-        Console.ResetColor();
-        
         Console.WriteLine();
-        CliOutput.PrintConsoleNewline("Press any key to return to the menu...");
-        Console.ReadKey(true);
+        if (isError) Console.ForegroundColor = ConsoleColor.Red;
+        CliOutput.PrintConsoleNewline($"   {(isError ? "⚠" : "ℹ")} {message}");
+        Console.ResetColor();
+
+        Console.WriteLine();
+        CliOutput.PrintConsoleNewline("   Press ENTER to return...");
+        Console.ReadLine();
     }
 
-    /// <summary>
-    /// Shows a success message in green and waits for the user to press a key.
-    /// </summary>
     public void ShowSuccessAndWait(string message)
     {
-        CliOutput.ClearTerminal();
-        
-        Console.ForegroundColor = ConsoleColor.Green;
-        CliOutput.PrintConsoleNewline(message);
-        Console.ResetColor();
-        
         Console.WriteLine();
-        CliOutput.PrintConsoleNewline("Press any key to continue...");
-        Console.ReadKey(true);
+        Console.ForegroundColor = ConsoleColor.Green;
+        CliOutput.PrintConsoleNewline($"   ✔ {message}");
+        Console.ResetColor();
+
+        Console.WriteLine();
+        CliOutput.PrintConsoleNewline("   Press ENTER to continue...");
+        Console.ReadLine();
+    }
+
+    public ConsoleKeyInfo ReadKey()
+    {
+        return Console.ReadKey(true);
     }
 }

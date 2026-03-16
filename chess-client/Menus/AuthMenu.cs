@@ -1,21 +1,23 @@
 using chess_client.Services;
 using Shared.Logger;
 using chess_client.UserInterface;
+using System;
+using System.Threading.Tasks;
 
 namespace chess_client.Menus;
 
-/// <summary>
-/// Manages the authentication logic (Login and Registration).
-/// </summary>
+public enum AuthResult
+{
+    Success,
+    Back,
+    Quit
+}
+
 public class AuthMenu(IAuthService authService, UserContainer userContainer)
 {
     private readonly AuthMenuUi _ui = new();
 
-    /// <summary>
-    /// Displays the auth menu and handles logic flow.
-    /// </summary>
-    /// <returns>True if login was successful, false otherwise.</returns>
-    public async Task<bool> DisplayMenu()
+    public async Task<AuthResult> DisplayMenu()
     {
         string? currentErrorMessage = null;
 
@@ -24,34 +26,36 @@ public class AuthMenu(IAuthService authService, UserContainer userContainer)
             GameLogger.Info("Displaying auth menu.");
 
             _ui.DrawMainMenu(currentErrorMessage);
-            currentErrorMessage = null; // Fehler für den nächsten Durchlauf zurücksetzen
+            currentErrorMessage = null;
 
-            var input = _ui.ReadInput()?.ToUpper();
-            GameLogger.Debug($"User entered menu input: '{input}'");
+            var input = _ui.ReadKey();
+            GameLogger.Debug($"User pressed key: '{input.Key}'");
 
-            switch (input)
+            switch (input.Key)
             {
-                case "L":
-                case "LOGIN":
+                case ConsoleKey.L:
                     GameLogger.Info("User selected 'Login'.");
                     var loginSuccess = await LoginFlow();
-                    if (loginSuccess) return true;
+                    if (loginSuccess) return AuthResult.Success;
                     break;
 
-                case "R":
-                case "REGISTER":
+                case ConsoleKey.R:
                     GameLogger.Info("User selected 'Register'.");
                     await RegisterFlow();
                     break;
 
-                case "Q":
-                case "QUIT":
+                case ConsoleKey.B:
+                case ConsoleKey.Escape:
+                    GameLogger.Info("User selected 'Back'.");
+                    return AuthResult.Back;
+
+                case ConsoleKey.Q:
                     GameLogger.Info("User selected 'Quit'.");
-                    return false;
+                    return AuthResult.Quit;
 
                 default:
-                    GameLogger.Warning($"Invalid menu input: '{input}'");
-                    currentErrorMessage = "Invalid input. Please try again.";
+                    GameLogger.Warning($"Invalid menu input: '{input.Key}'");
+                    currentErrorMessage = "Invalid input. Please press L, R, B, or Q.";
                     break;
             }
         }
@@ -61,13 +65,8 @@ public class AuthMenu(IAuthService authService, UserContainer userContainer)
     {
         GameLogger.Info("Displaying login view.");
 
-        var username = _ui.PromptForUsername(
-            "Please enter your username:\n> ",
-            "Username cannot be empty. Please try again:\n> ");
-
-        var password = _ui.PromptForPassword(
-            "Please enter your password:\n> ",
-            "Password cannot be empty. Please try again:\n> ");
+        var username = _ui.PromptForUsername("Login");
+        var password = _ui.PromptForPassword("Login", username);
 
         GameLogger.Info($"Attempting login for user '{username}'...");
 
@@ -89,13 +88,8 @@ public class AuthMenu(IAuthService authService, UserContainer userContainer)
     {
         GameLogger.Info("Displaying registration view.");
 
-        var username = _ui.PromptForUsername(
-            "Please enter your desired username:\n> ",
-            "Username cannot be empty. Please try again:\n> ");
-
-        var password = _ui.PromptForPassword(
-            "Please enter your desired password:\n> ",
-            "Password cannot be empty. Please try again:\n> ");
+        var username = _ui.PromptForUsername("Register");
+        var password = _ui.PromptForPassword("Register", username);
 
         GameLogger.Info($"Registering new user '{username}'...");
 
