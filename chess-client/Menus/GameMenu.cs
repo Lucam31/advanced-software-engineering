@@ -1,42 +1,29 @@
 using chess_client.Services;
 using chess_client.States;
-using Shared;
 using Shared.Logger;
 using Shared.WebSocketMessages;
+using chess_client.UserInterface;
 
 namespace chess_client.Menus;
 
 /// <summary>
-/// Manages the main menu of the game
+/// Manages the main menu logic, state transitions, and server communication.
 /// </summary>
-public class GameMenu
+public class GameMenu(
+    UserContainer userContainer,
+    FriendshipMenu friendshipMenu,
+    IGameService gameService,
+    WebSocketService webSocketService)
 {
-    private readonly UserContainer _userContainer;
-    private readonly FriendshipMenu _friendshipMenu;
-    private readonly WebSocketService _webSocketService;
-    private readonly IGameService _gameService;
-    private volatile bool _refreshRequested = false;
-    
-    /// <summary>
-    /// Initializes a new instance of the GameMenu class
-    /// </summary>
-    /// <param name="userContainer">The user container</param>
-    /// <param name="friendshipMenu">The friendship menu</param>
-    /// <param name="gameService">The game service</param>
-    /// <param name="webSocketService">The WebSocket service</param>
-    public GameMenu(UserContainer userContainer, FriendshipMenu friendshipMenu, IGameService gameService, WebSocketService webSocketService)
-    {
-        _userContainer = userContainer;
-        _friendshipMenu = friendshipMenu;
-        _gameService = gameService;
-        _webSocketService = webSocketService;
-    }
-    
+    private readonly GameMenuUi _ui = new();
+
     /// <summary>
     /// Displays the main menu and handles user input
     /// </summary>
     public async Task DisplayMainMenu()
     {
+        string? currentErrorMessage = null;
+
         while (true)
         {
             var state = new GameMenuState();
@@ -49,8 +36,7 @@ public class GameMenu
                 pendingInvitation = payload;
                 cts.Cancel();
             };
-            _webSocketService.TransitionTo(state);
-            
+
             StartGamePayload? pendingStartGame = null;
             state.OnStartGame += payload =>
             {
@@ -58,94 +44,89 @@ public class GameMenu
                 pendingStartGame = payload;
                 cts.Cancel();
             };
-            
+
+            webSocketService.TransitionTo(state);
+
             GameLogger.Info("Displaying main menu.");
 
-            CliOutput.ClearTerminal();
-            CliOutput.PrintConsoleNewline(ConsoleHelper.GameMenu);
-            CliOutput.PrintConsoleNewline("Please enter your choice or press Enter to refresh: ");
-            
+            _ui.DrawMainMenu(currentErrorMessage);
+            currentErrorMessage = null;
+
             string? input = null;
             try
             {
-                input = (await ConsoleHelper.ReadLineAsync(cts.Token))?.ToUpper();
+                input = (await _ui.ReadInputAsync(cts.Token))?.ToUpper();
             }
             catch (OperationCanceledException)
             {
-                GameLogger.Info("Received game invitation.");
-                await _gameService.AcceptGameInvitation(pendingInvitation.GameId);
-                
-                // wait for start game message
-                while (true)
+                if (pendingInvitation != null)
                 {
-                    if (pendingStartGame != null)
+                    GameLogger.Info("Received game invitation.");
+                    _ui.ShowMessage("Received game invitation. Accepting...");
+                    await gameService.AcceptGameInvitation(pendingInvitation.GameId);
+
+                    while (pendingStartGame == null)
                     {
-                        GameLogger.Info("Starting game with ID " + pendingStartGame.GameId);
-                        var game = new GameLogic();
-                        await game.StartGame(_webSocketService, pendingStartGame);
-                        break;
+                        await Task.Delay(50);
                     }
+
+                    GameLogger.Info("Starting game with ID " + pendingStartGame.GameId);
+                    var game = new GameLogic();
+                    await game.StartGame(webSocketService, pendingStartGame);
                 }
+                else if (pendingStartGame != null)
+                {
+                    GameLogger.Info("Starting game with ID " + pendingStartGame.GameId);
+                    var game = new GameLogic();
+                    await game.StartGame(webSocketService, pendingStartGame);
+                }
+
                 continue;
             }
+
             GameLogger.Debug($"User entered menu input: '{input}'");
-            
+
             switch (input)
             {
                 case "P":
                 case "PLAY":
-                    CliOutput.PrintConsoleNewline("Entering matchmaking queue...");
-                    await _gameService.SearchGame();
+                    // NEU: Vollständig gekapselter Aufruf des Matchmaking-Menüs
+                    var matchmakingMenu = new MatchmakingMenu(gameService, webSocketService);
                     
-                    while (true)
+                    // Wir übergeben das Token und eine Funktion, um im Abbruchs-Fall an den Payload zu kommen
+                    var startGamePayload = await matchmakingMenu.EnterQueueAsync(cts.Token, () => pendingStartGame);
+
+                    // Wenn ein Spiel gefunden wurde (Rückgabe ist nicht null)
+                    if (startGamePayload != null)
                     {
-                        CliOutput.PrintConsoleNewline("Press Q to quit matchmaking queue.");
-                        input = null;
-                        try
-                        {
-                            input = (await ConsoleHelper.ReadLineAsync(cts.Token))?.Trim().ToUpper();
-                            if (input == "Q")
-                            {
-                                var cancelMessage = new WebSocketMessage
-                                {
-                                    Type = MessageType.CancelSearch,
-                                    Payload = null
-                                };
-                                await _webSocketService.SendAsync(cancelMessage);
-                                break;
-                            }
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            if (pendingStartGame != null)
-                            {
-                                GameLogger.Info("Starting game with ID " + pendingStartGame.GameId);
-                                var game = new GameLogic();
-                                await game.StartGame(_webSocketService, pendingStartGame);
-                                break;
-                            }
-                        }
+                        GameLogger.Info("Starting game with ID " + startGamePayload.GameId);
+                        var game = new GameLogic();
+                        await game.StartGame(webSocketService, startGamePayload);
                     }
                     break;
+
                 case "F":
                 case "FRIENDS":
                     GameLogger.Info("User selected 'Friends'.");
-                    await _friendshipMenu.DisplayMenu();
-                    continue;
+                    await friendshipMenu.DisplayMenu();
+                    break;
+
                 case "G":
                 case "GAMES":
                     GameLogger.Info("User selected 'Games'.");
-                    var replayMenu = new ReplayMenu(_userContainer, _webSocketService);
+                    var replayMenu = new ReplayMenu(userContainer, webSocketService);
                     await replayMenu.DisplayMenu();
-                    continue;
+                    break;
+
                 case "Q":
                 case "QUIT":
                     GameLogger.Info("User selected 'Quit'.");
                     return;
+
                 default:
                     GameLogger.Warning($"Invalid menu input: '{input}'");
-                    CliOutput.PrintConsoleNewline("Invalid input. Please try again.");
-                    continue;
+                    currentErrorMessage = "Invalid input. Please try again.";
+                    break;
             }
         }
     }

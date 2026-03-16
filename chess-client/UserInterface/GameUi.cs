@@ -1,37 +1,40 @@
 using Shared;
 
-namespace chess_client;
+namespace chess_client.UserInterface;
 
 /// <summary>
-/// Renders the command-line chess game screen.
-///
-/// The UI consists of three aligned areas: the board on the left,
-/// match/status information in the middle, and captured pieces plus move history on the right.
-/// Rendering supports both White and Black perspectives.
+/// Manages the UI state and renders the command-line chess game screen.
 /// </summary>
-public static class GameUi
+public class GameUi
 {
     private const int BoardWidth = 36;
     private const int MiddleColumnWidth = 38;
 
-    /// <summary>
-    /// Clears the console and draws one full game frame.
-    ///
-    /// The frame combines board rows with two side panels and keeps all columns aligned by
-    /// iterating over the largest panel height.
-    /// </summary>
-    /// <param name="board">Current board state, including active and captured pieces.</param>
-    /// <param name="stats">Presentation data such as player names, status text, and move history.</param>
-    /// <param name="isWhitePerspective">
-    /// <see langword="true"/> to render from White's viewpoint; otherwise render from Black's viewpoint.
-    /// </param>
-    public static void DrawGameScreen(Gameboard board, GameStats stats, bool isWhitePerspective)
+    public string WhitePlayerName { get; set; } = "Player 1 (White)";
+    public string BlackPlayerName { get; set; } = "Player 2 (Black)";
+    public string StatusMessage { get; set; } = "Game starting...";
+    private List<string> WhiteMoves { get; } = [];
+    private List<string> BlackMoves { get; } = [];
+    public string ErrorMessage { get; set; } = "";
+    public string PromptMessage { get; set; } = "";
+
+    public void AddMoveToHistory(string from, string to, bool isWhite)
+    {
+        var move = $"{from}{to}";
+
+        if (isWhite)
+            WhiteMoves.Add(move);
+        else
+            BlackMoves.Add(move);
+    }
+
+    public void DrawGameScreen(Gameboard board, bool isWhitePerspective)
     {
         Console.Clear();
         Console.WriteLine();
 
-        var middleLines = GenerateMiddleColumnLines(stats);
-        var rightLines = GenerateRightColumnLines(board, stats);
+        var middleLines = GenerateMiddleColumnLines();
+        var rightLines = GenerateRightColumnLines(board);
 
         var maxLines = Math.Max(10, Math.Max(middleLines.Count, rightLines.Count));
 
@@ -47,24 +50,40 @@ public static class GameUi
         }
 
         Console.WriteLine();
+        Console.WriteLine(new string('─', 85));
+
+        if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(ErrorMessage);
+            Console.ResetColor();
+        }
+        else
+        {
+            Console.WriteLine();
+        }
+
+        if (!string.IsNullOrEmpty(PromptMessage))
+        {
+            Console.Write(PromptMessage);
+        }
+        else
+        {
+            Console.WriteLine();
+        }
     }
 
-    /// <summary>
-    /// Prints a single line of the board column.
-    ///
-    /// Index <c>0</c> and <c>9</c> are the file labels, <c>1</c>-<c>8</c> are board ranks,
-    /// and other indices print blank padding to keep side panels aligned.
-    /// </summary>
-    /// <param name="lineIndex">Line index in the board area (expected range: 0-9).</param>
-    /// <param name="board">Board state used to resolve pieces for rank lines.</param>
-    /// <param name="isWhitePerspective">Whether rank/file order is shown from White's side.</param>
     private static void PrintBoardLine(int lineIndex, Gameboard board, bool isWhitePerspective)
     {
         switch (lineIndex)
         {
             case 0 or 9:
             {
-                const string topLetters = "    A  B  C  D  E  F  G  H";
+                var letters = isWhitePerspective
+                    ? "A  B  C  D  E  F  G  H"
+                    : "H  G  F  E  D  C  B  A";
+
+                var topLetters = $"    {letters}";
                 Console.Write(topLetters.PadRight(BoardWidth));
                 break;
             }
@@ -104,35 +123,23 @@ public static class GameUi
         }
     }
 
-    /// <summary>
-    /// Creates the middle panel lines (match information and current status).
-    /// </summary>
-    /// <param name="stats">Game metadata used for player labels and the status message.</param>
-    /// <returns>Display lines in print order for the middle column.</returns>
-    private static List<string> GenerateMiddleColumnLines(GameStats stats)
+    private List<string> GenerateMiddleColumnLines()
     {
         return
         [
             "│  MATCH INFO",
             "│  ───────────────────────",
-            $"│  White: {stats.WhitePlayerName}",
-            $"│  Black: {stats.BlackPlayerName}",
+            $"│  White: {WhitePlayerName}",
+            $"│  Black: {BlackPlayerName}",
             "│",
             "│  STATUS",
             "│  ───────────────────────",
-            $"│  {stats.StatusMessage}"
+            $"│  {StatusMessage}",
+            "│"
         ];
     }
 
-    /// <summary>
-    /// Creates the right panel lines (captured pieces and recent moves for each side).
-    /// </summary>
-    /// <param name="board">Board state used to read captured piece collections.</param>
-    /// <param name="stats">Game statistics that provide move history for both players.</param>
-    /// <returns>
-    /// Display lines in print order for the right column. Empty captured/move lists are shown as <c>None</c>.
-    /// </returns>
-    private static List<string> GenerateRightColumnLines(Gameboard board, GameStats stats)
+    private List<string> GenerateRightColumnLines(Gameboard board)
     {
         var whiteCaptured = string.Join(", ", board.CapturedWhitePieces.Select(p => p.UnicodeSymbol));
         var blackCaptured = string.Join(", ", board.CapturedBlackPieces.Select(p => p.UnicodeSymbol));
@@ -140,8 +147,8 @@ public static class GameUi
         if (string.IsNullOrEmpty(whiteCaptured)) whiteCaptured = "None";
         if (string.IsNullOrEmpty(blackCaptured)) blackCaptured = "None";
 
-        var whiteMoves = stats.WhiteMoves.Count > 0 ? string.Join(", ", stats.WhiteMoves) : "None";
-        var blackMoves = stats.BlackMoves.Count > 0 ? string.Join(", ", stats.BlackMoves) : "None";
+        var whiteMoves = WhiteMoves.Count > 0 ? string.Join(", ", WhiteMoves) : "None";
+        var blackMoves = BlackMoves.Count > 0 ? string.Join(", ", BlackMoves) : "None";
 
         return
         [
