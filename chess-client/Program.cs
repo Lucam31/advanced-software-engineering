@@ -1,5 +1,4 @@
-﻿﻿using Shared;
-using System.Text;
+﻿using System.Text;
 using chess_client.Menus;
 using chess_client.Services;
 using Shared.Logger;
@@ -35,29 +34,30 @@ internal static class Program
         {
             GameLogger.Info("Client application starting...");
 
-            GameLogger.Debug("Initializing core components...");
-            var gameboard = new Gameboard();
-            var gameLogic = new GameLogic(gameboard);
-            GameLogger.Debug("Core components initialized.");
-
-            GameLogger.Info("Displaying login menu...");
-
             var userContainer = new UserContainer();
             var webSocketService = new WebSocketService();
             var gameService = new GameService(userContainer, webSocketService);
-            
-            var loginMenu = new AuthMenu(new AuthService(), userContainer);
-            var friendshipMenu = new FriendshipMenu(userContainer, new FriendshipServices(), gameService, webSocketService);
+            var authService = new AuthService();
+            var friendshipServices = new FriendshipServices();
+
+            var startupMenu = new MainMenu(authService, userContainer);
+            var friendshipMenu = new FriendshipMenu(userContainer, friendshipServices, gameService, webSocketService);
             var gameMenu = new GameMenu(userContainer, friendshipMenu, gameService, webSocketService);
-            
+
             while (true)
             {
-                var loggedIn = await loginMenu.DisplayMenu();
-                if (!loggedIn)
+                GameLogger.Info("Displaying startup menu...");
+
+                var isLoggedIn = await startupMenu.DisplayMenu();
+
+                if (!isLoggedIn)
+                {
+                    GameLogger.Info("User requested to quit the application.");
                     break;
-                
+                }
+
                 GameLogger.Info("User logged in successfully.");
-                
+
                 if (!webSocketService.IsConnected)
                 {
                     var wsUri = $"ws://localhost:8080/ws?userId={userContainer.Id}";
@@ -66,7 +66,13 @@ internal static class Program
                         GameLogger.Warning("WebSocket-Verbindung fehlgeschlagen. Läuft ohne Echtzeit-Updates.");
                 }
 
-                await gameMenu.DisplayMainMenu();
+                var menuResult = await gameMenu.DisplayMainMenu();
+
+                if (menuResult == GameMenuResult.Quit)
+                {
+                    GameLogger.Info("User requested to quit the application from the dashboard.");
+                    break;
+                }
             }
 
             GameLogger.Info("Client shutting down normally.");
