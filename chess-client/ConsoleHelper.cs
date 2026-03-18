@@ -214,7 +214,7 @@ public static class ConsoleHelper
 
         return password;
     }
-    
+
     /// <summary>
     /// Reads a line from the console in a truly cancellable way.
     /// Unlike <c>Task.Run(() => Console.ReadLine())</c>, this method stops reading

@@ -53,7 +53,7 @@ public static class InputParser
             ConsoleHelper.PrintConsoleNewline("Invalid input. Please try again.");
         }
     }
-    
+
     public static char ReadSingleCharInput(string prompt, bool newLine = false, params char[] validInputs)
     {
         if (validInputs.Length == 0)

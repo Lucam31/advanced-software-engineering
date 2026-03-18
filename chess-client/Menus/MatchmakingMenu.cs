@@ -19,14 +19,15 @@ public class MatchmakingMenu(
     /// <summary>
     /// Enters the matchmaking queue and waits for either user cancellation or a game start event.
     /// </summary>
-    /// <param name="token">Cancellation token triggered when external realtime events interrupt queue input.</param>
     /// <param name="getPendingStartGame">Callback returning the latest pending start-game payload, if available.</param>
+    /// <param name="token">Cancellation token triggered when external realtime events interrupt queue input.</param>
     /// <returns>The <see cref="StartGamePayload"/> when a game is found; otherwise <c>null</c>.</returns>
-    public async Task<StartGamePayload?> EnterQueueAsync(CancellationToken token, Func<StartGamePayload?> getPendingStartGame)
+    public async Task<StartGamePayload?> EnterQueueAsync(Func<StartGamePayload?> getPendingStartGame,
+        CancellationToken token)
     {
         GameLogger.Info("Entering matchmaking queue...");
         string? queueError = null;
-        
+
         MatchmakingUi.DrawQueueScreen();
         await gameService.SearchGame();
 
@@ -41,7 +42,7 @@ public class MatchmakingMenu(
             try
             {
                 var input = await _ui.ReadKeyAsync(token);
-                
+
                 if (input.Key == ConsoleKey.Q)
                 {
                     var cancelMessage = new WebSocketMessage
@@ -50,9 +51,9 @@ public class MatchmakingMenu(
                         Payload = null
                     };
                     await webSocketService.SendAsync(cancelMessage);
-                    
+
                     MatchmakingUi.ShowMessage("Matchmaking cancelled. Returning to menu...");
-                    await Task.Delay(1000, token); 
+                    await Task.Delay(1000, token);
                     return null;
                 }
                 else

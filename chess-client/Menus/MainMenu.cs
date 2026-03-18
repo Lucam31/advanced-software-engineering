@@ -38,16 +38,17 @@ public class MainMenu(IAuthService authService, UserContainer userContainer)
                     GameLogger.Info("User selected 'Authenticate'.");
 
                     var authResult = await _authMenu.DisplayMenu();
-                    
+
                     if (authResult == AuthResult.Success)
                     {
                         return true;
                     }
+
                     if (authResult == AuthResult.Quit)
                     {
                         return false;
                     }
-                    
+
                     break;
 
                 case ConsoleKey.Q:

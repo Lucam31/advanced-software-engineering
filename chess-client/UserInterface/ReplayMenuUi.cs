@@ -30,7 +30,7 @@ public class ReplayMenuUi
             ConsoleHelper.PrintConsoleNewline("   Select a game to replay:");
             Console.WriteLine();
 
-            for (int i = 0; i < gameDisplays.Count; i++)
+            for (var i = 0; i < gameDisplays.Count; i++)
             {
                 ConsoleHelper.PrintConsoleNewline($"   [{i + 1}] {gameDisplays[i]}");
             }

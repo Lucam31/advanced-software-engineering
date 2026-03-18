@@ -3,7 +3,7 @@ using Shared;
 namespace chess_client.UserInterface;
 
 /// <summary>
-/// Manages the UI state and renders the command-line chess game screen.
+/// Renders the terminal game screen and stores transient UI state such as status text and move history.
 /// </summary>
 public class GameUi
 {
@@ -11,37 +11,39 @@ public class GameUi
     private const int MiddleColumnWidth = 38;
 
     /// <summary>
-    /// Gets or sets the display name for the white player.
+    /// Gets or sets the label shown for the white side in the match info panel.
     /// </summary>
     public string WhitePlayerName { get; set; } = "Player 1 (White)";
 
     /// <summary>
-    /// Gets or sets the display name for the black player.
+    /// Gets or sets the label shown for the black side in the match info panel.
     /// </summary>
     public string BlackPlayerName { get; set; } = "Player 2 (Black)";
 
     /// <summary>
-    /// Gets or sets the status message shown in the information column.
+    /// Gets or sets the current game status text shown in the middle information column.
     /// </summary>
     public string StatusMessage { get; set; } = "Game starting...";
+
     private List<string> WhiteMoves { get; } = [];
     private List<string> BlackMoves { get; } = [];
+
     /// <summary>
-    /// Gets or sets the current error message displayed below the board.
+    /// Gets or sets the error message displayed under the board; an empty value hides the error line.
     /// </summary>
     public string ErrorMessage { get; set; } = "";
 
     /// <summary>
-    /// Gets or sets the prompt text shown for the next user action.
+    /// Gets or sets the input prompt shown at the bottom of the screen.
     /// </summary>
     public string PromptMessage { get; set; } = "";
 
     /// <summary>
-    /// Adds a move to the local move history displayed in the side panel.
+    /// Adds a move to the local move history that is rendered in the "Last Moves" panel.
     /// </summary>
-    /// <param name="from">Source square of the move (for example, e2).</param>
-    /// <param name="to">Destination square of the move (for example, e4).</param>
-    /// <param name="isWhite"><c>true</c> if the move belongs to white; otherwise it is added to black history.</param>
+    /// <param name="from">The source square in algebraic coordinates (for example, <c>e2</c>).</param>
+    /// <param name="to">The destination square in algebraic coordinates (for example, <c>e4</c>).</param>
+    /// <param name="isWhite"><c>true</c> to append to white's move list; otherwise appends to black's move list.</param>
     public void AddMoveToHistory(string from, string to, bool isWhite)
     {
         var move = $"{from}{to}";
@@ -53,10 +55,10 @@ public class GameUi
     }
 
     /// <summary>
-    /// Renders the full game screen, including board, status information, and move/capture history.
+    /// Draws the full game view, including the board, match/status panels, captured pieces, and move history.
     /// </summary>
-    /// <param name="board">Current board state to render.</param>
-    /// <param name="isWhitePerspective"><c>true</c> to render ranks/files from white's perspective; otherwise from black's perspective.</param>
+    /// <param name="board">The current board state used for piece and capture rendering.</param>
+    /// <param name="isWhitePerspective"><c>true</c> to render files/ranks from white's perspective; otherwise from black's perspective.</param>
     public void DrawGameScreen(Gameboard board, bool isWhitePerspective)
     {
         Console.Clear();
@@ -102,6 +104,12 @@ public class GameUi
         }
     }
 
+    /// <summary>
+    /// Prints one visual row of the board area, including file headers and rank numbers.
+    /// </summary>
+    /// <param name="lineIndex">The zero-based row index in the complete board section output.</param>
+    /// <param name="board">The board model used to resolve piece symbols per tile.</param>
+    /// <param name="isWhitePerspective"><c>true</c> to print coordinates from white's side; otherwise from black's side.</param>
     private static void PrintBoardLine(int lineIndex, Gameboard board, bool isWhitePerspective)
     {
         switch (lineIndex)
@@ -152,6 +160,10 @@ public class GameUi
         }
     }
 
+    /// <summary>
+    /// Builds the text lines for the middle column containing player labels and status information.
+    /// </summary>
+    /// <returns>A list of formatted lines for the middle panel.</returns>
     private List<string> GenerateMiddleColumnLines()
     {
         return
@@ -168,6 +180,11 @@ public class GameUi
         ];
     }
 
+    /// <summary>
+    /// Builds the text lines for the right column containing captured pieces and recent moves.
+    /// </summary>
+    /// <param name="board">The board model used to read captured piece collections.</param>
+    /// <returns>A list of formatted lines for the right panel.</returns>
     private List<string> GenerateRightColumnLines(Gameboard board)
     {
         var whiteCaptured = string.Join(", ", board.CapturedWhitePieces.Select(p => p.UnicodeSymbol));

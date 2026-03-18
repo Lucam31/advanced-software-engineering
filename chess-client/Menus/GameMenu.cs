@@ -116,7 +116,7 @@ public class GameMenu(
                     GameLogger.Info("User selected 'Play'.");
                     var matchmakingMenu = new MatchmakingMenu(gameService, webSocketService);
 
-                    var startGamePayload = await matchmakingMenu.EnterQueueAsync(cts.Token, () => pendingStartGame);
+                    var startGamePayload = await matchmakingMenu.EnterQueueAsync(() => pendingStartGame, cts.Token);
 
                     if (startGamePayload != null)
                     {

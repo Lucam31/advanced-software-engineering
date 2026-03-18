@@ -169,7 +169,7 @@ public class GameLogic
                     GameLogger.Info($"Checkmate detected. {gameOverMessage.Winner} wins.");
 
                     _gameUi.PromptMessage = "Press ENTER to return...";
-                    DrawBoard(); 
+                    DrawBoard();
                     Console.ReadLine();
 
                     _gameOver = true;
@@ -236,7 +236,7 @@ public class GameLogic
                 isMyTurn = true;
             }
         }
-        
+
         GameLogger.Info("Game ended.");
     }
 

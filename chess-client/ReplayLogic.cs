@@ -4,16 +4,9 @@ using Shared.Logger;
 
 namespace chess_client;
 
-public class ReplayLogic
+public class ReplayLogic(PlayedGame game)
 {
-    readonly PlayedGame _game;
-    Gameboard _gameboard;
-    
-    public ReplayLogic(PlayedGame game)
-    {
-        _game = game;
-        _gameboard = new Gameboard();
-    }
+    Gameboard _gameboard = new();
 
     /// <summary>
     /// Rebuilds the board from scratch and replays all moves up to the given index
@@ -23,11 +16,11 @@ public class ReplayLogic
     private void ReplayUpToMove(List<string> moves, int targetIndex)
     {
         _gameboard = new Gameboard();
-        for (int i = 0; i < targetIndex; i++)
+        for (var i = 0; i < targetIndex; i++)
         {
             var moveStr = moves[i];
-            Move move = new Move(moveStr[..2], moveStr[2..4]);
-            MoveValidator.MoveValidationResult result = MoveValidator.ValidateMove(move, _gameboard);
+            var move = new Move(moveStr[..2], moveStr[2..4]);
+            var result = MoveValidator.ValidateMove(move, _gameboard);
             switch (result)
             {
                 case MoveValidator.MoveValidationResult.EnPassant:
@@ -43,10 +36,10 @@ public class ReplayLogic
         }
     }
 
-    
+
     public void StartReplay()
     {
-        List<string> moves = _game.Moves;
+        List<string> moves = game.Moves;
         int currentMoveIndex = 0;
         ConsoleHelper.PrintConsoleNewline("Starting Replay...");
         Console.Clear();
@@ -84,6 +77,7 @@ public class ReplayLogic
                         ConsoleHelper.OverwriteLine("No more moves to play: ");
                         continue;
                     }
+
                     var moveToPlay = moves[currentMoveIndex];
                     Move move = new Move(moveToPlay[..2], moveToPlay[2..4]);
                     MoveValidator.MoveValidationResult result = MoveValidator.ValidateMove(move, _gameboard);
@@ -110,6 +104,7 @@ public class ReplayLogic
                             GameLogger.Warning($"Unexpected validation result: {result}");
                             break;
                     }
+
                     currentMoveIndex++;
                     ConsoleHelper.RewriteBoard(_gameboard);
                     ConsoleHelper.OverwriteLineRelative(2, $"Move {currentMoveIndex}/{moves.Count}");
@@ -120,9 +115,9 @@ public class ReplayLogic
                     continue;
             }
         }
+
         ConsoleHelper.PrintConsoleNewline("Replay Finished. Press any key to return to the replay menu: ");
         Console.ReadKey();
         Console.Clear();
     }
-    
 }
