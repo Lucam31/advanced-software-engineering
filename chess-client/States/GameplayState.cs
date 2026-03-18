@@ -89,9 +89,6 @@ public class GameplayState : IGameState
                 if (gameOverPayload != null)
                 {
                     _gameOverTcs?.TrySetResult(gameOverPayload);
-                    ConsoleHelper.PrintConsoleNewline(gameOverPayload.Winner != null
-                        ? $"Game over! Winner: {gameOverPayload.Winner}"
-                        : "Game over! It's a draw!");
                 }
 
                 break;
