@@ -65,7 +65,7 @@ public class FriendshipMenu(
             FriendshipMenuUi.DrawMainMenu(currentErrorMessage);
             currentErrorMessage = null;
 
-            var input = FriendshipMenuUi.ReadKey();
+            var input = BaseMenuUi.ReadKey();
             GameLogger.Debug($"User pressed key: '{input.Key}'");
 
             switch (input.Key)
@@ -117,7 +117,7 @@ public class FriendshipMenu(
             FriendshipMenuUi.DrawSearchPrompt(currentErrorMessage);
             currentErrorMessage = null;
 
-            var input = FriendshipMenuUi.ReadInput();
+            var input = BaseMenuUi.ReadInput();
             GameLogger.Debug($"User entered search input: '{input}'");
 
             if (input?.ToUpper() == "Q" || input?.ToUpper() == "QUIT") return FriendshipMenuResult.Quit;
@@ -129,10 +129,10 @@ public class FriendshipMenu(
 
             while (true)
             {
-                _ui.DrawSearchResults(users, searchResultError);
+                FriendshipMenuUi.DrawSearchResults(users, searchResultError);
                 searchResultError = null;
 
-                var num = FriendshipMenuUi.ReadInput();
+                var num = BaseMenuUi.ReadInput();
                 GameLogger.Debug($"User entered list selection: '{num}'");
 
                 if (num?.ToUpper() == "Q" || num?.ToUpper() == "QUIT") return FriendshipMenuResult.Quit;
@@ -145,7 +145,7 @@ public class FriendshipMenu(
                     GameLogger.Info($"User selected to add friend: '{selectedUser}'");
 
                     await friendshipServices.SendFriendRequest(userContainer.Id, selectedUser);
-                    FriendshipMenuUi.ShowMessageAndWait($"Friend request sent to {selectedUser}.");
+                    BaseMenuUi.ShowMessageAndWait($"Friend request sent to {selectedUser}.");
                     return FriendshipMenuResult.Back;
                 }
                 else
@@ -179,7 +179,7 @@ public class FriendshipMenu(
             FriendshipMenuUi.DrawListView(friendNames, currentErrorMessage);
             currentErrorMessage = null;
 
-            var input = FriendshipMenuUi.ReadInput()?.ToUpper();
+            var input = BaseMenuUi.ReadInput()?.ToUpper();
 
             if (string.IsNullOrEmpty(input))
             {
@@ -214,7 +214,7 @@ public class FriendshipMenu(
                 case 'D':
                     GameLogger.Info($"Removing friend '{selected.Name}'.");
                     await friendshipServices.RemoveFriend(selected);
-                    FriendshipMenuUi.ShowMessageAndWait($"Removed {selected.Name}.");
+                    BaseMenuUi.ShowMessageAndWait($"Removed {selected.Name}.");
                     friends = await friendshipServices.ListFriends(userContainer.Id);
                     break;
                 case 'P':
@@ -231,17 +231,17 @@ public class FriendshipMenu(
                             cts.Cancel();
                         };
 
-                        FriendshipMenuUi.ShowMessage("Waiting for opponent to accept... Press B to cancel.");
+                        BaseMenuUi.ShowMessage("Waiting for opponent to accept... Press B to cancel.");
 
                         try
                         {
-                            var cancelInput = (await FriendshipMenuUi.ReadInputAsync(cts.Token))?.ToUpper();
+                            var cancelInput = (await BaseMenuUi.ReadInputAsync(cts.Token))?.ToUpper();
                             if (cancelInput == "Q") return FriendshipMenuResult.Quit;
                             if (cancelInput == "B" || cancelInput == "BACK")
                             {
                                 GameLogger.Info("User cancelled game invitation.");
                                 // TODO: Send cancel message to server
-                                FriendshipMenuUi.ShowMessageAndWait("Game invitation cancelled.");
+                                BaseMenuUi.ShowMessageAndWait("Game invitation cancelled.");
                                 break;
                             }
                         }

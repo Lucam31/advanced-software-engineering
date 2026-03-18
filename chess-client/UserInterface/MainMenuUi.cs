@@ -3,7 +3,7 @@ namespace chess_client.UserInterface;
 /// <summary>
 /// Handles the visual representation of the initial startup menu.
 /// </summary>
-public class MainMenuUi
+public class MainMenuUi : BaseMenuUi
 {
     /// <summary>
     /// Draws the startup menu and optionally shows an error message.
@@ -31,14 +31,5 @@ public class MainMenuUi
         }
 
         ConsoleHelper.PrintConsoleNewline("   Your choice: ");
-    }
-
-    /// <summary>
-    /// Reads a single key press without echoing it to the console.
-    /// </summary>
-    /// <returns>The pressed key information.</returns>
-    public static ConsoleKeyInfo ReadKey()
-    {
-        return Console.ReadKey(true);
     }
 }

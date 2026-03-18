@@ -79,14 +79,14 @@ public class GameMenu(
             ConsoleKeyInfo input;
             try
             {
-                input = await _ui.ReadKeyAsync(cts.Token);
+                input = await BaseMenuUi.ReadKeyAsync(cts.Token);
             }
             catch (OperationCanceledException)
             {
                 if (pendingInvitation != null)
                 {
                     GameLogger.Info("Received game invitation.");
-                    GameMenuUi.ShowMessage("Received game invitation. Accepting...");
+                    BaseMenuUi.ShowMessage("Received game invitation. Accepting...");
                     await gameService.AcceptGameInvitation(pendingInvitation.GameId);
 
                     while (pendingStartGame == null)

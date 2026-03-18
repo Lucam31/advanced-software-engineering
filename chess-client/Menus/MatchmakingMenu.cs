@@ -41,7 +41,7 @@ public class MatchmakingMenu(
 
             try
             {
-                var input = await _ui.ReadKeyAsync(token);
+                var input = await BaseMenuUi.ReadKeyAsync(token);
 
                 if (input.Key == ConsoleKey.Q)
                 {
@@ -52,7 +52,7 @@ public class MatchmakingMenu(
                     };
                     await webSocketService.SendAsync(cancelMessage);
 
-                    MatchmakingUi.ShowMessage("Matchmaking cancelled. Returning to menu...");
+                    BaseMenuUi.ShowMessage("Matchmaking cancelled. Returning to menu...");
                     await Task.Delay(1000, token);
                     return null;
                 }

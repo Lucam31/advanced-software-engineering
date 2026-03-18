@@ -1,11 +1,14 @@
 using Shared;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace chess_client.UserInterface;
 
 /// <summary>
 /// Renders the terminal game screen and stores transient UI state such as status text and move history.
 /// </summary>
-public class GameUi
+public class GameUi : BaseMenuUi
 {
     private const int BoardWidth = 36;
     private const int MiddleColumnWidth = 38;

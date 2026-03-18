@@ -1,13 +1,9 @@
-using Shared;
-using System;
-using System.Collections.Generic;
-
 namespace chess_client.UserInterface;
 
 /// <summary>
 /// Handles the visual representation and console interactions for the replay menu.
 /// </summary>
-public class ReplayMenuUi
+public class ReplayMenuUi : BaseMenuUi
 {
     /// <summary>
     /// Clears the screen and draws the replay menu with selectable game entries.
@@ -49,14 +45,5 @@ public class ReplayMenuUi
         ConsoleHelper.PrintConsoleNewline("   [Q] Return to main menu");
         Console.WriteLine();
         Console.Write("   Your choice: ");
-    }
-
-    /// <summary>
-    /// Reads a single key press from the user without echoing it to the console.
-    /// </summary>
-    /// <returns>The pressed key information.</returns>
-    public static ConsoleKeyInfo ReadKey()
-    {
-        return Console.ReadKey(true);
     }
 }

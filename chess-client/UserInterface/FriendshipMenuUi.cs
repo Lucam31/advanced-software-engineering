@@ -3,7 +3,7 @@ namespace chess_client.UserInterface;
 /// <summary>
 /// Handles the visual representation and console interactions for the friendship menu.
 /// </summary>
-public class FriendshipMenuUi
+public class FriendshipMenuUi : BaseMenuUi
 {
     /// <summary>
     /// Draws the friendship main menu.
@@ -64,7 +64,7 @@ public class FriendshipMenuUi
     /// </summary>
     /// <param name="users">Usernames returned by the current search.</param>
     /// <param name="errorMessage">Optional error message shown above the input prompt.</param>
-    public void DrawSearchResults(List<string> users, string? errorMessage = null)
+    public static void DrawSearchResults(List<string> users, string? errorMessage = null)
     {
         ConsoleHelper.ClearTerminal();
         Console.WriteLine();
@@ -135,59 +135,5 @@ public class FriendshipMenuUi
         ConsoleHelper.PrintConsoleNewline("   Actions: <number>D = delete, <number>P = play");
         ConsoleHelper.PrintConsoleNewline("   (Type 'B' to go back, 'Q' to quit, or press Enter to refresh)");
         Console.Write("   > ");
-    }
-
-    /// <summary>
-    /// Displays a message with optional error styling.
-    /// </summary>
-    /// <param name="message">Message to display.</param>
-    /// <param name="isError"><c>true</c> to display the message as an error; otherwise informational styling is used.</param>
-    public static void ShowMessage(string message, bool isError = false)
-    {
-        Console.WriteLine();
-        if (isError) Console.ForegroundColor = ConsoleColor.Red;
-        ConsoleHelper.PrintConsoleNewline($"   {(isError ? "⚠" : "ℹ")} {message}");
-        Console.ResetColor();
-    }
-
-    /// <summary>
-    /// Displays a message and waits for the user to press ENTER.
-    /// </summary>
-    /// <param name="message">Message to display.</param>
-    /// <param name="isError"><c>true</c> to display the message as an error; otherwise informational styling is used.</param>
-    public static void ShowMessageAndWait(string message, bool isError = false)
-    {
-        ShowMessage(message, isError);
-        Console.WriteLine();
-        ConsoleHelper.PrintConsoleNewline("   Press ENTER to continue...");
-        Console.ReadLine();
-    }
-
-    /// <summary>
-    /// Reads a single key press without echoing it to the console.
-    /// </summary>
-    /// <returns>The pressed key information.</returns>
-    public static ConsoleKeyInfo ReadKey()
-    {
-        return Console.ReadKey(true);
-    }
-
-    /// <summary>
-    /// Reads a line of input and trims surrounding whitespace.
-    /// </summary>
-    /// <returns>The trimmed input or <c>null</c> when no input is available.</returns>
-    public static string? ReadInput()
-    {
-        return Console.ReadLine()?.Trim();
-    }
-
-    /// <summary>
-    /// Reads a line of input asynchronously and supports cancellation.
-    /// </summary>
-    /// <param name="token">Cancellation token used to interrupt waiting for input.</param>
-    /// <returns>The entered input or <c>null</c>.</returns>
-    public static async Task<string?> ReadInputAsync(CancellationToken token)
-    {
-        return await ConsoleHelper.ReadLineAsync(token);
     }
 }

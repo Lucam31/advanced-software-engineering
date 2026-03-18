@@ -53,7 +53,7 @@ public class AuthMenu(IAuthService authService, UserContainer userContainer)
             AuthMenuUi.DrawMainMenu(currentErrorMessage);
             currentErrorMessage = null;
 
-            var input = AuthMenuUi.ReadKey();
+            var input = BaseMenuUi.ReadKey();
             GameLogger.Debug($"User pressed key: '{input.Key}'");
 
             switch (input.Key)
@@ -108,7 +108,7 @@ public class AuthMenu(IAuthService authService, UserContainer userContainer)
         catch (Exception ex)
         {
             GameLogger.Warning($"Login failed: {ex.Message}");
-            AuthMenuUi.ShowMessageAndWait($"Login failed: {ex.Message}", isError: true);
+            BaseMenuUi.ShowMessageAndWait($"Login failed: {ex.Message}", isError: true);
             return false;
         }
     }
@@ -128,12 +128,12 @@ public class AuthMenu(IAuthService authService, UserContainer userContainer)
         try
         {
             await authService.Register(username, password);
-            AuthMenuUi.ShowSuccessAndWait("Registration successful! You can now log in with your credentials.");
+            BaseMenuUi.ShowSuccessAndWait("Registration successful! You can now log in with your credentials.");
         }
         catch (Exception ex)
         {
             GameLogger.Warning($"Registration failed: {ex.Message}");
-            AuthMenuUi.ShowMessageAndWait($"Registration failed: {ex.Message}", isError: true);
+            BaseMenuUi.ShowMessageAndWait($"Registration failed: {ex.Message}", isError: true);
         }
     }
 }
