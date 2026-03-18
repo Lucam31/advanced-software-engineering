@@ -5,6 +5,11 @@ namespace chess_client.UserInterface;
 /// </summary>
 public class ReplayMenuUi : BaseMenuUi
 {
+    private const string Header = "   === REPLAY MENU ===";
+    private const string NoGamesMessage = "   No games found.";
+    private const string SelectInstruction = "   Select a game to replay:";
+    private const string QuitInstruction = "   [Q] Return to main menu";
+
     /// <summary>
     /// Clears the screen and draws the replay menu with selectable game entries.
     /// </summary>
@@ -13,37 +18,24 @@ public class ReplayMenuUi : BaseMenuUi
     public static void DrawMenu(List<string> gameDisplays, string? errorMessage = null)
     {
         ConsoleHelper.ClearTerminal();
-        Console.WriteLine();
-        ConsoleHelper.PrintConsoleNewline("   === REPLAY MENU ===");
-        Console.WriteLine();
+        DrawSectionHeader(Header);
 
         if (gameDisplays.Count == 0)
         {
-            ConsoleHelper.PrintConsoleNewline("   No games found.");
+            ConsoleHelper.PrintConsoleNewline(NoGamesMessage);
         }
         else
         {
-            ConsoleHelper.PrintConsoleNewline("   Select a game to replay:");
-            Console.WriteLine();
-
-            for (var i = 0; i < gameDisplays.Count; i++)
-            {
-                ConsoleHelper.PrintConsoleNewline($"   [{i + 1}] {gameDisplays[i]}");
-            }
+            ConsoleHelper.PrintConsoleNewline(SelectInstruction);
+            ConsoleHelper.WriteEmptyLine();
+            DrawIndexedList(gameDisplays);
         }
 
-        Console.WriteLine();
+        ConsoleHelper.WriteEmptyLine();
+        DrawOptionalError(errorMessage);
 
-        if (!string.IsNullOrEmpty(errorMessage))
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
-            Console.ResetColor();
-            Console.WriteLine();
-        }
-
-        ConsoleHelper.PrintConsoleNewline("   [Q] Return to main menu");
-        Console.WriteLine();
-        Console.Write("   Your choice: ");
+        ConsoleHelper.PrintConsoleNewline(QuitInstruction);
+        ConsoleHelper.WriteEmptyLine();
+        DrawInputPrompt();
     }
 }
