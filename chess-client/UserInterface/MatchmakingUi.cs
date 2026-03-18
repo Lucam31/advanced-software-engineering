@@ -17,12 +17,12 @@ public class MatchmakingUi : BaseMenuUi
     public static void DrawQueueScreen(string? errorMessage = null)
     {
         ConsoleHelper.ClearTerminal();
-        BaseMenuUi.DrawSectionHeader(Header);
+        DrawSectionHeader(Header);
         ConsoleHelper.PrintConsoleNewline(SearchLine);
         ConsoleHelper.PrintConsoleNewline(WaitLine);
         ConsoleHelper.WriteEmptyLine();
 
-        BaseMenuUi.DrawOptionalError(errorMessage);
+        DrawOptionalError(errorMessage);
         ConsoleHelper.PrintConsoleNewline(QuitInstruction);
         ConsoleHelper.WriteEmptyLine();
     }

@@ -32,7 +32,7 @@ public class GameMenuUi : BaseMenuUi
         ConsoleHelper.PrintConsoleNewline(MainMenuLayout);
         ConsoleHelper.WriteEmptyLine();
 
-        BaseMenuUi.DrawOptionalError(errorMessage);
+        DrawOptionalError(errorMessage);
         ConsoleHelper.PrintConsoleNewline(PromptChoice);
     }
 }

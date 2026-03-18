@@ -29,7 +29,7 @@ public class MainMenuUi : BaseMenuUi
         ConsoleHelper.PrintConsoleNewline(MenuLayout);
         ConsoleHelper.WriteEmptyLine();
 
-        BaseMenuUi.DrawOptionalError(errorMessage);
+        DrawOptionalError(errorMessage);
         ConsoleHelper.PrintConsoleNewline(PromptChoice);
     }
 }

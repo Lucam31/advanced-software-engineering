@@ -100,7 +100,7 @@ public class GameUi : BaseMenuUi
 
         if (!string.IsNullOrEmpty(ErrorMessage))
         {
-            BaseMenuUi.DrawOptionalError(ErrorMessage, addTrailingEmptyLine: false);
+            DrawOptionalError(ErrorMessage, addTrailingEmptyLine: false);
         }
         else
         {
@@ -109,7 +109,7 @@ public class GameUi : BaseMenuUi
 
         if (!string.IsNullOrEmpty(PromptMessage))
         {
-            BaseMenuUi.DrawInputPrompt(PromptMessage);
+            DrawInputPrompt(PromptMessage);
         }
         else
         {
