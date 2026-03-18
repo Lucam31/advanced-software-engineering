@@ -5,6 +5,36 @@ namespace chess_client.UserInterface;
 /// </summary>
 public class FriendshipMenuUi : BaseMenuUi
 {
+    private const string PromptChoice = "   Your choice: ";
+    private const string InputPrompt = "   > ";
+    private const string ErrorPrefix = "   ⚠ ";
+    private const string SearchUsersHeader = "   === SEARCH USERS ===";
+    private const string SearchResultsHeader = "   === SEARCH RESULTS ===";
+    private const string FriendListHeader = "   === FRIEND LIST ===";
+    private const string NoUsersFoundMessage = "   No users found.";
+    private const string NoFriendsMessage = "   You have no friends yet. Try adding some!";
+    private const string SearchInstruction = "   Please enter the username you want to search for.";
+    private const string BackOrQuitInstruction = "   (Type 'B' to go back, 'Q' to quit)";
+    private const string SearchResultActionInstruction = "   Enter the number to add to your friendlist.";
+    private const string FriendListActionsInstruction = "   Actions: <number>D = delete, <number>P = play";
+
+    private const string FriendListPromptInstruction =
+        "   (Type 'B' to go back, 'Q' to quit, or press Enter to refresh)";
+
+    private const string MainMenuLayout =
+        """
+                   === FRIENDS ===
+
+           ┌──────────────────────────────┐
+           │          FRIEND MENU         │
+           ├──────────────────────────────┤
+           │  [S] Search Users            │
+           │  [L] Friend List             │
+           │  [B] Back to Dashboard       │
+           │  [Q] Quit Game               │
+           └──────────────────────────────┘
+        """;
+
     /// <summary>
     /// Draws the friendship main menu.
     /// </summary>
@@ -12,28 +42,15 @@ public class FriendshipMenuUi : BaseMenuUi
     public static void DrawMainMenu(string? errorMessage = null)
     {
         ConsoleHelper.ClearTerminal();
-        ConsoleHelper.PrintConsoleNewline("            === FRIENDS ===");
-        Console.WriteLine();
-        ConsoleHelper.PrintConsoleNewline("   ┌──────────────────────────────┐");
-        ConsoleHelper.PrintConsoleNewline("   │          FRIEND MENU         │");
-        ConsoleHelper.PrintConsoleNewline("   ├──────────────────────────────┤");
-        ConsoleHelper.PrintConsoleNewline("   │  [S] Search Users            │");
-        ConsoleHelper.PrintConsoleNewline("   │  [L] Friend List             │");
-        ConsoleHelper.PrintConsoleNewline("   │  [B] Back to Dashboard       │");
-        ConsoleHelper.PrintConsoleNewline("   │  [Q] Quit Game               │");
-        ConsoleHelper.PrintConsoleNewline("   └──────────────────────────────┘");
-        Console.WriteLine();
 
-        if (!string.IsNullOrEmpty(errorMessage))
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
-            Console.ResetColor();
-            Console.WriteLine();
-        }
+        ConsoleHelper.PrintConsoleNewline(MainMenuLayout);
+        ConsoleHelper.WriteEmptyLine();
 
-        ConsoleHelper.PrintConsoleNewline("   Your choice: ");
+        DrawOptionalError(errorMessage);
+
+        ConsoleHelper.PrintConsoleNewline(PromptChoice);
     }
+
 
     /// <summary>
     /// Draws the user search prompt in the friendship section.
@@ -42,21 +59,12 @@ public class FriendshipMenuUi : BaseMenuUi
     public static void DrawSearchPrompt(string? errorMessage = null)
     {
         ConsoleHelper.ClearTerminal();
-        Console.WriteLine();
-        ConsoleHelper.PrintConsoleNewline("   === SEARCH USERS ===");
-        Console.WriteLine();
+        DrawSectionHeader(SearchUsersHeader);
+        DrawOptionalError(errorMessage);
 
-        if (!string.IsNullOrEmpty(errorMessage))
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
-            Console.ResetColor();
-            Console.WriteLine();
-        }
-
-        ConsoleHelper.PrintConsoleNewline("   Please enter the username you want to search for.");
-        ConsoleHelper.PrintConsoleNewline("   (Type 'B' to go back, 'Q' to quit)");
-        Console.Write("   > ");
+        ConsoleHelper.PrintConsoleNewline(SearchInstruction);
+        ConsoleHelper.PrintConsoleNewline(BackOrQuitInstruction);
+        DrawInputPrompt();
     }
 
     /// <summary>
@@ -67,35 +75,23 @@ public class FriendshipMenuUi : BaseMenuUi
     public static void DrawSearchResults(List<string> users, string? errorMessage = null)
     {
         ConsoleHelper.ClearTerminal();
-        Console.WriteLine();
-        ConsoleHelper.PrintConsoleNewline("   === SEARCH RESULTS ===");
-        Console.WriteLine();
+        DrawSectionHeader(SearchResultsHeader);
 
         if (users.Count == 0)
         {
-            ConsoleHelper.PrintConsoleNewline("   No users found.");
+            ConsoleHelper.PrintConsoleNewline(NoUsersFoundMessage);
         }
         else
         {
-            for (var i = 0; i < users.Count; i++)
-            {
-                ConsoleHelper.PrintConsoleNewline($"   [{i + 1}] {users[i]}");
-            }
+            DrawIndexedList(users);
         }
 
-        Console.WriteLine();
+        ConsoleHelper.WriteEmptyLine();
+        DrawOptionalError(errorMessage);
 
-        if (!string.IsNullOrEmpty(errorMessage))
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
-            Console.ResetColor();
-            Console.WriteLine();
-        }
-
-        ConsoleHelper.PrintConsoleNewline("   Enter the number to add to your friendlist.");
-        ConsoleHelper.PrintConsoleNewline("   (Type 'B' to go back, 'Q' to quit)");
-        Console.Write("   > ");
+        ConsoleHelper.PrintConsoleNewline(SearchResultActionInstruction);
+        ConsoleHelper.PrintConsoleNewline(BackOrQuitInstruction);
+        DrawInputPrompt();
     }
 
     /// <summary>
@@ -106,34 +102,67 @@ public class FriendshipMenuUi : BaseMenuUi
     public static void DrawListView(List<string> friendNames, string? errorMessage = null)
     {
         ConsoleHelper.ClearTerminal();
-        Console.WriteLine();
-        ConsoleHelper.PrintConsoleNewline("   === FRIEND LIST ===");
-        Console.WriteLine();
+        DrawSectionHeader(FriendListHeader);
 
         if (friendNames.Count == 0)
         {
-            ConsoleHelper.PrintConsoleNewline("   You have no friends yet. Try adding some!");
+            ConsoleHelper.PrintConsoleNewline(NoFriendsMessage);
         }
         else
         {
-            for (var i = 0; i < friendNames.Count; i++)
-            {
-                ConsoleHelper.PrintConsoleNewline($"   [{i + 1}] {friendNames[i]}");
-            }
+            DrawIndexedList(friendNames);
         }
 
-        Console.WriteLine();
+        ConsoleHelper.WriteEmptyLine();
+        DrawOptionalError(errorMessage);
 
-        if (!string.IsNullOrEmpty(errorMessage))
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
-            Console.ResetColor();
-            Console.WriteLine();
-        }
-
-        ConsoleHelper.PrintConsoleNewline("   Actions: <number>D = delete, <number>P = play");
-        ConsoleHelper.PrintConsoleNewline("   (Type 'B' to go back, 'Q' to quit, or press Enter to refresh)");
-        Console.Write("   > ");
+        ConsoleHelper.PrintConsoleNewline(FriendListActionsInstruction);
+        ConsoleHelper.PrintConsoleNewline(FriendListPromptInstruction);
+        DrawInputPrompt();
     }
+
+    /// <summary>
+    /// Draws a section header with a title.
+    /// </summary>
+    /// <param name="title">The text to display as the section header.</param>
+    private static void DrawSectionHeader(string title)
+    {
+        ConsoleHelper.WriteEmptyLine();
+        ConsoleHelper.PrintConsoleNewline(title);
+        ConsoleHelper.WriteEmptyLine();
+    }
+
+    /// <summary>
+    /// Draws an optional error message if provided.
+    /// </summary>
+    /// <param name="errorMessage">The error message to display, or null/empty to skip.</param>
+    private static void DrawOptionalError(string? errorMessage)
+    {
+        if (string.IsNullOrEmpty(errorMessage))
+        {
+            return;
+        }
+
+        ConsoleHelper.SetForegroundColor(ConsoleColor.Red);
+        ConsoleHelper.PrintConsoleNewline($"{ErrorPrefix}{errorMessage}");
+        ConsoleHelper.ResetColor();
+        ConsoleHelper.WriteEmptyLine();
+    }
+
+    /// <summary>
+    /// Draws a numbered list of entries.
+    /// </summary>
+    /// <param name="entries">The list of strings to display as indexed entries.</param>
+    private static void DrawIndexedList(IReadOnlyList<string> entries)
+    {
+        for (var i = 0; i < entries.Count; i++)
+        {
+            ConsoleHelper.PrintConsoleNewline($"   [{i + 1}] {entries[i]}");
+        }
+    }
+
+    /// <summary>
+    /// Draws the input prompt for user input.
+    /// </summary>
+    private static void DrawInputPrompt() => ConsoleHelper.PrintConsole(InputPrompt);
 }

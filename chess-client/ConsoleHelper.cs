@@ -261,4 +261,29 @@ public static class ConsoleHelper
         ct.ThrowIfCancellationRequested();
         return null;
     }
+
+    /// <summary>
+    /// Writes an empty line to the console.
+    /// </summary>
+    public static void WriteEmptyLine()
+    {
+        Console.WriteLine();
+    }
+
+    /// <summary>
+    /// Resets the console color to the default.
+    /// </summary>
+    public static void ResetColor()
+    {
+        Console.ResetColor();
+    }
+
+    /// <summary>
+    /// Sets the foreground color of the console.
+    /// </summary>
+    /// <param name="color">The color to set for the console text.</param>
+    public static void SetForegroundColor(ConsoleColor color)
+    {
+        Console.ForegroundColor = color;
+    }
 }
