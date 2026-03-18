@@ -5,6 +5,10 @@ namespace chess_client.UserInterface;
 /// </summary>
 public class AuthMenuUi : BaseMenuUi
 {
+    /// <summary>
+    /// Draws the main menu with login/register options.
+    /// </summary>
+    /// <param name="errorMessage">Optional error message to display prominently on the menu.</param>
     public static void DrawMainMenu(string? errorMessage = null)
     {
         ConsoleHelper.ClearTerminal();
@@ -32,6 +36,11 @@ public class AuthMenuUi : BaseMenuUi
         ConsoleHelper.PrintConsoleNewline("   Your choice: ");
     }
 
+    /// <summary>
+    /// Prompts the user for a username.
+    /// </summary>
+    /// <param name="actionTitle">The title of the action being performed (e.g., "Login" or "Register") to display in the prompt.</param>
+    /// <returns>The username entered by the user.</returns>
     public static string PromptForUsername(string actionTitle)
     {
         string? username = null;
@@ -63,6 +72,12 @@ public class AuthMenuUi : BaseMenuUi
         return username;
     }
 
+    /// <summary>
+    /// Prompts the user for a password.
+    /// </summary>
+    /// <param name="actionTitle">The title of the action being performed (e.g., "Login" or "Register") to display in the prompt.</param>
+    /// <param name="enteredUsername">The username that was entered, to display in the prompt for context.</param>
+    /// <returns>The password entered by the user.</returns>
     public static string PromptForPassword(string actionTitle, string enteredUsername)
     {
         string? password = null;
