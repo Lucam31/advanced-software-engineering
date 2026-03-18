@@ -8,7 +8,7 @@ using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>
-/// Unit tests for the <see cref="InputParser"/> class
+/// Unit tests for the <see cref="ConsoleHelper"/> class
 /// The tests simulate console in and outputs using <see cref="Console.SetIn(TextReader)"/>
 /// and <see cref="Console.SetOut(TextWriter)"/>
 /// </summary>
