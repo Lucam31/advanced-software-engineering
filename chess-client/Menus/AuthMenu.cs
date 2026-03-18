@@ -32,7 +32,13 @@ public enum AuthResult
 /// <param name="userContainer">Shared user state container that stores the authenticated user id.</param>
 public class AuthMenu(IAuthService authService, UserContainer userContainer)
 {
-    private readonly AuthMenuUi _ui = new();
+    private const string LoginMode = "Login";
+    private const string RegisterMode = "Register";
+    private const string InvalidMenuInputMessage = "Invalid input. Please press L, R, B, or Q.";
+    private const string LoginFailedPrefix = "Login failed:";
+    private const string RegistrationFailedPrefix = "Registration failed:";
+    private const string RegistrationSuccessMessage =
+        "Registration successful! You can now log in with your credentials.";
 
     /// <summary>
     /// Displays the authentication menu until the user logs in, goes back, or quits.
@@ -80,7 +86,7 @@ public class AuthMenu(IAuthService authService, UserContainer userContainer)
 
                 default:
                     GameLogger.Warning($"Invalid menu input: '{input.Key}'");
-                    currentErrorMessage = "Invalid input. Please press L, R, B, or Q.";
+                    currentErrorMessage = InvalidMenuInputMessage;
                     break;
             }
         }
@@ -94,8 +100,8 @@ public class AuthMenu(IAuthService authService, UserContainer userContainer)
     {
         GameLogger.Info("Displaying login view.");
 
-        var username = AuthMenuUi.PromptForUsername("Login");
-        var password = AuthMenuUi.PromptForPassword("Login", username);
+        var username = AuthMenuUi.PromptForUsername(LoginMode);
+        var password = AuthMenuUi.PromptForPassword(LoginMode, username);
 
         GameLogger.Info($"Attempting login for user '{username}'...");
 
@@ -108,7 +114,7 @@ public class AuthMenu(IAuthService authService, UserContainer userContainer)
         catch (Exception ex)
         {
             GameLogger.Warning($"Login failed: {ex.Message}");
-            BaseMenuUi.ShowMessageAndWait($"Login failed: {ex.Message}", isError: true);
+            BaseMenuUi.ShowMessageAndWait($"{LoginFailedPrefix} {ex.Message}", isError: true);
             return false;
         }
     }
@@ -120,20 +126,20 @@ public class AuthMenu(IAuthService authService, UserContainer userContainer)
     {
         GameLogger.Info("Displaying registration view.");
 
-        var username = AuthMenuUi.PromptForUsername("Register");
-        var password = AuthMenuUi.PromptForPassword("Register", username);
+        var username = AuthMenuUi.PromptForUsername(RegisterMode);
+        var password = AuthMenuUi.PromptForPassword(RegisterMode, username);
 
         GameLogger.Info($"Registering new user '{username}'...");
 
         try
         {
             await authService.Register(username, password);
-            BaseMenuUi.ShowSuccessAndWait("Registration successful! You can now log in with your credentials.");
+            BaseMenuUi.ShowSuccessAndWait(RegistrationSuccessMessage);
         }
         catch (Exception ex)
         {
             GameLogger.Warning($"Registration failed: {ex.Message}");
-            BaseMenuUi.ShowMessageAndWait($"Registration failed: {ex.Message}", isError: true);
+            BaseMenuUi.ShowMessageAndWait($"{RegistrationFailedPrefix} {ex.Message}", isError: true);
         }
     }
 }
