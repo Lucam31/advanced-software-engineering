@@ -7,7 +7,6 @@ public class FriendshipMenuUi : BaseMenuUi
 {
     private const string PromptChoice = "   Your choice: ";
     private const string InputPrompt = "   > ";
-    private const string ErrorPrefix = "   ⚠ ";
     private const string SearchUsersHeader = "   === SEARCH USERS ===";
     private const string SearchResultsHeader = "   === SEARCH RESULTS ===";
     private const string FriendListHeader = "   === FRIEND LIST ===";
@@ -64,7 +63,7 @@ public class FriendshipMenuUi : BaseMenuUi
 
         ConsoleHelper.PrintConsoleNewline(SearchInstruction);
         ConsoleHelper.PrintConsoleNewline(BackOrQuitInstruction);
-        DrawInputPrompt();
+        DrawInputPrompt(InputPrompt);
     }
 
     /// <summary>
@@ -91,7 +90,7 @@ public class FriendshipMenuUi : BaseMenuUi
 
         ConsoleHelper.PrintConsoleNewline(SearchResultActionInstruction);
         ConsoleHelper.PrintConsoleNewline(BackOrQuitInstruction);
-        DrawInputPrompt();
+        DrawInputPrompt(InputPrompt);
     }
 
     /// <summary>
@@ -118,51 +117,6 @@ public class FriendshipMenuUi : BaseMenuUi
 
         ConsoleHelper.PrintConsoleNewline(FriendListActionsInstruction);
         ConsoleHelper.PrintConsoleNewline(FriendListPromptInstruction);
-        DrawInputPrompt();
+        DrawInputPrompt(InputPrompt);
     }
-
-    /// <summary>
-    /// Draws a section header with a title.
-    /// </summary>
-    /// <param name="title">The text to display as the section header.</param>
-    private static void DrawSectionHeader(string title)
-    {
-        ConsoleHelper.WriteEmptyLine();
-        ConsoleHelper.PrintConsoleNewline(title);
-        ConsoleHelper.WriteEmptyLine();
-    }
-
-    /// <summary>
-    /// Draws an optional error message if provided.
-    /// </summary>
-    /// <param name="errorMessage">The error message to display, or null/empty to skip.</param>
-    private static void DrawOptionalError(string? errorMessage)
-    {
-        if (string.IsNullOrEmpty(errorMessage))
-        {
-            return;
-        }
-
-        ConsoleHelper.SetForegroundColor(ConsoleColor.Red);
-        ConsoleHelper.PrintConsoleNewline($"{ErrorPrefix}{errorMessage}");
-        ConsoleHelper.ResetColor();
-        ConsoleHelper.WriteEmptyLine();
-    }
-
-    /// <summary>
-    /// Draws a numbered list of entries.
-    /// </summary>
-    /// <param name="entries">The list of strings to display as indexed entries.</param>
-    private static void DrawIndexedList(IReadOnlyList<string> entries)
-    {
-        for (var i = 0; i < entries.Count; i++)
-        {
-            ConsoleHelper.PrintConsoleNewline($"   [{i + 1}] {entries[i]}");
-        }
-    }
-
-    /// <summary>
-    /// Draws the input prompt for user input.
-    /// </summary>
-    private static void DrawInputPrompt() => ConsoleHelper.PrintConsole(InputPrompt);
 }
