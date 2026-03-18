@@ -11,26 +11,26 @@ public class MainMenuUi
     /// <param name="errorMessage">Optional error message shown above the input prompt.</param>
     public static void DrawMenu(string? errorMessage = null)
     {
-        CliOutput.ClearTerminal();
-        CliOutput.PrintConsoleNewline("       === WELCOME TO CHESS ===");
+        ConsoleHelper.ClearTerminal();
+        ConsoleHelper.PrintConsoleNewline("       === WELCOME TO CHESS ===");
         Console.WriteLine();
-        CliOutput.PrintConsoleNewline("   ┌──────────────────────────────┐");
-        CliOutput.PrintConsoleNewline("   │          MAIN MENU           │");
-        CliOutput.PrintConsoleNewline("   ├──────────────────────────────┤");
-        CliOutput.PrintConsoleNewline("   │  [A] Authenticate            │");
-        CliOutput.PrintConsoleNewline("   │  [Q] Quit Game               │");
-        CliOutput.PrintConsoleNewline("   └──────────────────────────────┘");
+        ConsoleHelper.PrintConsoleNewline("   ┌──────────────────────────────┐");
+        ConsoleHelper.PrintConsoleNewline("   │          MAIN MENU           │");
+        ConsoleHelper.PrintConsoleNewline("   ├──────────────────────────────┤");
+        ConsoleHelper.PrintConsoleNewline("   │  [A] Authenticate            │");
+        ConsoleHelper.PrintConsoleNewline("   │  [Q] Quit Game               │");
+        ConsoleHelper.PrintConsoleNewline("   └──────────────────────────────┘");
         Console.WriteLine();
 
         if (!string.IsNullOrEmpty(errorMessage))
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            CliOutput.PrintConsoleNewline($"   ⚠ {errorMessage}");
+            ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
             Console.ResetColor();
             Console.WriteLine();
         }
 
-        CliOutput.PrintConsoleNewline("   Your choice: ");
+        ConsoleHelper.PrintConsoleNewline("   Your choice: ");
     }
 
     /// <summary>

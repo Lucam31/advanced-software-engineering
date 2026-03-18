@@ -14,7 +14,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 /// </summary>
 [DoNotParallelize]
 [TestClass]
-public class CliOutputTest
+public class ConsoleHelperTest
 {
     /// <summary>
     /// Saved original console input stream, restored in test cleanup
@@ -34,7 +34,7 @@ public class CliOutputTest
         _originalIn = Console.In;
         _originalOut = Console.Out;
         Console.SetOut(_output);
-        CliOutput.SetConsole(new SystemConsoleAdapterProxy());
+        ConsoleHelper.SetConsole(new SystemConsoleAdapterProxy());
     }
 
     /// <summary>
@@ -46,68 +46,68 @@ public class CliOutputTest
     {
         if (_originalIn != null) Console.SetIn(_originalIn);
         if (_originalOut != null) Console.SetOut(_originalOut);
-        CliOutput.ResetConsole();
+        ConsoleHelper.ResetConsole();
     }
 
     /// <summary>
-    /// Verifies that <see cref="CliOutput.PrintConsole(string)"/> outputs the expected string to the console
+    /// Verifies that <see cref="ConsoleHelper.PrintConsole(string)"/> outputs the expected string to the console
     /// </summary>
     [TestMethod]
     public void TestPrintConsole_OutputEqualsInput()
     {
-        CliOutput.PrintConsole("Test");
+        ConsoleHelper.PrintConsole("Test");
 
         Assert.AreEqual("Test", _output.ToString());
     }
 
     /// <summary>
-    /// Verifies that <see cref="CliOutput.PrintConsoleNewline(string)"/> outputs the expected string with a newline
+    /// Verifies that <see cref="ConsoleHelper.PrintConsoleNewline(string)"/> outputs the expected string with a newline
     /// to the console
     /// </summary>
     [TestMethod]
     public void TestPrintConsoleNewline_OutputEqualsNewlineInput()
     {
-        CliOutput.PrintConsoleNewline("TestNewline");
+        ConsoleHelper.PrintConsoleNewline("TestNewline");
         
         Assert.AreEqual("\nTestNewline", _output.ToString());
     }
     
     /// <summary>
-    /// Verifies that <see cref="CliOutput.ClearCurrentConsoleLine"/> clears the current console line
+    /// Verifies that <see cref="ConsoleHelper.ClearCurrentConsoleLine"/> clears the current console line
     /// </summary>
     [TestMethod]
     public void TestClearCurrentConsoleLine_OutputClearsLine()
     {
-        CliOutput.SetConsole(_mockOutput);
-        CliOutput.PrintConsole("TestLine");
-        CliOutput.ClearCurrentConsoleLine();
+        ConsoleHelper.SetConsole(_mockOutput);
+        ConsoleHelper.PrintConsole("TestLine");
+        ConsoleHelper.ClearCurrentConsoleLine();
         // Assert.AreEqual(string.Empty, _mockOutput.GetLine(_mockOutput.CursorTop));
         Assert.AreEqual(string.Empty, _mockOutput.GetLine(0));
     }
     
     /// <summary>
-    /// Verifies that <see cref="CliOutput.OverwriteLine(string)"/> overwrites the current console line
+    /// Verifies that <see cref="ConsoleHelper.OverwriteLine(string)"/> overwrites the current console line
     /// with the expected string
     /// </summary>
     [TestMethod]
     public void TestOverwriteLine_OutputEqualsInput()
     {
-        CliOutput.SetConsole(_mockOutput);
-        CliOutput.PrintConsole("OldLine");
-        CliOutput.OverwriteLine("NewLine");
+        ConsoleHelper.SetConsole(_mockOutput);
+        ConsoleHelper.PrintConsole("OldLine");
+        ConsoleHelper.OverwriteLine("NewLine");
         Assert.AreEqual("NewLine", _mockOutput.GetLine(_mockOutput.CursorTop));
     }
     
     /// <summary>
-    /// Verifies that <see cref="CliOutput.WriteErrorMessage(string)"/> outputs the expected error message
+    /// Verifies that <see cref="ConsoleHelper.WriteErrorMessage(string)"/> outputs the expected error message
     /// to the console
     /// </summary>
     [TestMethod]
     public void TestWriteErrorMessage_OutputEqualsInput()
     {
-        CliOutput.SetConsole(_mockOutput);
-        CliOutput.PrintConsoleNewline("SomeMessage");
-        CliOutput.WriteErrorMessage("ErrorMessage");
+        ConsoleHelper.SetConsole(_mockOutput);
+        ConsoleHelper.PrintConsoleNewline("SomeMessage");
+        ConsoleHelper.WriteErrorMessage("ErrorMessage");
         Assert.AreEqual("ErrorMessage", _mockOutput.GetLine(0));
     }
 

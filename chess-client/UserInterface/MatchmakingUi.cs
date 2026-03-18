@@ -11,25 +11,25 @@ public class MatchmakingUi
     /// <param name="errorMessage">Optional error message shown above the queue input prompt.</param>
     public static void DrawQueueScreen(string? errorMessage = null)
     {
-        CliOutput.ClearTerminal();
+        ConsoleHelper.ClearTerminal();
         Console.WriteLine();
-        CliOutput.PrintConsoleNewline("   === MATCHMAKING ===");
+        ConsoleHelper.PrintConsoleNewline("   === MATCHMAKING ===");
         Console.WriteLine();
-        CliOutput.PrintConsoleNewline("   Searching for an opponent...");
-        CliOutput.PrintConsoleNewline("   Please wait.");
+        ConsoleHelper.PrintConsoleNewline("   Searching for an opponent...");
+        ConsoleHelper.PrintConsoleNewline("   Please wait.");
         Console.WriteLine();
 
         if (!string.IsNullOrEmpty(errorMessage))
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            CliOutput.PrintConsoleNewline($"   {errorMessage}");
+            ConsoleHelper.PrintConsoleNewline($"   {errorMessage}");
             Console.ResetColor();
             Console.WriteLine();
         }
 
-        CliOutput.PrintConsoleNewline("   [Q] Quit Queue");
+        ConsoleHelper.PrintConsoleNewline("   [Q] Quit Queue");
         Console.WriteLine();
-        CliOutput.PrintConsoleNewline("   Your input: ");
+        ConsoleHelper.PrintConsoleNewline("   Your input: ");
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ public class MatchmakingUi
     public static void ShowMessage(string message)
     {
         Console.WriteLine();
-        CliOutput.PrintConsoleNewline($"   {message}");
+        ConsoleHelper.PrintConsoleNewline($"   {message}");
     }
 
     /// <summary>

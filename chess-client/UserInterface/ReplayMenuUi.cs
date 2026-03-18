@@ -16,23 +16,23 @@ public class ReplayMenuUi
     /// <param name="errorMessage">Optional error message shown above the input prompt.</param>
     public static void DrawMenu(List<string> gameDisplays, string? errorMessage = null)
     {
-        CliOutput.ClearTerminal();
+        ConsoleHelper.ClearTerminal();
         Console.WriteLine();
-        CliOutput.PrintConsoleNewline("   === REPLAY MENU ===");
+        ConsoleHelper.PrintConsoleNewline("   === REPLAY MENU ===");
         Console.WriteLine();
 
         if (gameDisplays.Count == 0)
         {
-            CliOutput.PrintConsoleNewline("   No games found.");
+            ConsoleHelper.PrintConsoleNewline("   No games found.");
         }
         else
         {
-            CliOutput.PrintConsoleNewline("   Select a game to replay:");
+            ConsoleHelper.PrintConsoleNewline("   Select a game to replay:");
             Console.WriteLine();
 
             for (int i = 0; i < gameDisplays.Count; i++)
             {
-                CliOutput.PrintConsoleNewline($"   [{i + 1}] {gameDisplays[i]}");
+                ConsoleHelper.PrintConsoleNewline($"   [{i + 1}] {gameDisplays[i]}");
             }
         }
 
@@ -41,12 +41,12 @@ public class ReplayMenuUi
         if (!string.IsNullOrEmpty(errorMessage))
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            CliOutput.PrintConsoleNewline($"   ⚠ {errorMessage}");
+            ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
             Console.ResetColor();
             Console.WriteLine();
         }
 
-        CliOutput.PrintConsoleNewline("   [Q] Return to main menu");
+        ConsoleHelper.PrintConsoleNewline("   [Q] Return to main menu");
         Console.WriteLine();
         Console.Write("   Your choice: ");
     }

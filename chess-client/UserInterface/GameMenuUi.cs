@@ -11,31 +11,31 @@ public class GameMenuUi
     /// <param name="errorMessage">Optional error message shown above the input prompt.</param>
     public static void DrawMainMenu(string? errorMessage = null)
     {
-        CliOutput.ClearTerminal();
+        ConsoleHelper.ClearTerminal();
         Console.WriteLine();
-        CliOutput.PrintConsoleNewline("       === CHESS DASHBOARD ===");
+        ConsoleHelper.PrintConsoleNewline("       === CHESS DASHBOARD ===");
         Console.WriteLine();
 
-        CliOutput.PrintConsoleNewline("   ┌──────────────────────────────┐");
-        CliOutput.PrintConsoleNewline("   │          MAIN MENU           │");
-        CliOutput.PrintConsoleNewline("   ├──────────────────────────────┤");
-        CliOutput.PrintConsoleNewline("   │  [P] Play                    │");
-        CliOutput.PrintConsoleNewline("   │  [F] Friends                 │");
-        CliOutput.PrintConsoleNewline("   │  [G] Games and Replays       │");
-        CliOutput.PrintConsoleNewline("   │  [L] Logout                  │");
-        CliOutput.PrintConsoleNewline("   │  [Q] Quit Game               │");
-        CliOutput.PrintConsoleNewline("   └──────────────────────────────┘");
+        ConsoleHelper.PrintConsoleNewline("   ┌──────────────────────────────┐");
+        ConsoleHelper.PrintConsoleNewline("   │          MAIN MENU           │");
+        ConsoleHelper.PrintConsoleNewline("   ├──────────────────────────────┤");
+        ConsoleHelper.PrintConsoleNewline("   │  [P] Play                    │");
+        ConsoleHelper.PrintConsoleNewline("   │  [F] Friends                 │");
+        ConsoleHelper.PrintConsoleNewline("   │  [G] Games and Replays       │");
+        ConsoleHelper.PrintConsoleNewline("   │  [L] Logout                  │");
+        ConsoleHelper.PrintConsoleNewline("   │  [Q] Quit Game               │");
+        ConsoleHelper.PrintConsoleNewline("   └──────────────────────────────┘");
         Console.WriteLine();
 
         if (!string.IsNullOrEmpty(errorMessage))
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            CliOutput.PrintConsoleNewline($"   ⚠ {errorMessage}");
+            ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
             Console.ResetColor();
             Console.WriteLine();
         }
 
-        CliOutput.PrintConsoleNewline("   Your choice: ");
+        ConsoleHelper.PrintConsoleNewline("   Your choice: ");
     }
 
     /// <summary>
@@ -45,7 +45,7 @@ public class GameMenuUi
     public static void ShowMessage(string message)
     {
         Console.WriteLine();
-        CliOutput.PrintConsoleNewline($"   ℹ {message}");
+        ConsoleHelper.PrintConsoleNewline($"   ℹ {message}");
     }
 
     /// <summary>

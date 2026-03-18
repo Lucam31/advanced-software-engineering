@@ -48,40 +48,40 @@ public class ReplayLogic
     {
         List<string> moves = _game.Moves;
         int currentMoveIndex = 0;
-        CliOutput.PrintConsoleNewline("Starting Replay...");
+        ConsoleHelper.PrintConsoleNewline("Starting Replay...");
         Console.Clear();
         _gameboard.PrintBoard();
         // CLIOutput.PrintConsoleNewline($"Move {currentMoveIndex}/{moves.Length}");
-        CliOutput.PrintConsoleNewline($"Move {currentMoveIndex}/{moves.Count}");
+        ConsoleHelper.PrintConsoleNewline($"Move {currentMoveIndex}/{moves.Count}");
         // new method in InputParser to read single character input with validation???
-        CliOutput.PrintConsoleNewline("Revert last Move (A), Next Move (D), (Q)uit.");
-        CliOutput.PrintConsoleNewline("Enter your choice: ");
+        ConsoleHelper.PrintConsoleNewline("Revert last Move (A), Next Move (D), (Q)uit.");
+        ConsoleHelper.PrintConsoleNewline("Enter your choice: ");
         while (true)
         {
             var userInput = Console.ReadKey();
             switch (userInput.KeyChar.ToString().ToUpper())
             {
                 case "Q":
-                    CliOutput.PrintConsoleNewline("Exiting Replay...");
+                    ConsoleHelper.PrintConsoleNewline("Exiting Replay...");
                     Console.Clear();
                     return;
                 case "A":
                     if (currentMoveIndex == 0)
                     {
-                        CliOutput.OverwriteLine("No moves to revert: ");
+                        ConsoleHelper.OverwriteLine("No moves to revert: ");
                         continue;
                     }
 
                     currentMoveIndex--;
                     ReplayUpToMove(moves, currentMoveIndex);
-                    CliOutput.RewriteBoard(_gameboard);
-                    CliOutput.OverwriteLineRelative(2, $"Move {currentMoveIndex}/{moves.Count}");
-                    CliOutput.OverwriteLine("Reverted last move: ");
+                    ConsoleHelper.RewriteBoard(_gameboard);
+                    ConsoleHelper.OverwriteLineRelative(2, $"Move {currentMoveIndex}/{moves.Count}");
+                    ConsoleHelper.OverwriteLine("Reverted last move: ");
                     continue;
                 case "D":
                     if (currentMoveIndex >= moves.Count)
                     {
-                        CliOutput.OverwriteLine("No more moves to play: ");
+                        ConsoleHelper.OverwriteLine("No more moves to play: ");
                         continue;
                     }
                     var moveToPlay = moves[currentMoveIndex];
@@ -111,16 +111,16 @@ public class ReplayLogic
                             break;
                     }
                     currentMoveIndex++;
-                    CliOutput.RewriteBoard(_gameboard);
-                    CliOutput.OverwriteLineRelative(2, $"Move {currentMoveIndex}/{moves.Count}");
-                    CliOutput.OverwriteLine("Enter your choice: ");
+                    ConsoleHelper.RewriteBoard(_gameboard);
+                    ConsoleHelper.OverwriteLineRelative(2, $"Move {currentMoveIndex}/{moves.Count}");
+                    ConsoleHelper.OverwriteLine("Enter your choice: ");
                     continue;
                 default:
-                    CliOutput.OverwriteLine($"{userInput.KeyChar} is not a valid choice: ");
+                    ConsoleHelper.OverwriteLine($"{userInput.KeyChar} is not a valid choice: ");
                     continue;
             }
         }
-        CliOutput.PrintConsoleNewline("Replay Finished. Press any key to return to the replay menu: ");
+        ConsoleHelper.PrintConsoleNewline("Replay Finished. Press any key to return to the replay menu: ");
         Console.ReadKey();
         Console.Clear();
     }

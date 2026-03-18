@@ -11,29 +11,29 @@ public class AuthMenuUi
     /// <param name="errorMessage">Optional error message shown above the input prompt.</param>
     public static void DrawMainMenu(string? errorMessage = null)
     {
-        CliOutput.ClearTerminal();
-        CliOutput.PrintConsoleNewline("        === AUTHENTICATION ===");
+        ConsoleHelper.ClearTerminal();
+        ConsoleHelper.PrintConsoleNewline("        === AUTHENTICATION ===");
         Console.WriteLine();
 
-        CliOutput.PrintConsoleNewline("   ┌──────────────────────────────┐");
-        CliOutput.PrintConsoleNewline("   │       LOGIN & REGISTER       │");
-        CliOutput.PrintConsoleNewline("   ├──────────────────────────────┤");
-        CliOutput.PrintConsoleNewline("   │  [L] Login                   │");
-        CliOutput.PrintConsoleNewline("   │  [R] Register                │");
-        CliOutput.PrintConsoleNewline("   │  [B] Back to Main Menu       │");
-        CliOutput.PrintConsoleNewline("   │  [Q] Quit Game               │");
-        CliOutput.PrintConsoleNewline("   └──────────────────────────────┘");
+        ConsoleHelper.PrintConsoleNewline("   ┌──────────────────────────────┐");
+        ConsoleHelper.PrintConsoleNewline("   │       LOGIN & REGISTER       │");
+        ConsoleHelper.PrintConsoleNewline("   ├──────────────────────────────┤");
+        ConsoleHelper.PrintConsoleNewline("   │  [L] Login                   │");
+        ConsoleHelper.PrintConsoleNewline("   │  [R] Register                │");
+        ConsoleHelper.PrintConsoleNewline("   │  [B] Back to Main Menu       │");
+        ConsoleHelper.PrintConsoleNewline("   │  [Q] Quit Game               │");
+        ConsoleHelper.PrintConsoleNewline("   └──────────────────────────────┘");
         Console.WriteLine();
 
         if (!string.IsNullOrEmpty(errorMessage))
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            CliOutput.PrintConsoleNewline($"   ⚠ {errorMessage}");
+            ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
             Console.ResetColor();
             Console.WriteLine();
         }
 
-        CliOutput.PrintConsoleNewline("   Your choice: ");
+        ConsoleHelper.PrintConsoleNewline("   Your choice: ");
     }
 
     /// <summary>
@@ -48,20 +48,20 @@ public class AuthMenuUi
 
         while (true)
         {
-            CliOutput.ClearTerminal();
+            ConsoleHelper.ClearTerminal();
             Console.WriteLine();
-            CliOutput.PrintConsoleNewline($"   === {actionTitle.ToUpper()} ===");
+            ConsoleHelper.PrintConsoleNewline($"   === {actionTitle.ToUpper()} ===");
             Console.WriteLine();
 
             if (!string.IsNullOrEmpty(errorMessage))
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                CliOutput.PrintConsoleNewline($"   ⚠ {errorMessage}");
+                ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
                 Console.ResetColor();
                 Console.WriteLine();
             }
 
-            CliOutput.PrintConsoleNewline("   Username: ");
+            ConsoleHelper.PrintConsoleNewline("   Username: ");
             username = Console.ReadLine()?.Trim();
 
             if (!string.IsNullOrEmpty(username)) break;
@@ -85,25 +85,25 @@ public class AuthMenuUi
 
         while (true)
         {
-            CliOutput.ClearTerminal();
+            ConsoleHelper.ClearTerminal();
             Console.WriteLine();
-            CliOutput.PrintConsoleNewline($"   === {actionTitle.ToUpper()} ===");
+            ConsoleHelper.PrintConsoleNewline($"   === {actionTitle.ToUpper()} ===");
             Console.WriteLine();
 
             Console.ForegroundColor = ConsoleColor.DarkGray;
-            CliOutput.PrintConsoleNewline($"   Username: {enteredUsername}");
+            ConsoleHelper.PrintConsoleNewline($"   Username: {enteredUsername}");
             Console.ResetColor();
             Console.WriteLine();
 
             if (!string.IsNullOrEmpty(errorMessage))
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                CliOutput.PrintConsoleNewline($"   ⚠ {errorMessage}");
+                ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
                 Console.ResetColor();
                 Console.WriteLine();
             }
 
-            password = CliOutput.ReadPassword("   Password: ");
+            password = ConsoleHelper.ReadPassword("   Password: ");
 
             if (!string.IsNullOrEmpty(password)) break;
 
@@ -122,11 +122,11 @@ public class AuthMenuUi
     {
         Console.WriteLine();
         if (isError) Console.ForegroundColor = ConsoleColor.Red;
-        CliOutput.PrintConsoleNewline($"   {(isError ? "⚠" : "ℹ")} {message}");
+        ConsoleHelper.PrintConsoleNewline($"   {(isError ? "⚠" : "ℹ")} {message}");
         Console.ResetColor();
 
         Console.WriteLine();
-        CliOutput.PrintConsoleNewline("   Press ENTER to return...");
+        ConsoleHelper.PrintConsoleNewline("   Press ENTER to return...");
         Console.ReadLine();
     }
 
@@ -138,11 +138,11 @@ public class AuthMenuUi
     {
         Console.WriteLine();
         Console.ForegroundColor = ConsoleColor.Green;
-        CliOutput.PrintConsoleNewline($"   ✔ {message}");
+        ConsoleHelper.PrintConsoleNewline($"   ✔ {message}");
         Console.ResetColor();
 
         Console.WriteLine();
-        CliOutput.PrintConsoleNewline("   Press ENTER to continue...");
+        ConsoleHelper.PrintConsoleNewline("   Press ENTER to continue...");
         Console.ReadLine();
     }
 

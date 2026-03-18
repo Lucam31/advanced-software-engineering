@@ -11,28 +11,28 @@ public class FriendshipMenuUi
     /// <param name="errorMessage">Optional error message shown above the input prompt.</param>
     public static void DrawMainMenu(string? errorMessage = null)
     {
-        CliOutput.ClearTerminal();
-        CliOutput.PrintConsoleNewline("            === FRIENDS ===");
+        ConsoleHelper.ClearTerminal();
+        ConsoleHelper.PrintConsoleNewline("            === FRIENDS ===");
         Console.WriteLine();
-        CliOutput.PrintConsoleNewline("   ┌──────────────────────────────┐");
-        CliOutput.PrintConsoleNewline("   │          FRIEND MENU         │");
-        CliOutput.PrintConsoleNewline("   ├──────────────────────────────┤");
-        CliOutput.PrintConsoleNewline("   │  [S] Search Users            │");
-        CliOutput.PrintConsoleNewline("   │  [L] Friend List             │");
-        CliOutput.PrintConsoleNewline("   │  [B] Back to Dashboard       │");
-        CliOutput.PrintConsoleNewline("   │  [Q] Quit Game               │");
-        CliOutput.PrintConsoleNewline("   └──────────────────────────────┘");
+        ConsoleHelper.PrintConsoleNewline("   ┌──────────────────────────────┐");
+        ConsoleHelper.PrintConsoleNewline("   │          FRIEND MENU         │");
+        ConsoleHelper.PrintConsoleNewline("   ├──────────────────────────────┤");
+        ConsoleHelper.PrintConsoleNewline("   │  [S] Search Users            │");
+        ConsoleHelper.PrintConsoleNewline("   │  [L] Friend List             │");
+        ConsoleHelper.PrintConsoleNewline("   │  [B] Back to Dashboard       │");
+        ConsoleHelper.PrintConsoleNewline("   │  [Q] Quit Game               │");
+        ConsoleHelper.PrintConsoleNewline("   └──────────────────────────────┘");
         Console.WriteLine();
 
         if (!string.IsNullOrEmpty(errorMessage))
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            CliOutput.PrintConsoleNewline($"   ⚠ {errorMessage}");
+            ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
             Console.ResetColor();
             Console.WriteLine();
         }
 
-        CliOutput.PrintConsoleNewline("   Your choice: ");
+        ConsoleHelper.PrintConsoleNewline("   Your choice: ");
     }
 
     /// <summary>
@@ -41,21 +41,21 @@ public class FriendshipMenuUi
     /// <param name="errorMessage">Optional error message shown above the input prompt.</param>
     public static void DrawSearchPrompt(string? errorMessage = null)
     {
-        CliOutput.ClearTerminal();
+        ConsoleHelper.ClearTerminal();
         Console.WriteLine();
-        CliOutput.PrintConsoleNewline("   === SEARCH USERS ===");
+        ConsoleHelper.PrintConsoleNewline("   === SEARCH USERS ===");
         Console.WriteLine();
 
         if (!string.IsNullOrEmpty(errorMessage))
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            CliOutput.PrintConsoleNewline($"   ⚠ {errorMessage}");
+            ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
             Console.ResetColor();
             Console.WriteLine();
         }
 
-        CliOutput.PrintConsoleNewline("   Please enter the username you want to search for.");
-        CliOutput.PrintConsoleNewline("   (Type 'B' to go back, 'Q' to quit)");
+        ConsoleHelper.PrintConsoleNewline("   Please enter the username you want to search for.");
+        ConsoleHelper.PrintConsoleNewline("   (Type 'B' to go back, 'Q' to quit)");
         Console.Write("   > ");
     }
 
@@ -66,20 +66,20 @@ public class FriendshipMenuUi
     /// <param name="errorMessage">Optional error message shown above the input prompt.</param>
     public void DrawSearchResults(List<string> users, string? errorMessage = null)
     {
-        CliOutput.ClearTerminal();
+        ConsoleHelper.ClearTerminal();
         Console.WriteLine();
-        CliOutput.PrintConsoleNewline("   === SEARCH RESULTS ===");
+        ConsoleHelper.PrintConsoleNewline("   === SEARCH RESULTS ===");
         Console.WriteLine();
 
         if (users.Count == 0)
         {
-            CliOutput.PrintConsoleNewline("   No users found.");
+            ConsoleHelper.PrintConsoleNewline("   No users found.");
         }
         else
         {
             for (var i = 0; i < users.Count; i++)
             {
-                CliOutput.PrintConsoleNewline($"   [{i + 1}] {users[i]}");
+                ConsoleHelper.PrintConsoleNewline($"   [{i + 1}] {users[i]}");
             }
         }
 
@@ -88,13 +88,13 @@ public class FriendshipMenuUi
         if (!string.IsNullOrEmpty(errorMessage))
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            CliOutput.PrintConsoleNewline($"   ⚠ {errorMessage}");
+            ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
             Console.ResetColor();
             Console.WriteLine();
         }
 
-        CliOutput.PrintConsoleNewline("   Enter the number to add to your friendlist.");
-        CliOutput.PrintConsoleNewline("   (Type 'B' to go back, 'Q' to quit)");
+        ConsoleHelper.PrintConsoleNewline("   Enter the number to add to your friendlist.");
+        ConsoleHelper.PrintConsoleNewline("   (Type 'B' to go back, 'Q' to quit)");
         Console.Write("   > ");
     }
 
@@ -105,20 +105,20 @@ public class FriendshipMenuUi
     /// <param name="errorMessage">Optional error message shown above the input prompt.</param>
     public static void DrawListView(List<string> friendNames, string? errorMessage = null)
     {
-        CliOutput.ClearTerminal();
+        ConsoleHelper.ClearTerminal();
         Console.WriteLine();
-        CliOutput.PrintConsoleNewline("   === FRIEND LIST ===");
+        ConsoleHelper.PrintConsoleNewline("   === FRIEND LIST ===");
         Console.WriteLine();
 
         if (friendNames.Count == 0)
         {
-            CliOutput.PrintConsoleNewline("   You have no friends yet. Try adding some!");
+            ConsoleHelper.PrintConsoleNewline("   You have no friends yet. Try adding some!");
         }
         else
         {
             for (var i = 0; i < friendNames.Count; i++)
             {
-                CliOutput.PrintConsoleNewline($"   [{i + 1}] {friendNames[i]}");
+                ConsoleHelper.PrintConsoleNewline($"   [{i + 1}] {friendNames[i]}");
             }
         }
 
@@ -127,13 +127,13 @@ public class FriendshipMenuUi
         if (!string.IsNullOrEmpty(errorMessage))
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            CliOutput.PrintConsoleNewline($"   ⚠ {errorMessage}");
+            ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
             Console.ResetColor();
             Console.WriteLine();
         }
 
-        CliOutput.PrintConsoleNewline("   Actions: <number>D = delete, <number>P = play");
-        CliOutput.PrintConsoleNewline("   (Type 'B' to go back, 'Q' to quit, or press Enter to refresh)");
+        ConsoleHelper.PrintConsoleNewline("   Actions: <number>D = delete, <number>P = play");
+        ConsoleHelper.PrintConsoleNewline("   (Type 'B' to go back, 'Q' to quit, or press Enter to refresh)");
         Console.Write("   > ");
     }
 
@@ -146,7 +146,7 @@ public class FriendshipMenuUi
     {
         Console.WriteLine();
         if (isError) Console.ForegroundColor = ConsoleColor.Red;
-        CliOutput.PrintConsoleNewline($"   {(isError ? "⚠" : "ℹ")} {message}");
+        ConsoleHelper.PrintConsoleNewline($"   {(isError ? "⚠" : "ℹ")} {message}");
         Console.ResetColor();
     }
 
@@ -159,7 +159,7 @@ public class FriendshipMenuUi
     {
         ShowMessage(message, isError);
         Console.WriteLine();
-        CliOutput.PrintConsoleNewline("   Press ENTER to continue...");
+        ConsoleHelper.PrintConsoleNewline("   Press ENTER to continue...");
         Console.ReadLine();
     }
 
