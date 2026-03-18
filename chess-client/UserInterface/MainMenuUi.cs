@@ -5,6 +5,20 @@ namespace chess_client.UserInterface;
 /// </summary>
 public class MainMenuUi : BaseMenuUi
 {
+    private const string PromptChoice = "   Your choice: ";
+
+    private const string MenuLayout =
+        """
+               === WELCOME TO CHESS ===
+
+           ┌──────────────────────────────┐
+           │          MAIN MENU           │
+           ├──────────────────────────────┤
+           │  [A] Authenticate            │
+           │  [Q] Quit Game               │
+           └──────────────────────────────┘
+        """;
+
     /// <summary>
     /// Draws the startup menu and optionally shows an error message.
     /// </summary>
@@ -12,24 +26,10 @@ public class MainMenuUi : BaseMenuUi
     public static void DrawMenu(string? errorMessage = null)
     {
         ConsoleHelper.ClearTerminal();
-        ConsoleHelper.PrintConsoleNewline("       === WELCOME TO CHESS ===");
-        Console.WriteLine();
-        ConsoleHelper.PrintConsoleNewline("   ┌──────────────────────────────┐");
-        ConsoleHelper.PrintConsoleNewline("   │          MAIN MENU           │");
-        ConsoleHelper.PrintConsoleNewline("   ├──────────────────────────────┤");
-        ConsoleHelper.PrintConsoleNewline("   │  [A] Authenticate            │");
-        ConsoleHelper.PrintConsoleNewline("   │  [Q] Quit Game               │");
-        ConsoleHelper.PrintConsoleNewline("   └──────────────────────────────┘");
-        Console.WriteLine();
+        ConsoleHelper.PrintConsoleNewline(MenuLayout);
+        ConsoleHelper.WriteEmptyLine();
 
-        if (!string.IsNullOrEmpty(errorMessage))
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
-            Console.ResetColor();
-            Console.WriteLine();
-        }
-
-        ConsoleHelper.PrintConsoleNewline("   Your choice: ");
+        BaseMenuUi.DrawOptionalError(errorMessage);
+        ConsoleHelper.PrintConsoleNewline(PromptChoice);
     }
 }
