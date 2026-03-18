@@ -5,6 +5,27 @@ namespace chess_client.UserInterface;
 /// </summary>
 public class AuthMenuUi : BaseMenuUi
 {
+    private const string PromptChoice = "   Your choice: ";
+    private const string UsernamePrompt = "   Username: ";
+    private const string PasswordPrompt = "   Password: ";
+    private const string EmptyUsernameError = "Username cannot be empty.";
+    private const string EmptyPasswordError = "Password cannot be empty.";
+    private const string UsernameDisplayFormat = "   Username: {0}";
+
+    private const string MainMenuLayout =
+        """
+               === AUTHENTICATION ===
+
+           ┌──────────────────────────────┐
+           │       LOGIN & REGISTER       │
+           ├──────────────────────────────┤
+           │  [L] Login                   │
+           │  [R] Register                │
+           │  [B] Back to Main Menu       │
+           │  [Q] Quit Game               │
+           └──────────────────────────────┘
+        """;
+
     /// <summary>
     /// Draws the main menu with login/register options.
     /// </summary>
@@ -12,28 +33,11 @@ public class AuthMenuUi : BaseMenuUi
     public static void DrawMainMenu(string? errorMessage = null)
     {
         ConsoleHelper.ClearTerminal();
-        ConsoleHelper.PrintConsoleNewline("        === AUTHENTICATION ===");
-        Console.WriteLine();
+        ConsoleHelper.PrintConsoleNewline(MainMenuLayout);
+        ConsoleHelper.WriteEmptyLine();
 
-        ConsoleHelper.PrintConsoleNewline("   ┌──────────────────────────────┐");
-        ConsoleHelper.PrintConsoleNewline("   │       LOGIN & REGISTER       │");
-        ConsoleHelper.PrintConsoleNewline("   ├──────────────────────────────┤");
-        ConsoleHelper.PrintConsoleNewline("   │  [L] Login                   │");
-        ConsoleHelper.PrintConsoleNewline("   │  [R] Register                │");
-        ConsoleHelper.PrintConsoleNewline("   │  [B] Back to Main Menu       │");
-        ConsoleHelper.PrintConsoleNewline("   │  [Q] Quit Game               │");
-        ConsoleHelper.PrintConsoleNewline("   └──────────────────────────────┘");
-        Console.WriteLine();
-
-        if (!string.IsNullOrEmpty(errorMessage))
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
-            Console.ResetColor();
-            Console.WriteLine();
-        }
-
-        ConsoleHelper.PrintConsoleNewline("   Your choice: ");
+        DrawOptionalError(errorMessage);
+        ConsoleHelper.PrintConsoleNewline(PromptChoice);
     }
 
     /// <summary>
@@ -49,24 +53,15 @@ public class AuthMenuUi : BaseMenuUi
         while (true)
         {
             ConsoleHelper.ClearTerminal();
-            Console.WriteLine();
-            ConsoleHelper.PrintConsoleNewline($"   === {actionTitle.ToUpper()} ===");
-            Console.WriteLine();
+            DrawAuthHeader(actionTitle);
+            BaseMenuUi.DrawOptionalError(errorMessage);
 
-            if (!string.IsNullOrEmpty(errorMessage))
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
-                Console.ResetColor();
-                Console.WriteLine();
-            }
-
-            ConsoleHelper.PrintConsoleNewline("   Username: ");
+            ConsoleHelper.PrintConsoleNewline(UsernamePrompt);
             username = Console.ReadLine()?.Trim();
 
             if (!string.IsNullOrEmpty(username)) break;
 
-            errorMessage = "Username cannot be empty.";
+            errorMessage = EmptyUsernameError;
         }
 
         return username;
@@ -86,30 +81,40 @@ public class AuthMenuUi : BaseMenuUi
         while (true)
         {
             ConsoleHelper.ClearTerminal();
-            Console.WriteLine();
-            ConsoleHelper.PrintConsoleNewline($"   === {actionTitle.ToUpper()} ===");
-            Console.WriteLine();
+            DrawAuthHeader(actionTitle);
+            DrawDisplayedUsername(enteredUsername);
+            DrawOptionalError(errorMessage);
 
-            Console.ForegroundColor = ConsoleColor.DarkGray;
-            ConsoleHelper.PrintConsoleNewline($"   Username: {enteredUsername}");
-            Console.ResetColor();
-            Console.WriteLine();
-
-            if (!string.IsNullOrEmpty(errorMessage))
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
-                Console.ResetColor();
-                Console.WriteLine();
-            }
-
-            password = ConsoleHelper.ReadPassword("   Password: ");
+            password = ConsoleHelper.ReadPassword(PasswordPrompt);
 
             if (!string.IsNullOrEmpty(password)) break;
 
-            errorMessage = "Password cannot be empty.";
+            errorMessage = EmptyPasswordError;
         }
 
         return password;
+    }
+
+    /// <summary>
+    /// Draws an authentication action header centered on screen.
+    /// </summary>
+    /// <param name="actionTitle">The action name to display (e.g., "Login", "Register").</param>
+    private static void DrawAuthHeader(string actionTitle)
+    {
+        ConsoleHelper.WriteEmptyLine();
+        ConsoleHelper.PrintConsoleNewline($"   === {actionTitle.ToUpper()} ===");
+        ConsoleHelper.WriteEmptyLine();
+    }
+
+    /// <summary>
+    /// Displays a previously entered username in muted style.
+    /// </summary>
+    /// <param name="username">The username to display.</param>
+    private static void DrawDisplayedUsername(string username)
+    {
+        ConsoleHelper.SetForegroundColor(ConsoleColor.DarkGray);
+        ConsoleHelper.PrintConsoleNewline(string.Format(UsernameDisplayFormat, username));
+        ConsoleHelper.ResetColor();
+        ConsoleHelper.WriteEmptyLine();
     }
 }
