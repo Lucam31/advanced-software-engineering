@@ -1,3 +1,4 @@
+using chess_client.Logic;
 using chess_client.Services;
 using chess_client.States;
 using Shared.Logger;
@@ -189,8 +190,8 @@ public class FriendshipMenu(
                 continue;
             }
 
-            if (input == "Q" || input == "QUIT") return FriendshipMenuResult.Quit;
-            if (input == "B" || input == "BACK") return FriendshipMenuResult.Back;
+            if (input is "Q" or "QUIT") return FriendshipMenuResult.Quit;
+            if (input is "B" or "BACK") return FriendshipMenuResult.Back;
 
             if (input.Length < 2)
             {
