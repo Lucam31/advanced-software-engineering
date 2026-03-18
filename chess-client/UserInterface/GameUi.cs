@@ -1,7 +1,4 @@
 using Shared;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace chess_client.UserInterface;
 
@@ -12,21 +9,36 @@ public class GameUi : BaseMenuUi
 {
     private const int BoardWidth = 36;
     private const int MiddleColumnWidth = 38;
+    private const int BoardSectionMinLines = 10;
+    private const int SeparatorWidth = 85;
+    private const string DefaultWhitePlayerLabel = "Player 1 (White)";
+    private const string DefaultBlackPlayerLabel = "Player 2 (Black)";
+    private const string DefaultStatusMessage = "Game starting...";
+    private const string EmptyValue = "";
+    private const string NoneLabel = "None";
+    private const string WhitePerspectiveFiles = "A  B  C  D  E  F  G  H";
+    private const string BlackPerspectiveFiles = "H  G  F  E  D  C  B  A";
+    private const string MatchInfoHeader = "│  MATCH INFO";
+    private const string StatusHeader = "│  STATUS";
+    private const string CapturedPiecesHeader = "│  CAPTURED PIECES";
+    private const string LastMovesHeader = "│  LAST MOVES";
+    private const string SectionSeparator = "│  ───────────────────────";
+    private const string EmptySectionLine = "│";
 
     /// <summary>
     /// Gets or sets the label shown for the white side in the match info panel.
     /// </summary>
-    public string WhitePlayerName { get; set; } = "Player 1 (White)";
+    public string WhitePlayerName { get; set; } = DefaultWhitePlayerLabel;
 
     /// <summary>
     /// Gets or sets the label shown for the black side in the match info panel.
     /// </summary>
-    public string BlackPlayerName { get; set; } = "Player 2 (Black)";
+    public string BlackPlayerName { get; set; } = DefaultBlackPlayerLabel;
 
     /// <summary>
     /// Gets or sets the current game status text shown in the middle information column.
     /// </summary>
-    public string StatusMessage { get; set; } = "Game starting...";
+    public string StatusMessage { get; set; } = DefaultStatusMessage;
 
     private List<string> WhiteMoves { get; } = [];
     private List<string> BlackMoves { get; } = [];
@@ -34,12 +46,12 @@ public class GameUi : BaseMenuUi
     /// <summary>
     /// Gets or sets the error message displayed under the board; an empty value hides the error line.
     /// </summary>
-    public string ErrorMessage { get; set; } = "";
+    public string ErrorMessage { get; set; } = EmptyValue;
 
     /// <summary>
     /// Gets or sets the input prompt shown at the bottom of the screen.
     /// </summary>
-    public string PromptMessage { get; set; } = "";
+    public string PromptMessage { get; set; } = EmptyValue;
 
     /// <summary>
     /// Adds a move to the local move history that is rendered in the "Last Moves" panel.
@@ -70,7 +82,7 @@ public class GameUi : BaseMenuUi
         var middleLines = GenerateMiddleColumnLines();
         var rightLines = GenerateRightColumnLines(board);
 
-        var maxLines = Math.Max(10, Math.Max(middleLines.Count, rightLines.Count));
+        var maxLines = Math.Max(BoardSectionMinLines, Math.Max(middleLines.Count, rightLines.Count));
 
         for (var i = 0; i < maxLines; i++)
         {
@@ -84,13 +96,11 @@ public class GameUi : BaseMenuUi
         }
 
         Console.WriteLine();
-        Console.WriteLine(new string('─', 85));
+        Console.WriteLine(new string('─', SeparatorWidth));
 
         if (!string.IsNullOrEmpty(ErrorMessage))
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(ErrorMessage);
-            Console.ResetColor();
+            BaseMenuUi.DrawOptionalError(ErrorMessage, addTrailingEmptyLine: false);
         }
         else
         {
@@ -99,7 +109,7 @@ public class GameUi : BaseMenuUi
 
         if (!string.IsNullOrEmpty(PromptMessage))
         {
-            Console.Write(PromptMessage);
+            BaseMenuUi.DrawInputPrompt(PromptMessage);
         }
         else
         {
@@ -120,8 +130,8 @@ public class GameUi : BaseMenuUi
             case 0 or 9:
             {
                 var letters = isWhitePerspective
-                    ? "A  B  C  D  E  F  G  H"
-                    : "H  G  F  E  D  C  B  A";
+                    ? WhitePerspectiveFiles
+                    : BlackPerspectiveFiles;
 
                 var topLetters = $"    {letters}";
                 Console.Write(topLetters.PadRight(BoardWidth));
@@ -171,15 +181,15 @@ public class GameUi : BaseMenuUi
     {
         return
         [
-            "│  MATCH INFO",
-            "│  ───────────────────────",
+            MatchInfoHeader,
+            SectionSeparator,
             $"│  White: {WhitePlayerName}",
             $"│  Black: {BlackPlayerName}",
-            "│",
-            "│  STATUS",
-            "│  ───────────────────────",
+            EmptySectionLine,
+            StatusHeader,
+            SectionSeparator,
             $"│  {StatusMessage}",
-            "│"
+            EmptySectionLine
         ];
     }
 
@@ -193,21 +203,21 @@ public class GameUi : BaseMenuUi
         var whiteCaptured = string.Join(", ", board.CapturedWhitePieces.Select(p => p.UnicodeSymbol));
         var blackCaptured = string.Join(", ", board.CapturedBlackPieces.Select(p => p.UnicodeSymbol));
 
-        if (string.IsNullOrEmpty(whiteCaptured)) whiteCaptured = "None";
-        if (string.IsNullOrEmpty(blackCaptured)) blackCaptured = "None";
+        if (string.IsNullOrEmpty(whiteCaptured)) whiteCaptured = NoneLabel;
+        if (string.IsNullOrEmpty(blackCaptured)) blackCaptured = NoneLabel;
 
-        var whiteMoves = WhiteMoves.Count > 0 ? string.Join(", ", WhiteMoves) : "None";
-        var blackMoves = BlackMoves.Count > 0 ? string.Join(", ", BlackMoves) : "None";
+        var whiteMoves = WhiteMoves.Count > 0 ? string.Join(", ", WhiteMoves) : NoneLabel;
+        var blackMoves = BlackMoves.Count > 0 ? string.Join(", ", BlackMoves) : NoneLabel;
 
         return
         [
-            "│  CAPTURED PIECES",
-            "│  ───────────────────────",
+            CapturedPiecesHeader,
+            SectionSeparator,
             $"│  White: {whiteCaptured}",
             $"│  Black: {blackCaptured}",
-            "│",
-            "│  LAST MOVES",
-            "│  ───────────────────────",
+            EmptySectionLine,
+            LastMovesHeader,
+            SectionSeparator,
             $"│  White: {whiteMoves}",
             $"│  Black: {blackMoves}"
         ];
