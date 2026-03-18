@@ -5,6 +5,11 @@ namespace chess_client.UserInterface;
 /// </summary>
 public class MatchmakingUi : BaseMenuUi
 {
+    private const string Header = "   === MATCHMAKING ===";
+    private const string SearchLine = "   Searching for an opponent...";
+    private const string WaitLine = "   Please wait.";
+    private const string QuitInstruction = "   Press [Q] to quit queue.";
+
     /// <summary>
     /// Clears the screen and draws the matchmaking queue view.
     /// </summary>
@@ -12,22 +17,13 @@ public class MatchmakingUi : BaseMenuUi
     public static void DrawQueueScreen(string? errorMessage = null)
     {
         ConsoleHelper.ClearTerminal();
-        Console.WriteLine();
-        ConsoleHelper.PrintConsoleNewline("   === MATCHMAKING ===");
-        Console.WriteLine();
-        ConsoleHelper.PrintConsoleNewline("   Searching for an opponent...");
-        ConsoleHelper.PrintConsoleNewline("   Please wait.");
-        Console.WriteLine();
+        BaseMenuUi.DrawSectionHeader(Header);
+        ConsoleHelper.PrintConsoleNewline(SearchLine);
+        ConsoleHelper.PrintConsoleNewline(WaitLine);
+        ConsoleHelper.WriteEmptyLine();
 
-        if (!string.IsNullOrEmpty(errorMessage))
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            ConsoleHelper.PrintConsoleNewline($"   ⚠ {errorMessage}");
-            Console.ResetColor();
-            Console.WriteLine();
-        }
-
-        ConsoleHelper.PrintConsoleNewline("   Press [Q] to quit queue.");
-        Console.WriteLine();
+        BaseMenuUi.DrawOptionalError(errorMessage);
+        ConsoleHelper.PrintConsoleNewline(QuitInstruction);
+        ConsoleHelper.WriteEmptyLine();
     }
 }
