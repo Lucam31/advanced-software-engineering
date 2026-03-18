@@ -1,3 +1,4 @@
+using chess_client.Logic;
 using chess_client.Services;
 using chess_client.States;
 using Shared.Logger;

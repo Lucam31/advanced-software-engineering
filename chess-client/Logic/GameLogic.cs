@@ -1,10 +1,10 @@
 using chess_client.States;
 using chess_client.UserInterface;
-using Shared.Logger;
 using Shared;
+using Shared.Logger;
 using Shared.WebSocketMessages;
 
-namespace chess_client;
+namespace chess_client.Logic;
 
 public class GameLogic
 {

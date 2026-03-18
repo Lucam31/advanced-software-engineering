@@ -2,7 +2,7 @@ using Shared;
 using Shared.Dtos;
 using Shared.Logger;
 
-namespace chess_client;
+namespace chess_client.Logic;
 
 public class ReplayLogic(PlayedGame game)
 {
@@ -39,8 +39,8 @@ public class ReplayLogic(PlayedGame game)
 
     public void StartReplay()
     {
-        List<string> moves = game.Moves;
-        int currentMoveIndex = 0;
+        var moves = game.Moves;
+        var currentMoveIndex = 0;
         ConsoleHelper.PrintConsoleNewline("Starting Replay...");
         Console.Clear();
         _gameboard.PrintBoard();

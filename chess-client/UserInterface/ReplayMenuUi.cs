@@ -5,7 +5,7 @@ namespace chess_client.UserInterface;
 /// </summary>
 public class ReplayMenuUi : BaseMenuUi
 {
-    private const string Header = "   === REPLAY MENU ===";
+    private const string Header = "    === REPLAY MENU ===";
     private const string NoGamesMessage = "   No games found.";
     private const string SelectInstruction = "   Select a game to replay:";
     private const string QuitInstruction = "   [Q] Return to main menu";
