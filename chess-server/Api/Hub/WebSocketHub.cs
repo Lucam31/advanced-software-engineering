@@ -431,6 +431,8 @@ public class WebSocketHub : IWebSocketHub
         
         if (!_games.TryGetValue(gameOverPayload.GameId, out var game)) return;
 
+        game.AppendMove(gameOverPayload.LastMove);
+        
         var gameDto = new GameDto
         {
             Id = game.Id,
