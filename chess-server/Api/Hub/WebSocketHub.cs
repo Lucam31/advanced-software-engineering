@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Net;
+using System.Net.WebSockets;
 using System.Text.Json;
 using System.Threading.Channels;
 using chess_server.Services;
@@ -29,6 +30,9 @@ public interface IWebSocketHub
 /// </summary>
 public class WebSocketHub : IWebSocketHub
 {
+    private static readonly TimeSpan PingInterval = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan PongTimeout = TimeSpan.FromSeconds(25);
+
     /// <summary>
     /// The game service used to manage game logic.
     /// </summary>
@@ -62,6 +66,7 @@ public class WebSocketHub : IWebSocketHub
     {
         _gameService = gameService;
         Task.Run(ProcessNotificationsAsync);
+        Task.Run(ProcessHeartbeatsAsync);
     }
     
     /// <summary>
@@ -71,8 +76,14 @@ public class WebSocketHub : IWebSocketHub
     /// <returns>A task that represents the asynchronous unregister operation.</returns>
     private Task UnregisterClient(Guid userId)
     {
-        _clients.TryRemove(userId, out _);
-        GameLogger.Info($"Unregistered client {userId}");
+        RemoveFromWaitingClients(userId);
+
+        if (_clients.TryRemove(userId, out var removedClient))
+        {
+            removedClient.MarkInactive();
+            GameLogger.Info($"Unregistered client {userId}");
+        }
+
         return Task.CompletedTask;
     }
     
@@ -83,9 +94,27 @@ public class WebSocketHub : IWebSocketHub
     /// <returns>A task that represents the asynchronous register operation.</returns>
     private Task RegisterClient(WebSocketClient client)
     {
-        _clients.TryAdd(client.Id, client);
+        if (_clients.TryGetValue(client.Id, out var previousClient))
+        {
+            _ = Task.Run(() => previousClient.CloseAsync("Replaced by a newer connection"));
+        }
+
+        _clients[client.Id] = client;
+        client.MarkPongReceived();
         GameLogger.Info($"Registered client {client.Id} in websocket");
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Removes a user from the matchmaking waiting list.
+    /// </summary>
+    /// <param name="userId">The user id to remove.</param>
+    private void RemoveFromWaitingClients(Guid userId)
+    {
+        lock (_waitingClients)
+        {
+            _waitingClients.RemoveAll(id => id == userId);
+        }
     }
     
     /// <summary>
@@ -127,6 +156,12 @@ public class WebSocketHub : IWebSocketHub
         {
             if (_clients.TryGetValue(notification.UserId, out var client))
             {
+                if (!client.IsActive)
+                {
+                    GameLogger.Warning($"Client {notification.UserId} is inactive, skipping notification");
+                    continue;
+                }
+
                 await client.SendAsync(notification.Message);
                 GameLogger.Info($"Sent notification to user {notification.UserId}");
             }
@@ -165,8 +200,14 @@ public class WebSocketHub : IWebSocketHub
                 await HandleSearchGame(clientId);
                 break;
             case MessageType.CancelSearch:
-                _waitingClients.Remove(clientId);
+                RemoveFromWaitingClients(clientId);
                 GameLogger.Debug($"Client {clientId} cancelled search");
+                break;
+            case MessageType.Logout:
+                await HandleLogout(clientId);
+                break;
+            case MessageType.Pong:
+                HandlePong(clientId);
                 break;
             default:
                 GameLogger.Error($"Unknown message type {messageType}");
@@ -175,9 +216,106 @@ public class WebSocketHub : IWebSocketHub
         
         await Task.CompletedTask;
     }
+
+    /// <summary>
+    /// Handles a logout message by unregistering and closing the current websocket connection.
+    /// </summary>
+    /// <param name="clientId">The id of the user that logged out.</param>
+    private async Task HandleLogout(Guid clientId)
+    {
+        if (!_clients.TryGetValue(clientId, out var client))
+        {
+            return;
+        }
+
+        await UnregisterClient(clientId);
+
+        try
+        {
+            await client.CloseAsync("Client logout");
+        }
+        catch (Exception ex) when (IsExpectedLogoutCloseException(ex))
+        {
+            GameLogger.Debug($"Expected close race on logout for {clientId}: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            GameLogger.Warning($"Error while closing websocket on logout for {clientId}: {ex.Message}");
+        }
+    }
+
+    private static bool IsExpectedLogoutCloseException(Exception ex)
+    {
+        if (ex is OperationCanceledException or ObjectDisposedException)
+        {
+            return true;
+        }
+
+        if (ex is WebSocketException wsEx)
+        {
+            return wsEx.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely
+                   || wsEx.WebSocketErrorCode == WebSocketError.InvalidState;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Marks a client as active after receiving a heartbeat response.
+    /// </summary>
+    /// <param name="clientId">The client id that sent a Pong.</param>
+    private void HandlePong(Guid clientId)
+    {
+        if (_clients.TryGetValue(clientId, out var client))
+        {
+            client.MarkPongReceived();
+            GameLogger.Debug($"Pong received from client {clientId}");
+        }
+    }
+
+    /// <summary>
+    /// Sends periodic ping messages and marks clients inactive when no pong is received in time.
+    /// </summary>
+    private async Task ProcessHeartbeatsAsync()
+    {
+        using var timer = new PeriodicTimer(PingInterval);
+
+        while (await timer.WaitForNextTickAsync())
+        {
+            var now = DateTime.UtcNow;
+            var pingMessage = new WebSocketMessage { Type = MessageType.Ping };
+
+            foreach (var (clientId, client) in _clients.ToArray())
+            {
+                if (now - client.LastPongUtc > PongTimeout)
+                {
+                    if (client.IsActive)
+                    {
+                        client.MarkInactive();
+                        GameLogger.Warning($"Client {clientId} marked inactive (missing pong)");
+                    }
+                }
+
+                try
+                {
+                    await client.SendAsync(pingMessage);
+                }
+                catch (Exception ex)
+                {
+                    GameLogger.Warning($"Ping send failed for client {clientId}: {ex.Message}");
+                }
+            }
+        }
+    }
     
     private async Task HandleSearchGame(Guid clientId)
     {
+        if (!_clients.TryGetValue(clientId, out var searchingClient) || !searchingClient.IsActive)
+        {
+            GameLogger.Warning($"Inactive or unknown client {clientId} tried to search a game");
+            return;
+        }
+
         GameLogger.Debug($"Client {clientId} is searching for a game");
 
         Guid opponentId = Guid.Empty;
@@ -185,14 +323,21 @@ public class WebSocketHub : IWebSocketHub
 
         lock (_waitingClients)
         {
-            if (_waitingClients.Count > 0)
+            while (_waitingClients.Count > 0)
             {
-                opponentId = _waitingClients[0];
+                var candidateId = _waitingClients[0];
                 _waitingClients.RemoveAt(0);
-                matchFound = true;
-                GameLogger.Debug($"Found opponent {opponentId} for client {clientId}");
+
+                if (_clients.TryGetValue(candidateId, out var candidate) && candidate.IsActive)
+                {
+                    opponentId = candidateId;
+                    matchFound = true;
+                    GameLogger.Debug($"Found opponent {opponentId} for client {clientId}");
+                    break;
+                }
             }
-            else
+
+            if (!matchFound)
             {
                 _waitingClients.Add(clientId);
                 GameLogger.Debug($"No opponent found for client {clientId}, added to waiting list");
@@ -212,13 +357,13 @@ public class WebSocketHub : IWebSocketHub
     /// <param name="blackClientId">The client that will play as black.</param>
     private async Task StartGameBetween(Guid whiteClientId, Guid blackClientId)
     {
-        if (!_clients.TryGetValue(whiteClientId, out var whiteClient))
+        if (!_clients.TryGetValue(whiteClientId, out var whiteClient) || !whiteClient.IsActive)
         {
             GameLogger.Error($"White client {whiteClientId} not found when starting game");
             return;
         }
 
-        if (!_clients.TryGetValue(blackClientId, out var blackClient))
+        if (!_clients.TryGetValue(blackClientId, out var blackClient) || !blackClient.IsActive)
         {
             GameLogger.Error($"Black client {blackClientId} not found when starting game");
             return;
@@ -274,7 +419,7 @@ public class WebSocketHub : IWebSocketHub
         _games.TryAdd(game.Id, game);
         GameLogger.Debug($"Created new game {game.Id} by client {clientId}");
 
-        if (!_clients.TryGetValue(createGamePayload.OpponentId, out var opp))
+        if (!_clients.TryGetValue(createGamePayload.OpponentId, out var opp) || !opp.IsActive)
         {
             GameLogger.Error($"Opponent client with id {clientId} not found in clients dictionary");
             return;
@@ -330,7 +475,7 @@ public class WebSocketHub : IWebSocketHub
         _clients.TryGetValue(game.GetWhitePlayerId(), out var whiteClient);
         _clients.TryGetValue(blackPlayerId.Value, out var blackClient);
         
-        if (whiteClient == null || blackClient == null)
+        if (whiteClient == null || blackClient == null || !whiteClient.IsActive || !blackClient.IsActive)
         {
             GameLogger.Error("One of the clients is null when sending StartGame message");
             return;
@@ -394,7 +539,7 @@ public class WebSocketHub : IWebSocketHub
             return;
         }
         
-        if (!_clients.TryGetValue(opponentId, out var opponent)) return;
+        if (!_clients.TryGetValue(opponentId, out var opponent) || !opponent.IsActive) return;
     
         // send ack to sender
         var ackMessage = new WebSocketMessage
@@ -407,7 +552,8 @@ public class WebSocketHub : IWebSocketHub
         };
         
         // send ack to sender
-        await _clients[clientId].SendAsync(ackMessage);
+        if (!_clients.TryGetValue(clientId, out var sender) || !sender.IsActive) return;
+        await sender.SendAsync(ackMessage);
         
         // forward new game state to opponent
         var forwardMessage = new WebSocketMessage
@@ -449,11 +595,11 @@ public class WebSocketHub : IWebSocketHub
             Payload = payload
         };
     
-        if (_clients.TryGetValue(game.GetWhitePlayerId(), out var white))
+        if (_clients.TryGetValue(game.GetWhitePlayerId(), out var white) && white.IsActive)
             await white.SendAsync(message);
     
         var blackId = game.GetBlackPlayerId();
-        if (blackId.HasValue && _clients.TryGetValue(blackId.Value, out var black))
+        if (blackId.HasValue && _clients.TryGetValue(blackId.Value, out var black) && black.IsActive)
             await black.SendAsync(message);
     
         // remove game from active games

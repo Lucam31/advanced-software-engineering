@@ -1,3 +1,4 @@
+using System.Net.WebSockets;
 using chess_client.Logic;
 using chess_client.Services;
 using chess_client.States;
@@ -148,10 +149,22 @@ public class GameMenu(
 
                 case ConsoleKey.L:
                     GameLogger.Info("User selected 'Logout'.");
+                    await webSocketService.SendAsync(new WebSocketMessage
+                    {
+                        Type = MessageType.Logout,
+                        Payload = null
+                    });
+                    await webSocketService.DisconnectAsync();
                     return GameMenuResult.Logout;
 
                 case ConsoleKey.Q:
                     GameLogger.Info("User selected 'Quit'.");
+                    await webSocketService.SendAsync(new WebSocketMessage
+                    {
+                        Type = MessageType.Logout,
+                        Payload = null
+                    });
+                    await webSocketService.DisconnectAsync();
                     return GameMenuResult.Quit;
 
                 default:
