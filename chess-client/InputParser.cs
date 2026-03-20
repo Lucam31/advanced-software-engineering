@@ -26,7 +26,7 @@ public static class InputParser
         if (prompt == "")
         {
             GameLogger.Warning("ReadInput called with empty prompt.");
-            CliOutput.WriteErrorMessage("prompt must not be empty.");
+            ConsoleHelper.WriteErrorMessage("prompt must not be empty.");
         }
 
         while (true)
@@ -34,11 +34,11 @@ public static class InputParser
             GameLogger.Debug($"Prompting user. newLine={newLine}, validInputs=[{string.Join(",", validInputs)}]");
             if (newLine)
             {
-                CliOutput.PrintConsoleNewline(prompt);
+                ConsoleHelper.PrintConsoleNewline(prompt);
             }
             else
             {
-                CliOutput.PrintConsole(prompt);
+                ConsoleHelper.PrintConsole(prompt);
             }
 
             var input = Console.ReadLine()?.Trim().ToUpper();
@@ -50,10 +50,10 @@ public static class InputParser
             }
 
             GameLogger.Warning($"Invalid input: '{input}'. Expected one of: [{string.Join(",", validInputs)}]");
-            CliOutput.PrintConsoleNewline("Invalid input. Please try again.");
+            ConsoleHelper.PrintConsoleNewline("Invalid input. Please try again.");
         }
     }
-    
+
     public static char ReadSingleCharInput(string prompt, bool newLine = false, params char[] validInputs)
     {
         if (validInputs.Length == 0)
@@ -65,7 +65,7 @@ public static class InputParser
         if (prompt == "")
         {
             GameLogger.Warning("ReadSingleCharInput called with empty prompt.");
-            CliOutput.WriteErrorMessage("prompt must not be empty.");
+            ConsoleHelper.WriteErrorMessage("prompt must not be empty.");
         }
 
         while (true)
@@ -73,11 +73,11 @@ public static class InputParser
             GameLogger.Debug($"Prompting user. newLine={newLine}, validInputs=[{string.Join(",", validInputs)}]");
             if (newLine)
             {
-                CliOutput.PrintConsoleNewline(prompt);
+                ConsoleHelper.PrintConsoleNewline(prompt);
             }
             else
             {
-                CliOutput.PrintConsole(prompt);
+                ConsoleHelper.PrintConsole(prompt);
             }
 
             var input = Console.ReadKey().KeyChar;
@@ -89,7 +89,7 @@ public static class InputParser
             }
 
             GameLogger.Warning($"Invalid input: '{input}'. Expected one of: [{string.Join(",", validInputs)}]");
-            CliOutput.PrintConsoleNewline("Invalid input. Please try again.");
+            ConsoleHelper.PrintConsoleNewline("Invalid input. Please try again.");
         }
     }
 

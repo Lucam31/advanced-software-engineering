@@ -1,183 +1,201 @@
+using chess_client.Logic;
 using chess_client.Services;
 using chess_client.States;
 using Shared.Logger;
 using Shared.WebSocketMessages;
+using chess_client.UserInterface;
 
 namespace chess_client.Menus;
 
 /// <summary>
-/// Manages the friendship menu of the game.
+/// Represents the possible outcomes when leaving the friendship menu.
 /// </summary>
-public class FriendshipMenu
+public enum FriendshipMenuResult
 {
-    private readonly UserContainer _userContainer;
-    private readonly FriendshipServices _friendshipServices;
-    private readonly WebSocketService _webSocketService;
-    private readonly IGameService _gameService;
-    
-    private volatile bool _refreshRequested = false;
-    
     /// <summary>
-    /// Initializes a new instance of the GameMenu class.
+    /// User returned to the previous menu.
     /// </summary>
-    /// <param name="userContainer">The user container.</param>
-    /// <param name="friendshipServices">The friendship services.</param>
-    /// <param name="webSocketService">The web socket service.</param>
-    public FriendshipMenu(UserContainer userContainer, FriendshipServices friendshipServices, IGameService gameService, WebSocketService webSocketService)
+    Back,
+
+    /// <summary>
+    /// User requested to quit the client.
+    /// </summary>
+    Quit
+}
+
+/// <summary>
+/// Coordinates friendship features such as searching users, listing friends, and creating friend games.
+/// </summary>
+/// <param name="userContainer">Shared user state that contains the active user id.</param>
+/// <param name="friendshipServices">Service for searching users and managing friendships.</param>
+/// <param name="gameService">Service used to create games against friends.</param>
+/// <param name="webSocketService">WebSocket connection used for realtime friendship and game events.</param>
+public class FriendshipMenu(
+    UserContainer userContainer,
+    FriendshipServices friendshipServices,
+    IGameService gameService,
+    WebSocketService webSocketService)
+{
+    private readonly FriendshipMenuUi _ui = new();
+
+    private volatile bool _refreshRequested = false;
+
+    /// <summary>
+    /// Displays the friendship menu and routes user actions to search or list flows.
+    /// </summary>
+    /// <returns>
+    /// <see cref="FriendshipMenuResult.Back"/> when the user navigates back,
+    /// or <see cref="FriendshipMenuResult.Quit"/> when the user exits the client.
+    /// </returns>
+    public async Task<FriendshipMenuResult> DisplayMenu()
     {
-        _userContainer = userContainer;
-        _friendshipServices = friendshipServices;
-        _gameService = gameService;
-        _webSocketService = webSocketService;
-    }
-    
-    public async Task DisplayMenu()
-    {
-        
         var state = new FriendshipMenuState();
         state.OnFriendsRefreshRequested += () =>
         {
             GameLogger.Info("Friends-Refresh angefordert (via WebSocket).");
             _refreshRequested = true;
         };
-        _webSocketService.TransitionTo(state);
+        webSocketService.TransitionTo(state);
+
+        string? currentErrorMessage = null;
 
         while (true)
         {
-
             GameLogger.Info("Displaying friendship menu.");
 
-            CliOutput.PrintConsoleNewline(ConsoleHelper.FriendsMenu);
-            CliOutput.PrintConsoleNewline("Please enter your choice: ");
-            var input = Console.ReadLine()?.Trim().ToUpper();
+            FriendshipMenuUi.DrawMainMenu(currentErrorMessage);
+            currentErrorMessage = null;
 
-            GameLogger.Debug($"User entered menu input: '{input}'");
+            var input = BaseMenuUi.ReadKey();
+            GameLogger.Debug($"User pressed key: '{input.Key}'");
 
-            switch (input)
+            switch (input.Key)
             {
-                case "S":
-                case "SEARCH":
+                case ConsoleKey.S:
                     GameLogger.Info("User selected 'Search'.");
-                    await SearchView();
-                    continue;
-                case "L":
-                case "LIST":
+                    var searchResult = await SearchView();
+                    if (searchResult == FriendshipMenuResult.Quit) return FriendshipMenuResult.Quit;
+                    break;
+
+                case ConsoleKey.L:
                     GameLogger.Info("User selected 'List'.");
-                    await ListView(state);
-                    continue;
-                case "Q":
-                case "QUIT":
+                    var listResult = await ListView(state);
+                    if (listResult == FriendshipMenuResult.Quit) return FriendshipMenuResult.Quit;
+                    break;
+
+                case ConsoleKey.B:
+                case ConsoleKey.Escape:
+                    GameLogger.Info("User selected 'Back'.");
+                    return FriendshipMenuResult.Back;
+
+                case ConsoleKey.Q:
                     GameLogger.Info("User selected 'Quit'.");
-                    return;
+                    return FriendshipMenuResult.Quit;
+
                 default:
-                    GameLogger.Warning($"Invalid menu input: '{input}'");
-                    CliOutput.PrintConsoleNewline("Invalid input. Please try again.");
-                    continue;
+                    GameLogger.Warning($"Invalid menu input: '{input.Key}'");
+                    currentErrorMessage = "Invalid input. Please press S, L, B, or Q.";
+                    break;
             }
         }
     }
-    
+
     /// <summary>
-    /// Displays the list of friends and handles user input for the list view.
+    /// Displays the user search flow and optionally sends a friend request.
     /// </summary>
-    private async Task SearchView()
+    /// <returns>
+    /// <see cref="FriendshipMenuResult.Back"/> when the flow finishes or the user goes back,
+    /// or <see cref="FriendshipMenuResult.Quit"/> when the user exits the client.
+    /// </returns>
+    private async Task<FriendshipMenuResult> SearchView()
     {
+        string? currentErrorMessage = null;
+
         while (true)
         {
             GameLogger.Info("Displaying SearchView in friendship menu.");
 
-            CliOutput.PrintConsoleNewline("Please enter the username you want so search for (or 'Q' to quit): ");
-            var input = Console.ReadLine()?.Trim();
+            FriendshipMenuUi.DrawSearchPrompt(currentErrorMessage);
+            currentErrorMessage = null;
 
-            GameLogger.Debug($"User entered menu input: '{input}'");
-            
-            if (input == "Q" || input == "QUIT" || input == null)
-            {
-                GameLogger.Info("User selected 'Quit' in SearchView.");
-                return;
-            }
-            
-            // search for users with the given username and display results
-            var users = await _friendshipServices.SearchUsers(input);
+            var input = BaseMenuUi.ReadInput();
+            GameLogger.Debug($"User entered search input: '{input}'");
+
+            if (input?.ToUpper() == "Q" || input?.ToUpper() == "QUIT") return FriendshipMenuResult.Quit;
+            if (input?.ToUpper() == "B" || input?.ToUpper() == "BACK" || string.IsNullOrEmpty(input))
+                return FriendshipMenuResult.Back;
+
+            var users = await friendshipServices.SearchUsers(input);
+            string? searchResultError = null;
+
             while (true)
             {
-                foreach (var user in users)
-                {
-                    CliOutput.PrintConsoleNewline($"[1] {user}");
-                }
+                FriendshipMenuUi.DrawSearchResults(users, searchResultError);
+                searchResultError = null;
 
-                CliOutput.PrintConsoleNewline("Please enter the number of the username you want so add to your friendlist (or 'Q' to quit): ");
-                var num = Console.ReadLine()?.Trim();
+                var num = BaseMenuUi.ReadInput();
+                GameLogger.Debug($"User entered list selection: '{num}'");
 
-                GameLogger.Debug($"User entered menu input: '{num}'");
-
-                if (num == "Q" || num == "QUIT" || num == null)
-                {
-                    GameLogger.Info("User selected 'Quit' in SearchView.");
-                    return;
-                }
+                if (num?.ToUpper() == "Q" || num?.ToUpper() == "QUIT") return FriendshipMenuResult.Quit;
+                if (num?.ToUpper() == "B" || num?.ToUpper() == "BACK" || string.IsNullOrEmpty(num))
+                    break;
 
                 if (int.TryParse(num, out var index) && index > 0 && index <= users.Count)
                 {
                     var selectedUser = users[index - 1];
                     GameLogger.Info($"User selected to add friend: '{selectedUser}'");
-                    await _friendshipServices.SendFriendRequest(_userContainer.Id, selectedUser);
-                    CliOutput.PrintConsoleNewline($"Friend request sent to {selectedUser}.");
-                    break;
+
+                    await friendshipServices.SendFriendRequest(userContainer.Id, selectedUser);
+                    BaseMenuUi.ShowMessageAndWait($"Friend request sent to {selectedUser}.");
+                    return FriendshipMenuResult.Back;
                 }
                 else
                 {
                     GameLogger.Warning($"Invalid input for selecting user: '{num}'");
-                    CliOutput.PrintConsoleNewline("Invalid input. Please try again.");
+                    searchResultError = "Invalid input. Please try again.";
                 }
             }
-
-            return;
         }
     }
 
     /// <summary>
-    /// Displays the list of friends and handles user input for the list view.
+    /// Displays the friend list flow and handles delete/play actions for selected friends.
     /// </summary>
-    private async Task ListView(FriendshipMenuState state)
+    /// <param name="state">Active friendship menu state used to receive realtime start-game events.</param>
+    /// <returns>
+    /// <see cref="FriendshipMenuResult.Back"/> when the user returns to the previous menu,
+    /// or <see cref="FriendshipMenuResult.Quit"/> when the user exits the client.
+    /// </returns>
+    private async Task<FriendshipMenuResult> ListView(FriendshipMenuState state)
     {
-        var friends = await _friendshipServices.ListFriends(_userContainer.Id);
-        
+        var friends = await friendshipServices.ListFriends(userContainer.Id);
+        string? currentErrorMessage = null;
+
         while (true)
         {
             GameLogger.Info("Displaying ListView in friendship menu.");
 
-            Console.Clear();
-            if (friends.Count == 0)
-            {
-                CliOutput.PrintConsoleNewline("You have no friends yet. Try adding some!");
-            }
-            else
-            {
-                for (var i = 0; i < friends.Count; i++)
-                    CliOutput.PrintConsoleNewline($"[{i + 1}] {friends[i].Name}");
-            }
-            
-            CliOutput.PrintConsoleNewline("Actions: <number>D = delete, <number>P = play");
-            CliOutput.PrintConsoleNewline("Enter action, press 'Q' to go back, or just Enter to refresh friendlist.");
+            var friendNames = friends.Select(f => (string)f.Name).ToList();
 
-            var input = Console.ReadLine()?.Trim().ToUpper();
+            FriendshipMenuUi.DrawListView(friendNames, currentErrorMessage);
+            currentErrorMessage = null;
+
+            var input = BaseMenuUi.ReadInput()?.ToUpper();
 
             if (string.IsNullOrEmpty(input))
             {
                 _refreshRequested = false;
                 GameLogger.Info("Reloading friends list.");
-                friends = await _friendshipServices.ListFriends(_userContainer.Id);
+                friends = await friendshipServices.ListFriends(userContainer.Id);
                 continue;
             }
 
-            if (input == "Q" || input == "QUIT")
-                return;
+            if (input is "Q" or "QUIT") return FriendshipMenuResult.Quit;
+            if (input is "B" or "BACK") return FriendshipMenuResult.Back;
 
-            // Format: <number><action>, z.B. "1D", "2P", "11D"
             if (input.Length < 2)
             {
-                CliOutput.PrintConsoleNewline("Invalid input. Example: 1D or 2P");
+                currentErrorMessage = "Invalid input. Example: 1D or 2P";
                 continue;
             }
 
@@ -186,7 +204,7 @@ public class FriendshipMenu
 
             if (!int.TryParse(numberStr, out var index) || index < 1 || index > friends.Count)
             {
-                CliOutput.PrintConsoleNewline($"Invalid number. Choose between 1 and {friends.Count}.");
+                currentErrorMessage = $"Invalid number. Choose between 1 and {friends.Count}.";
                 continue;
             }
 
@@ -196,15 +214,14 @@ public class FriendshipMenu
             {
                 case 'D':
                     GameLogger.Info($"Removing friend '{selected.Name}'.");
-                    await _friendshipServices.RemoveFriend(selected);
-                    CliOutput.PrintConsoleNewline($"Removed {selected.Name}.");
-                    friends = await _friendshipServices.ListFriends(_userContainer.Id);
+                    await friendshipServices.RemoveFriend(selected);
+                    BaseMenuUi.ShowMessageAndWait($"Removed {selected.Name}.");
+                    friends = await friendshipServices.ListFriends(userContainer.Id);
                     break;
                 case 'P':
                     GameLogger.Info($"Create Game with player '{selected.Name}'.");
-                    await _gameService.CreateGame(selected.UserId);
-                    
-                    // Wait for the server to send StartGame, meanwhile let the user cancel with Q
+                    await gameService.CreateGame(selected.UserId);
+
                     using (var cts = new CancellationTokenSource())
                     {
                         StartGamePayload? pendingStartGame = null;
@@ -215,34 +232,35 @@ public class FriendshipMenu
                             cts.Cancel();
                         };
 
-                        CliOutput.PrintConsoleNewline("Waiting for opponent to accept... Press Q to cancel.");
+                        BaseMenuUi.ShowMessage("Waiting for opponent to accept... Press B to cancel.");
 
                         try
                         {
-                            var cancelInput = (await ConsoleHelper.ReadLineAsync(cts.Token))?.Trim().ToUpper();
-                            if (cancelInput == "Q")
+                            var cancelInput = (await BaseMenuUi.ReadInputAsync(cts.Token))?.ToUpper();
+                            if (cancelInput == "Q") return FriendshipMenuResult.Quit;
+                            if (cancelInput == "B" || cancelInput == "BACK")
                             {
                                 GameLogger.Info("User cancelled game invitation.");
-                                // TODO: Send cancel message to server in the future
-                                CliOutput.PrintConsoleNewline("Game invitation cancelled.");
+                                // TODO: Send cancel message to server
+                                BaseMenuUi.ShowMessageAndWait("Game invitation cancelled.");
                                 break;
                             }
                         }
                         catch (OperationCanceledException)
                         {
-                            // Server sent StartGame → start the game
                             if (pendingStartGame != null)
                             {
                                 GameLogger.Info("Starting game with ID " + pendingStartGame.GameId);
                                 var game = new GameLogic();
-                                await game.StartGame(_webSocketService, pendingStartGame);
-                                return;
+                                await game.StartGame(webSocketService, pendingStartGame);
+                                return FriendshipMenuResult.Back;
                             }
                         }
                     }
+
                     break;
                 default:
-                    CliOutput.PrintConsoleNewline("Unknown action. Use D to delete or P to play.");
+                    currentErrorMessage = "Unknown action. Use D to delete or P to play.";
                     break;
             }
         }

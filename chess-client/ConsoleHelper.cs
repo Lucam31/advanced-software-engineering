@@ -1,10 +1,134 @@
+using Shared.Logger;
+
 namespace chess_client;
 
+using Shared;
+
 /// <summary>
-/// Provides helper constants and methods for the console interface.
+/// Provides helper methods for command-line interface output.
+///
+/// Central place for all console write operations used by the CLI client. Methods
+/// are thin wrappers around an <see cref="IConsoleAdapter"/> allowing the
+/// console to be mocked in tests.
 /// </summary>
 public static class ConsoleHelper
 {
+    /// <summary>
+    /// The console adapter used for output
+    /// </summary>
+    private static IConsoleAdapter _console = SystemConsoleAdapter.Instance;
+
+    /// <summary>
+    /// For testing: replace the console adapter.
+    /// </summary>
+    public static void SetConsole(IConsoleAdapter console) => _console = console;
+
+    /// <summary>
+    /// For testing: reset the console adapter to the default system console.
+    /// </summary>
+    public static void ResetConsole() => _console = SystemConsoleAdapter.Instance;
+
+    /// <summary>
+    /// Clears the current line in the console.
+    /// </summary>
+    public static void ClearCurrentConsoleLine()
+    {
+        GameLogger.Debug("Clearing current console line.");
+        var currentLineCursor = _console.CursorTop;
+        _console.SetCursorPosition(0, _console.CursorTop);
+        _console.Write(new string(' ', _console.WindowWidth));
+        _console.SetCursorPosition(0, currentLineCursor);
+    }
+
+    /// <summary>
+    /// Prints a message to the console, followed by a new line.
+    /// </summary>
+    /// <param name="message">The message to print.</param>
+    public static void PrintConsoleNewline(string message)
+    {
+        GameLogger.Debug($"PrintConsoleNewline: '{message}'");
+        _console.Write("\n{0}".Replace("{0}", message));
+    }
+
+    /// <summary>
+    /// Prints a message to the console.
+    /// </summary>
+    /// <param name="message">The message to print.</param>
+    public static void PrintConsole(string message)
+    {
+        GameLogger.Debug($"PrintConsole: '{message}'");
+        _console.Write(message);
+    }
+
+    /// <summary>
+    /// Overwrites the current console line with a new message.
+    /// </summary>
+    /// <param name="message">The message to write.</param>
+    public static void OverwriteLine(string message)
+    {
+        GameLogger.Debug($"OverwriteLine: '{message}'");
+        ClearCurrentConsoleLine();
+        _console.Write(message);
+    }
+
+    /// <summary>
+    /// Writes an error message to the console, overwriting the previous line.
+    /// </summary>
+    /// <param name="message">The error message to write.</param>
+    public static void WriteErrorMessage(string message)
+    {
+        GameLogger.Warning($"WriteErrorMessage: '{message}'");
+        _console.SetCursorPosition(0, _console.CursorTop - 1);
+        OverwriteLine(message);
+    }
+
+    /// <summary>
+    /// Clears the terminal using the current console adapter and resets the
+    /// cursor to the top-left corner (0,0).
+    /// </summary>
+    public static void ClearTerminal()
+    {
+        Console.Clear();
+        Console.SetCursorPosition(0, 0);
+    }
+
+    /// <summary>
+    /// Reads a password from the console without echoing the characters.
+    /// </summary>
+    /// <param name="prompt">The prompt to show before reading the password.</param>
+    /// <returns>The entered password.</returns>
+    public static string ReadPassword(string prompt)
+    {
+        Console.Write(prompt);
+
+        var password = "";
+
+        while (true)
+        {
+            var keyInfo = Console.ReadKey(intercept: true);
+
+            if (keyInfo.Key == ConsoleKey.Enter)
+            {
+                Console.WriteLine();
+                break;
+            }
+
+            if (keyInfo.Key == ConsoleKey.Backspace)
+            {
+                if (password.Length <= 0) continue;
+                password = password[..^1];
+                Console.Write("\b \b");
+            }
+            else if (!char.IsControl(keyInfo.KeyChar))
+            {
+                password += keyInfo.KeyChar;
+                Console.Write("*");
+            }
+        }
+
+        return password;
+    }
+
     /// <summary>
     /// Reads a line from the console in a truly cancellable way.
     /// Unlike <c>Task.Run(() => Console.ReadLine())</c>, this method stops reading
@@ -52,55 +176,28 @@ public static class ConsoleHelper
         return null;
     }
 
-    // Die erste leere Zeile beim @-String weglassen, damit es im Terminal nicht 
-    // ungewollt nach unten rutscht.
-
-    public const string GameMenu =
-        """
-        ┌────────────────────┐
-        │      Play (P)      │
-        ├────────────────────┤
-        │    Friends (F)     │
-        ├────────────────────┤
-        │     Games (G)      │
-        ├────────────────────┤
-        │      Quit (Q)      │
-        └────────────────────┘
-        """;
-
-    public const string FriendsMenu =
-        """
-        ┌────────────────────┐
-        │     Search (S)     │
-        ├────────────────────┤
-        │      List (L)      │
-        ├────────────────────┤
-        │      Quit (Q)      │
-        └────────────────────┘
-        """;
-    
     /// <summary>
-    /// A string representing the replay menu text
+    /// Writes an empty line to the console.
     /// </summary>
-    public const string ReplayMenu = 
-        """
-        ┌────────────────────┐
-        │     Replays (R)    │
-        ├────────────────────┤
-        │      Quit (Q)      │
-        └────────────────────┘
-        """;
+    public static void WriteEmptyLine()
+    {
+        Console.WriteLine();
+    }
 
+    /// <summary>
+    /// Resets the console color to the default.
+    /// </summary>
+    public static void ResetColor()
+    {
+        Console.ResetColor();
+    }
 
-    public const string LoginMenu =
-        """
-          Welcome to ChessLI!
-        ┌────────────────────┐
-        │      Login (L)     │
-        ├────────────────────┤
-        │    Register (R)    │
-        ├────────────────────┤
-        │      Quit (Q)      │
-        └────────────────────┘
-        """;
+    /// <summary>
+    /// Sets the foreground color of the console.
+    /// </summary>
+    /// <param name="color">The color to set for the console text.</param>
+    public static void SetForegroundColor(ConsoleColor color)
+    {
+        Console.ForegroundColor = color;
+    }
 }

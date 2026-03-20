@@ -21,7 +21,7 @@ public class WebSocketService : IAsyncDisposable
         {
             await _ws.ConnectAsync(new Uri(uri), _cts.Token);
             GameLogger.Info($"WebSocket connected to {uri}");
-            
+
             _ = Task.Run(ReceiveLoopAsync);
             return true;
         }
@@ -55,9 +55,9 @@ public class WebSocketService : IAsyncDisposable
             GameLogger.Error($"SendAsync error: {e.Message}");
             throw;
         }
-        
+
         var bytes = Encoding.UTF8.GetBytes(json);
-        
+
         try
         {
             await _ws.SendAsync(bytes, WebSocketMessageType.Text, true, _cts.Token);
@@ -67,6 +67,7 @@ public class WebSocketService : IAsyncDisposable
             GameLogger.Error($"SendAsync error: {e.Message}");
             throw;
         }
+
         GameLogger.Debug($"Sent message: {message.Type}");
     }
 
@@ -109,7 +110,7 @@ public class WebSocketService : IAsyncDisposable
                     GameLogger.Warning($"Deserialized message was null. Raw: {json}");
                     continue;
                 }
-   
+
                 if (_currentState is null)
                 {
                     GameLogger.Warning($"Received '{message.Type}' but no state is active — message dropped!");
@@ -129,10 +130,10 @@ public class WebSocketService : IAsyncDisposable
             GameLogger.Error($"ReceiveLoop error: {ex.Message}");
         }
     }
-    
+
     public async ValueTask DisposeAsync()
     {
-        _cts.Cancel();
+        await _cts.CancelAsync();
         await _ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client disconnecting", CancellationToken.None);
         _ws.Dispose();
     }

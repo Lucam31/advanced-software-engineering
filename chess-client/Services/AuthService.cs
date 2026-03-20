@@ -5,7 +5,7 @@ using Shared.Dtos;
 namespace chess_client.Services;
 
 /// <summary>
-/// Interface for authentication services.
+/// Defines authentication operations for client login and registration.
 /// </summary>
 public interface IAuthService
 {
@@ -18,20 +18,24 @@ public interface IAuthService
     Task<Guid> Login(string username, string password);
 
     /// <summary>
-    /// Registers a new user with the given credentials.
+    /// Registers a new user with the provided credentials.
     /// </summary>
     /// <param name="username">The username.</param>
     /// <param name="password">The password.</param>
+    /// <returns>A task that completes when registration succeeds.</returns>
     Task Register(string username, string password);
 }
 
 /// <summary>
-/// Provides authentication services for the client.
+/// Sends authentication-related HTTP requests to the server API.
 /// </summary>
 public class AuthService(HttpClient client) : IAuthService
 {
     private readonly JsonParser _jsonParser = new();
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="AuthService"/> with a default <see cref="HttpClient"/>.
+    /// </summary>
     public AuthService() : this(new HttpClient())
     {
     }
@@ -114,10 +118,10 @@ public class AuthService(HttpClient client) : IAuthService
     }
 
     /// <summary>
-    /// Translate server error codes to user-friendly messages.
+    /// Translates server error codes into user-friendly messages.
     /// </summary>
-    /// <param name="errorCode"></param>
-    /// <returns></returns>
+    /// <param name="errorCode">The error code returned by the server.</param>
+    /// <returns>A human-readable error message for display in the UI.</returns>
     private string TranslateServerErrorCode(string errorCode)
     {
         return errorCode.ToUpper() switch

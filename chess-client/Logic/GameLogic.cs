@@ -1,56 +1,40 @@
-using System.Text.Json;
 using chess_client.States;
-using Shared.Logger;
+using chess_client.UserInterface;
 using Shared;
+using Shared.Logger;
 using Shared.WebSocketMessages;
 
-namespace chess_client;
+namespace chess_client.Logic;
 
-/// <summary>
-/// Manages the core logic of the chess game
-/// </summary>
 public class GameLogic
 {
     private Gameboard _gameboard;
-    private readonly GameStats _gameStats;
+    private readonly GameUi _gameUi;
     private bool _isWhiteTurn;
     private bool _gameOver;
     private bool _isWhite;
-    private JsonParser _parser = new JsonParser();
+    private readonly JsonParser _parser = new();
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="GameLogic"/> class with a fresh gameboard
-    /// </summary>
     public GameLogic()
     {
         _gameboard = new Gameboard();
-        _gameStats = new GameStats();
+        _gameUi = new GameUi();
         _isWhiteTurn = true;
         _gameOver = false;
         _isWhite = true;
     }
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="GameLogic"/> class with an existing gameboard
-    /// </summary>
-    /// <param name="gameboard">The gameboard to use</param>
     public GameLogic(Gameboard gameboard)
     {
         _gameboard = gameboard;
-        _gameStats = new GameStats();
+        _gameUi = new GameUi();
         _isWhiteTurn = true;
         _gameOver = false;
         _isWhite = true;
     }
 
-    /// <summary>
-    /// Starts a new online game by sending a CreateGame message and running the game loop
-    /// </summary>
-    /// <param name="webSocketService">The WebSocket service for server communication</param>
-    /// <param name="startGamePayload">The payload which contains informations to start the game</param>
     public async Task StartGame(WebSocketService webSocketService, StartGamePayload startGamePayload)
     {
-        // Set to true to play locally without server communication
         var test = false;
 
         GameplayState? gameplayState = null;
@@ -59,55 +43,50 @@ public class GameLogic
         if (test)
         {
             _isWhite = true;
-            _gameStats.WhitePlayerName = "Local Player (White) (temp)";
-            _gameStats.BlackPlayerName = "Local Player (Black) (temp)";
-            CliOutput.PrintConsoleNewline("Test mode: starting local game as white.");
+            _gameUi.WhitePlayerName = "Local Player (White)";
+            _gameUi.BlackPlayerName = "Local Player (Black)";
             GameLogger.Info("Test mode enabled. Skipping server communication.");
         }
         else
         {
             gameplayState = new GameplayState();
             webSocketService.TransitionTo(gameplayState);
-            
+
             gameId = startGamePayload.GameId;
             _isWhite = startGamePayload.Color.Equals("white", StringComparison.OrdinalIgnoreCase);
 
-            _gameStats.WhitePlayerName = _isWhite ? "You" : "Opponent";
-            _gameStats.BlackPlayerName = !_isWhite ? "You" : "Opponent";
-
-            CliOutput.PrintConsoleNewline($"Game started! You are playing as {startGamePayload.Color}.");
+            _gameUi.WhitePlayerName = _isWhite ? "You" : "Opponent";
+            _gameUi.BlackPlayerName = !_isWhite ? "You" : "Opponent";
             GameLogger.Info($"Game {gameId} started. Playing as {startGamePayload.Color}.");
         }
 
-        // Initialize the gameboard and run the game loop
         _gameboard = new Gameboard();
         _isWhiteTurn = true;
         _gameOver = false;
-        var isMyTurn = _isWhite; // White always moves first
+        var isMyTurn = _isWhite;
 
         while (!_gameOver)
         {
             var currentPlayer = _isWhiteTurn ? "White" : "Black";
-            _gameStats.StatusMessage = $"Waiting for {currentPlayer}...";
-
-            DrawBoard();
+            GameLogger.Info($"New turn started. Current player: {currentPlayer}");
+            _gameUi.StatusMessage = "Your turn...";
 
             if (test || isMyTurn)
             {
-                // Check if the current player's king is in checkmate or check
                 var currentIsWhite = test ? _isWhiteTurn : _isWhite;
 
-                // Check Check
                 if (MoveValidator.IsKingInCheck(currentIsWhite, _gameboard))
                 {
-                    _gameStats.StatusMessage = "CHECK! Protect your King!";
-                    DrawBoard();
+                    _gameUi.StatusMessage = "CHECK! Protect your King!";
                 }
 
                 Move move;
                 MoveValidator.MoveValidationResult validationResult;
 
-                CliOutput.PrintConsoleNewline("Your turn. Enter your move (e.g. E2E4): ");
+                _gameUi.PromptMessage = "Enter your move (e.g. E2E4): ";
+                _gameUi.ErrorMessage = ""; // Alten Fehler löschen
+                DrawBoard();
+
                 while (true)
                 {
                     try
@@ -116,65 +95,63 @@ public class GameLogic
                     }
                     catch (Exception)
                     {
-                        CliOutput.OverwriteLineRelativeKeepCursorAtEnd(1,
-                            "Your input is invalid. Enter your move using the format E2E4: ");
+                        _gameUi.ErrorMessage = "Your input is invalid. Enter your move using the format E2E4.";
+                        DrawBoard();
                         continue;
                     }
 
                     var piece = _gameboard.GetPieceAtPosition(move.From);
                     if (piece == null)
                     {
-                        CliOutput.OverwriteLineRelativeKeepCursorAtEnd(1,
-                            "Your input is invalid. No piece at the selected position. Try again: ");
+                        _gameUi.ErrorMessage = "Your input is invalid. No piece at the selected position. Try again.";
+                        DrawBoard();
                         continue;
                     }
 
                     if (!test && piece.IsWhite != _isWhite)
                     {
-                        CliOutput.OverwriteLineRelativeKeepCursorAtEnd(1,
-                            "Your input is invalid. You can only move your own pieces. Try again: ");
+                        _gameUi.ErrorMessage = "Your input is invalid. You can only move your own pieces. Try again.";
+                        DrawBoard();
                         continue;
                     }
 
                     if (test && piece.IsWhite != _isWhiteTurn)
                     {
-                        CliOutput.OverwriteLineRelativeKeepCursorAtEnd(1,
-                            "Your input is invalid. You can only move your own pieces. Try again: ");
+                        _gameUi.ErrorMessage = "Your input is invalid. You can only move your own pieces. Try again.";
+                        DrawBoard();
                         continue;
                     }
 
                     MoveValidator.WhitePlayer = test ? _isWhiteTurn : _isWhite;
-
                     validationResult = MoveValidator.ValidateMove(move, _gameboard);
 
                     if (validationResult == MoveValidator.MoveValidationResult.Invalid)
                     {
-                        CliOutput.OverwriteLineRelativeKeepCursorAtEnd(1, "Your move is invalid. Try again: ");
+                        _gameUi.ErrorMessage = "Your move is invalid. Try again.";
+                        DrawBoard();
                         continue;
                     }
 
-                    // Verify the move does not leave the own king in check
                     if (!MoveValidator.TryMoveEscapesCheck(move, validationResult, currentIsWhite, _gameboard))
                     {
-                        CliOutput.OverwriteLineRelativeKeepCursorAtEnd(1,
-                            "This move leaves your king in check. Try again: ");
+                        _gameUi.ErrorMessage = "This move leaves your king in check. Try again.";
+                        DrawBoard();
                         continue;
                     }
 
                     break;
                 }
 
-                // Save move to the history
-                _gameStats.AddMoveToHistory(move.From, move.To, currentIsWhite);
+                // Eingabefeld für die Verarbeitung wieder säubern
+                _gameUi.PromptMessage = "";
+                _gameUi.ErrorMessage = "";
 
-                // Execute the move locally
+                _gameUi.AddMoveToHistory(move.From, move.To, currentIsWhite);
                 ExecuteMove(move, validationResult);
 
-                // Check if the opponent is in checkmate
                 var opponentIsWhite = test ? !_isWhiteTurn : !_isWhite;
                 if (MoveValidator.IsCheckmate(opponentIsWhite, _gameboard))
                 {
-                    // send checkmate message to server
                     var gameFinishedMessage = new WebSocketMessage
                     {
                         Type = MessageType.GameOver,
@@ -186,28 +163,25 @@ public class GameLogic
                     };
 
                     await webSocketService.SendAsync(gameFinishedMessage);
-                    
-                    // then wait for game over message from server to update the UI and end the game loop
                     var gameOverMessage = await gameplayState!.WaitForGameOverAsync();
-                    
-                    _gameStats.StatusMessage = $"CHECKMATE! {gameOverMessage.Winner} wins!";
+
+                    _gameUi.StatusMessage = $"CHECKMATE! {gameOverMessage.Winner} wins!";
                     GameLogger.Info($"Checkmate detected. {gameOverMessage.Winner} wins.");
 
-                    CliOutput.PrintConsoleNewline("Press ENTER to return...");
-                    Console.ReadLine(); 
-                    
+                    _gameUi.PromptMessage = "Press ENTER to return...";
+                    DrawBoard();
+                    Console.ReadLine();
+
                     _gameOver = true;
                     break;
                 }
 
                 if (test)
                 {
-                    // In test mode just alternate turns locally
                     _isWhiteTurn = !_isWhiteTurn;
                 }
                 else
                 {
-                    // Send the updated board to the server
                     var turnPayload = new GameTurnPayload
                     {
                         GameId = gameId,
@@ -227,8 +201,8 @@ public class GameLogic
             }
             else
             {
-                // Opponent's turn: wait for server response, this can either be a new turn or a game over message if the opponent's move caused checkmate
-                _gameStats.StatusMessage = "Waiting for opponent's move...";
+                _gameUi.StatusMessage = "Waiting for opponent...";
+                _gameUi.PromptMessage = ""; // Kein Input vom Nutzer erwartet
                 DrawBoard();
 
                 var opponentTurnTask = gameplayState!.WaitForOpponentTurnAsync();
@@ -239,11 +213,11 @@ public class GameLogic
                 if (completedTask == gameOverTask)
                 {
                     var gameOverMessage = await gameOverTask;
-                    _gameStats.StatusMessage = $"CHECKMATE! {gameOverMessage.Winner} wins!";
-                    DrawBoard();
+                    _gameUi.StatusMessage = $"CHECKMATE! {gameOverMessage.Winner} wins!";
                     GameLogger.Info($"Opponent caused checkmate. {gameOverMessage.Winner} wins.");
 
-                    CliOutput.PrintConsoleNewline("Press ENTER to return...");
+                    _gameUi.PromptMessage = "Press ENTER to return...";
+                    DrawBoard();
                     Console.ReadLine();
 
                     _gameOver = true;
@@ -255,7 +229,7 @@ public class GameLogic
 
                 var fromMove = opponentTurn.LastMove[..2];
                 var toMove = opponentTurn.LastMove.Substring(2, 2);
-                _gameStats.AddMoveToHistory(fromMove, toMove, !_isWhite);
+                _gameUi.AddMoveToHistory(fromMove, toMove, !_isWhite);
 
                 GameLogger.Info($"Received opponent move: {opponentTurn.LastMove}");
 
@@ -263,26 +237,14 @@ public class GameLogic
             }
         }
 
-        _gameStats.StatusMessage = "Game Over!";
-        DrawBoard();
-
-        CliOutput.PrintConsoleNewline("Game over! Returning to main menu...");
         GameLogger.Info("Game ended.");
     }
 
-    /// <summary>
-    /// Uses the GameUi to draw the current state of the gameboard and game statistics
-    /// </summary>
     private void DrawBoard()
     {
-        GameUi.DrawGameScreen(_gameboard, _gameStats, _isWhite);
+        _gameUi.DrawGameScreen(_gameboard, _isWhite);
     }
 
-    /// <summary>
-    /// Executes a validated move on the gameboard, handling special moves like en passant and castling
-    /// </summary>
-    /// <param name="move">The move to execute</param>
-    /// <param name="result">The validation result indicating the type of move</param>
     private void ExecuteMove(Move move, MoveValidator.MoveValidationResult result)
     {
         switch (result)

@@ -27,4 +27,3 @@ internal sealed class SystemConsoleAdapter : IConsoleAdapter
 
     public void Write(string value) => Console.Write(value);
 }
-

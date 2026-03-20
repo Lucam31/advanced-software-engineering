@@ -1,139 +1,117 @@
+using chess_client.Logic;
 using chess_client.Services;
 using chess_client.States;
 using Shared.Logger;
+using chess_client.UserInterface;
 
 namespace chess_client.Menus;
 
 /// <summary>
-/// Manages the menu of past games and the replay function
+/// Displays past games and lets the user open a replay.
 /// </summary>
 public class ReplayMenu
 {
+    private const int DisplayLimit = 5;
+    private const string InvalidSelectionMessage = "Invalid selection. That game is not available.";
+    private const string InvalidInputMessage = "Invalid input. Please use numbers 1-5 or Q.";
+
     private readonly UserContainer _userContainer;
     private readonly WebSocketService _webSocketService;
     private readonly ReplayService _replayService;
-    
+    private readonly ReplayMenuUi _ui = new();
+
     /// <summary>
-    /// Initializes a new instance of the GameMenu class
+    /// Initializes a replay menu for the currently authenticated user.
     /// </summary>
-    /// <param name="userContainer">The user container</param>
-    /// <param name="webSocketService">The WebSocket service</param>
+    /// <param name="userContainer">Shared user state containing the active user id.</param>
+    /// <param name="webSocketService">WebSocket connection used to transition into replay menu state.</param>
     public ReplayMenu(UserContainer userContainer, WebSocketService webSocketService)
     {
         _userContainer = userContainer;
         _webSocketService = webSocketService;
         _replayService = new ReplayService();
     }
-    
+
     /// <summary>
-    /// Displays the replay menu and handles user input
+    /// Displays recent games and handles selection input until the user exits the replay menu.
     /// </summary>
     public async Task DisplayMenu()
     {
-        Console.Clear();
         _webSocketService.TransitionTo(new ReplayMenuState());
+        string? currentErrorMessage = null;
 
         while (true)
         {
             GameLogger.Info("Displaying replay menu.");
 
             var games = await _replayService.GetGames(_userContainer.Id);
-            if (games.Count == 0)
+
+            var gameStrings = BuildGameDisplayStrings(games);
+
+            _ui.DrawMenu(gameStrings, currentErrorMessage);
+            currentErrorMessage = null;
+
+            var input = BaseMenuUi.ReadKey();
+
+            if (input.Key == ConsoleKey.Q)
             {
-                CliOutput.PrintConsoleNewline("No games found.");
-                CliOutput.PrintConsoleNewline("Press Q to return to the main menu: ");
+                GameLogger.Info("User selected 'Quit' in replay menu.");
+                return;
+            }
+
+            if (TryGetSelectedIndex(input.Key, out var selectedIndex))
+            {
+                if (selectedIndex < games.Count)
+                {
+                    GameLogger.Info($"User selected game {selectedIndex + 1} for replay.");
+                    var replayLogic = new ReplayLogic(games[selectedIndex]);
+                    replayLogic.StartReplay();
+                }
+                else
+                {
+                    GameLogger.Warning($"User selected game {selectedIndex + 1} for replay, but it is not available.");
+                    currentErrorMessage = InvalidSelectionMessage;
+                }
             }
             else
             {
-                CliOutput.PrintConsoleNewline("Press the number of the game you want to replay.");
-                for (int i = 0; i < (5 <= games.Count ? 5 : games.Count); i++)
-                {
-                    CliOutput.PrintConsoleNewline(
-                        $"({i + 1}) {games[i].WhitePlayerUsername} vs {games[i].BlackPlayerUsername}"); // - Result: {games[i].Result}");
-                }
-
-                CliOutput.PrintConsoleNewline("(Q) return to the main menu.");
-                CliOutput.PrintConsoleNewline("Enter your choice: ");
-            }
-
-            var input = Console.ReadKey();
-            switch (input.Key)
-            {
-                case ConsoleKey.Q:
-                    GameLogger.Info("User selected 'Quit' in replay menu.");
-                    Console.Clear();
-                    return;
-                case ConsoleKey.D1:
-                case ConsoleKey.NumPad1:
-                    if (games.Count >= 1)
-                    {
-                        GameLogger.Info("User selected game 1 for replay.");
-                        var replayLogic = new ReplayLogic(games[0]);
-                        replayLogic.StartReplay();
-                    }
-                    else
-                    {
-                        GameLogger.Warning("User selected game 1 for replay, but no games are available.");
-                    }
-
-                    break;
-                case ConsoleKey.D2:
-                case ConsoleKey.NumPad2:
-                    if (games.Count >= 2)
-                    {
-                        GameLogger.Info("User selected game 2 for replay.");
-                        var replayLogic = new ReplayLogic(games[1]);
-                        replayLogic.StartReplay();
-                    }
-                    else
-                    {
-                        GameLogger.Warning("User selected game 2 for replay, but no games are available.");
-                    }
-
-                    break;
-                case ConsoleKey.D3:
-                case ConsoleKey.NumPad3:
-                    if (games.Count >= 3)
-                    {
-                        GameLogger.Info("User selected game 3 for replay.");
-                        var replayLogic = new ReplayLogic(games[2]);
-                        replayLogic.StartReplay();
-                    }
-                    else
-                    {
-                        GameLogger.Warning("User selected game 3 for replay, but no games are available.");
-                    }
-
-                    break;
-                case ConsoleKey.D4:
-                case ConsoleKey.NumPad4:
-                    if (games.Count >= 4)
-                    {
-                        GameLogger.Info("User selected game 4 for replay.");
-                        var replayLogic = new ReplayLogic(games[3]);
-                        replayLogic.StartReplay();
-                    }
-                    else
-                    {
-                        GameLogger.Warning("User selected game 4 for replay, but no games are available.");
-                    }
-
-                    break;
-                case ConsoleKey.D5:
-                case ConsoleKey.NumPad5:
-                    if (games.Count >= 5)
-                    {
-                        GameLogger.Info("User selected game 5 for replay.");
-                        var replayLogic = new ReplayLogic(games[4]);
-                        replayLogic.StartReplay();
-                    }
-                    else
-                    {
-                        GameLogger.Warning("User selected game 5 for replay, but no games are available.");
-                    }
-
-                    break;
+                GameLogger.Warning($"Invalid menu input: '{input.Key}'");
+                currentErrorMessage = InvalidInputMessage;
             }
         }
+    }
+
+    /// <summary>
+    /// Creates display labels for replayable games and limits output to the configured maximum.
+    /// </summary>
+    /// <param name="games">The full list of recent games.</param>
+    /// <returns>Formatted labels shown in the replay menu.</returns>
+    private List<string> BuildGameDisplayStrings(IReadOnlyList<Shared.Dtos.PlayedGame> games)
+    {
+        var visibleCount = Math.Min(DisplayLimit, games.Count);
+        return games.Take(visibleCount)
+            .Select(g => $"{g.WhitePlayerUsername} vs {g.BlackPlayerUsername}")
+            .ToList();
+    }
+
+    /// <summary>
+    /// Maps numeric key input to a zero-based replay selection index.
+    /// </summary>
+    /// <param name="key">The pressed menu key.</param>
+    /// <param name="selectedIndex">The resolved zero-based index when parsing succeeds.</param>
+    /// <returns><c>true</c> when a supported numeric selection key was pressed.</returns>
+    private bool TryGetSelectedIndex(ConsoleKey key, out int selectedIndex)
+    {
+        selectedIndex = key switch
+        {
+            ConsoleKey.D1 or ConsoleKey.NumPad1 => 0,
+            ConsoleKey.D2 or ConsoleKey.NumPad2 => 1,
+            ConsoleKey.D3 or ConsoleKey.NumPad3 => 2,
+            ConsoleKey.D4 or ConsoleKey.NumPad4 => 3,
+            ConsoleKey.D5 or ConsoleKey.NumPad5 => 4,
+            _ => -1
+        };
+
+        return selectedIndex >= 0;
     }
 }

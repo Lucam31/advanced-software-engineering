@@ -31,7 +31,7 @@ internal static class Program
             minLevel: LogLevel.Debug,
             logToConsole: enableConsoleLog,
             logToFile: enableFileLog,
-            logFilePath: "logs/server_log.txt"
+            logFilePath: "logs/server.log"
         );
 
         try

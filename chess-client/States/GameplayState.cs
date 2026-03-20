@@ -5,7 +5,7 @@ using Shared.WebSocketMessages;
 namespace chess_client.States;
 
 /// <summary>
-/// Handles WebSocket messages during active gameplay
+/// Handles incoming WebSocket messages while a match is in progress.
 /// </summary>
 public class GameplayState : IGameState
 {
@@ -15,8 +15,9 @@ public class GameplayState : IGameState
     private JsonParser _parser = new JsonParser();
 
     /// <summary>
-    /// Returns a task that completes when the server sends a StartGame message
+    /// Returns a task that completes when the server sends a <c>StartGame</c> message.
     /// </summary>
+    /// <returns>A task that resolves to the received start-game payload.</returns>
     public Task<StartGamePayload> WaitForGameStartAsync()
     {
         _startGameTcs = new TaskCompletionSource<StartGamePayload>();
@@ -24,23 +25,40 @@ public class GameplayState : IGameState
     }
 
     /// <summary>
-    /// Returns a task that completes when the server sends a GameTurn message
+    /// Returns a task that completes when the server sends a <c>GameTurn</c> message.
     /// </summary>
+    /// <returns>A task that resolves to the received turn payload.</returns>
     public Task<GameTurnPayload> WaitForOpponentTurnAsync()
     {
         _gameTurnTcs = new TaskCompletionSource<GameTurnPayload>();
         return _gameTurnTcs.Task;
     }
 
+    /// <summary>
+    /// Returns a task that completes when the server sends a <c>GameOver</c> message.
+    /// </summary>
+    /// <returns>A task that resolves to the received game-over payload.</returns>
     public Task<GameOverPayload> WaitForGameOverAsync()
     {
         _gameOverTcs = new TaskCompletionSource<GameOverPayload>();
         return _gameOverTcs.Task;
     }
 
+    /// <summary>
+    /// Executes logic when entering the gameplay state.
+    /// </summary>
     public void OnEnter() => GameLogger.Info("Entered Gameplay state.");
+
+    /// <summary>
+    /// Executes logic when leaving the gameplay state.
+    /// </summary>
     public void OnExit() => GameLogger.Info("Leaving Gameplay state.");
 
+    /// <summary>
+    /// Handles gameplay-related WebSocket messages.
+    /// </summary>
+    /// <param name="message">The incoming WebSocket message.</param>
+    /// <returns>A completed task after message processing finishes.</returns>
     public Task HandleMessageAsync(WebSocketMessage message)
     {
         switch (message.Type)
@@ -52,6 +70,7 @@ public class GameplayState : IGameState
                 {
                     _startGameTcs?.TrySetResult(startPayload);
                 }
+
                 break;
 
             case MessageType.GameTurn:
@@ -61,6 +80,7 @@ public class GameplayState : IGameState
                 {
                     _gameTurnTcs?.TrySetResult(turnPayload);
                 }
+
                 break;
 
             case MessageType.GameOver:
@@ -69,10 +89,8 @@ public class GameplayState : IGameState
                 if (gameOverPayload != null)
                 {
                     _gameOverTcs?.TrySetResult(gameOverPayload);
-                    CliOutput.PrintConsoleNewline(gameOverPayload.Winner != null
-                        ? $"Game over! Winner: {gameOverPayload.Winner}"
-                        : "Game over! It's a draw!");
                 }
+
                 break;
 
             default:
@@ -83,4 +101,3 @@ public class GameplayState : IGameState
         return Task.CompletedTask;
     }
 }
-

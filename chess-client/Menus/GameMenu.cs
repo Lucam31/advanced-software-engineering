@@ -1,42 +1,54 @@
+using chess_client.Logic;
 using chess_client.Services;
 using chess_client.States;
-using Shared;
 using Shared.Logger;
 using Shared.WebSocketMessages;
+using chess_client.UserInterface;
 
 namespace chess_client.Menus;
 
 /// <summary>
-/// Manages the main menu of the game
+/// Represents the possible outcomes when leaving the dashboard menu.
 /// </summary>
-public class GameMenu
+public enum GameMenuResult
 {
-    private readonly UserContainer _userContainer;
-    private readonly FriendshipMenu _friendshipMenu;
-    private readonly WebSocketService _webSocketService;
-    private readonly IGameService _gameService;
-    private volatile bool _refreshRequested = false;
-    
     /// <summary>
-    /// Initializes a new instance of the GameMenu class
+    /// User requested to log out and return to the startup flow.
     /// </summary>
-    /// <param name="userContainer">The user container</param>
-    /// <param name="friendshipMenu">The friendship menu</param>
-    /// <param name="gameService">The game service</param>
-    /// <param name="webSocketService">The WebSocket service</param>
-    public GameMenu(UserContainer userContainer, FriendshipMenu friendshipMenu, IGameService gameService, WebSocketService webSocketService)
-    {
-        _userContainer = userContainer;
-        _friendshipMenu = friendshipMenu;
-        _gameService = gameService;
-        _webSocketService = webSocketService;
-    }
-    
+    Logout,
+
     /// <summary>
-    /// Displays the main menu and handles user input
+    /// User requested to quit the client.
     /// </summary>
-    public async Task DisplayMainMenu()
+    Quit
+}
+
+/// <summary>
+/// Coordinates the dashboard menu, including navigation, WebSocket-driven events, and game starts.
+/// </summary>
+/// <param name="userContainer">Shared user state used by nested menus.</param>
+/// <param name="friendshipMenu">Friendship menu used when the user opens friend features.</param>
+/// <param name="gameService">Service for creating, accepting, and managing games.</param>
+/// <param name="webSocketService">WebSocket connection used for realtime invitations and game start events.</param>
+public class GameMenu(
+    UserContainer userContainer,
+    FriendshipMenu friendshipMenu,
+    IGameService gameService,
+    WebSocketService webSocketService)
+{
+    private readonly GameMenuUi _ui = new();
+
+    /// <summary>
+    /// Displays the dashboard menu and processes user input until logout or quit.
+    /// </summary>
+    /// <returns>
+    /// <see cref="GameMenuResult.Logout"/> when the user logs out,
+    /// or <see cref="GameMenuResult.Quit"/> when the user exits the client.
+    /// </returns>
+    public async Task<GameMenuResult> DisplayMainMenu()
     {
+        string? currentErrorMessage = null;
+
         while (true)
         {
             var state = new GameMenuState();
@@ -49,8 +61,7 @@ public class GameMenu
                 pendingInvitation = payload;
                 cts.Cancel();
             };
-            _webSocketService.TransitionTo(state);
-            
+
             StartGamePayload? pendingStartGame = null;
             state.OnStartGame += payload =>
             {
@@ -58,94 +69,95 @@ public class GameMenu
                 pendingStartGame = payload;
                 cts.Cancel();
             };
-            
+
+            webSocketService.TransitionTo(state);
+
             GameLogger.Info("Displaying main menu.");
 
-            CliOutput.ClearTerminal();
-            CliOutput.PrintConsoleNewline(ConsoleHelper.GameMenu);
-            CliOutput.PrintConsoleNewline("Please enter your choice or press Enter to refresh: ");
-            
-            string? input = null;
+            GameMenuUi.DrawMainMenu(currentErrorMessage);
+            currentErrorMessage = null;
+
+            ConsoleKeyInfo input;
             try
             {
-                input = (await ConsoleHelper.ReadLineAsync(cts.Token))?.ToUpper();
+                input = await BaseMenuUi.ReadKeyAsync(cts.Token);
             }
             catch (OperationCanceledException)
             {
-                GameLogger.Info("Received game invitation.");
-                await _gameService.AcceptGameInvitation(pendingInvitation.GameId);
-                
-                // wait for start game message
-                while (true)
+                if (pendingInvitation != null)
                 {
-                    if (pendingStartGame != null)
+                    GameLogger.Info("Received game invitation.");
+                    BaseMenuUi.ShowMessage("Received game invitation. Accepting...");
+                    await gameService.AcceptGameInvitation(pendingInvitation.GameId);
+
+                    while (pendingStartGame == null)
                     {
-                        GameLogger.Info("Starting game with ID " + pendingStartGame.GameId);
-                        var game = new GameLogic();
-                        await game.StartGame(_webSocketService, pendingStartGame);
-                        break;
+                        await Task.Delay(50);
                     }
+
+                    GameLogger.Info("Starting game with ID " + pendingStartGame.GameId);
+                    var game = new GameLogic();
+                    await game.StartGame(webSocketService, pendingStartGame);
                 }
+                else if (pendingStartGame != null)
+                {
+                    GameLogger.Info("Starting game with ID " + pendingStartGame.GameId);
+                    var game = new GameLogic();
+                    await game.StartGame(webSocketService, pendingStartGame);
+                }
+
                 continue;
             }
-            GameLogger.Debug($"User entered menu input: '{input}'");
-            
-            switch (input)
+
+            GameLogger.Debug($"User pressed key: '{input.Key}'");
+
+            switch (input.Key)
             {
-                case "P":
-                case "PLAY":
-                    CliOutput.PrintConsoleNewline("Entering matchmaking queue...");
-                    await _gameService.SearchGame();
-                    
-                    while (true)
+                case ConsoleKey.P:
+                    GameLogger.Info("User selected 'Play'.");
+                    var matchmakingMenu = new MatchmakingMenu(gameService, webSocketService);
+
+                    var startGamePayload = await matchmakingMenu.EnterQueueAsync(() => pendingStartGame, cts.Token);
+
+                    if (startGamePayload != null)
                     {
-                        CliOutput.PrintConsoleNewline("Press Q to quit matchmaking queue.");
-                        input = null;
-                        try
-                        {
-                            input = (await ConsoleHelper.ReadLineAsync(cts.Token))?.Trim().ToUpper();
-                            if (input == "Q")
-                            {
-                                var cancelMessage = new WebSocketMessage
-                                {
-                                    Type = MessageType.CancelSearch,
-                                    Payload = null
-                                };
-                                await _webSocketService.SendAsync(cancelMessage);
-                                break;
-                            }
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            if (pendingStartGame != null)
-                            {
-                                GameLogger.Info("Starting game with ID " + pendingStartGame.GameId);
-                                var game = new GameLogic();
-                                await game.StartGame(_webSocketService, pendingStartGame);
-                                break;
-                            }
-                        }
+                        GameLogger.Info("Starting game with ID " + startGamePayload.GameId);
+                        var game = new GameLogic();
+                        await game.StartGame(webSocketService, startGamePayload);
                     }
+
                     break;
-                case "F":
-                case "FRIENDS":
+
+                case ConsoleKey.F:
                     GameLogger.Info("User selected 'Friends'.");
-                    await _friendshipMenu.DisplayMenu();
-                    continue;
-                case "G":
-                case "GAMES":
+
+                    var friendResult = await friendshipMenu.DisplayMenu();
+
+                    if (friendResult == FriendshipMenuResult.Quit)
+                    {
+                        return GameMenuResult.Quit;
+                    }
+
+                    break;
+
+                case ConsoleKey.G:
                     GameLogger.Info("User selected 'Games'.");
-                    var replayMenu = new ReplayMenu(_userContainer, _webSocketService);
+                    var replayMenu = new ReplayMenu(userContainer, webSocketService);
                     await replayMenu.DisplayMenu();
-                    continue;
-                case "Q":
-                case "QUIT":
+                    break;
+
+                case ConsoleKey.L:
+                    GameLogger.Info("User selected 'Logout'.");
+                    return GameMenuResult.Logout;
+
+                case ConsoleKey.Q:
                     GameLogger.Info("User selected 'Quit'.");
-                    return;
+                    return GameMenuResult.Quit;
+
                 default:
-                    GameLogger.Warning($"Invalid menu input: '{input}'");
-                    CliOutput.PrintConsoleNewline("Invalid input. Please try again.");
-                    continue;
+                    GameLogger.Warning($"Invalid menu input: '{input.Key}'");
+                    currentErrorMessage = "Invalid input. Please press P, F, G, L, or Q.";
+                    break;
             }
         }
     }
