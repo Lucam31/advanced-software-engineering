@@ -11,6 +11,7 @@ public class GameUi : BaseMenuUi
     private const int MiddleColumnWidth = 38;
     private const int BoardSectionMinLines = 10;
     private const int SeparatorWidth = 85;
+    private const string FooterPadding = "   ";
     private const string DefaultWhitePlayerLabel = "Player 1 (White)";
     private const string DefaultBlackPlayerLabel = "Player 2 (Black)";
     private const string DefaultStatusMessage = "Game starting...";
@@ -98,18 +99,23 @@ public class GameUi : BaseMenuUi
         Console.WriteLine();
         Console.WriteLine(new string('─', SeparatorWidth));
 
+        // Reserve exactly one status line below the separator.
+        Console.WriteLine();
+        var statusRow = Console.CursorTop - 1;
+
         if (!string.IsNullOrEmpty(ErrorMessage))
         {
-            DrawOptionalError(ErrorMessage, addTrailingEmptyLine: false);
+            Console.SetCursorPosition(0, statusRow);
+            ConsoleHelper.SetForegroundColor(ConsoleColor.Red);
+            ConsoleHelper.PrintConsole($"{FooterPadding}⚠ {ErrorMessage}");
+            ConsoleHelper.ResetColor();
         }
-        else
-        {
-            Console.WriteLine();
-        }
+
+        Console.SetCursorPosition(0, statusRow + 1);
 
         if (!string.IsNullOrEmpty(PromptMessage))
         {
-            DrawInputPrompt(PromptMessage);
+            DrawInputPrompt($"{FooterPadding}{PromptMessage.TrimStart()}");
         }
         else
         {

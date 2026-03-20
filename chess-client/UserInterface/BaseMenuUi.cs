@@ -48,7 +48,7 @@ public abstract class BaseMenuUi
     /// Draws a section header line surrounded by empty lines.
     /// </summary>
     /// <param name="title">The section title text to display.</param>
-    protected static void DrawSectionHeader(string title)
+    public static void DrawSectionHeader(string title)
     {
         ConsoleHelper.WriteEmptyLine();
         ConsoleHelper.PrintConsoleNewline(title);
@@ -60,7 +60,7 @@ public abstract class BaseMenuUi
     /// </summary>
     /// <param name="errorMessage">The error message to display; null or empty values are ignored.</param>
     /// <param name="addTrailingEmptyLine"><c>true</c> to print an empty line after the error message.</param>
-    protected static void DrawOptionalError(string? errorMessage, bool addTrailingEmptyLine = true)
+    public static void DrawOptionalError(string? errorMessage, bool addTrailingEmptyLine = true)
     {
         if (string.IsNullOrEmpty(errorMessage))
         {
@@ -81,7 +81,7 @@ public abstract class BaseMenuUi
     /// Draws a numbered list using one-based indexes.
     /// </summary>
     /// <param name="entries">The entries to print.</param>
-    protected static void DrawIndexedList(IReadOnlyList<string> entries)
+    public static void DrawIndexedList(IReadOnlyList<string> entries)
     {
         for (var i = 0; i < entries.Count; i++)
         {
@@ -93,7 +93,7 @@ public abstract class BaseMenuUi
     /// Draws a menu input prompt without adding a trailing newline.
     /// </summary>
     /// <param name="prompt">The prompt text to show.</param>
-    protected static void DrawInputPrompt(string prompt = DefaultInputPrompt)
+    public static void DrawInputPrompt(string prompt = DefaultInputPrompt)
     {
         ConsoleHelper.PrintConsole(prompt);
     }
