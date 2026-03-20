@@ -11,6 +11,10 @@ namespace chess_client.Menus;
 /// </summary>
 public class ReplayMenu
 {
+    private const int DisplayLimit = 5;
+    private const string InvalidSelectionMessage = "Invalid selection. That game is not available.";
+    private const string InvalidInputMessage = "Invalid input. Please use numbers 1-5 or Q.";
+
     private readonly UserContainer _userContainer;
     private readonly WebSocketService _webSocketService;
     private readonly ReplayService _replayService;
@@ -42,17 +46,12 @@ public class ReplayMenu
 
             var games = await _replayService.GetGames(_userContainer.Id);
 
-            // show max 5 games
-            var displayLimit = Math.Min(5, games.Count);
+            var gameStrings = BuildGameDisplayStrings(games);
 
-            var gameStrings = games.Take(displayLimit)
-                .Select(g => $"{g.WhitePlayerUsername} vs {g.BlackPlayerUsername}")
-                .ToList();
-
-            ReplayMenuUi.DrawMenu(gameStrings, currentErrorMessage);
+            _ui.DrawMenu(gameStrings, currentErrorMessage);
             currentErrorMessage = null;
 
-            var input = ReplayMenuUi.ReadKey();
+            var input = BaseMenuUi.ReadKey();
 
             if (input.Key == ConsoleKey.Q)
             {
@@ -60,22 +59,7 @@ public class ReplayMenu
                 return;
             }
 
-            var selectedIndex = -1;
-            switch (input.Key)
-            {
-                case ConsoleKey.D1:
-                case ConsoleKey.NumPad1: selectedIndex = 0; break;
-                case ConsoleKey.D2:
-                case ConsoleKey.NumPad2: selectedIndex = 1; break;
-                case ConsoleKey.D3:
-                case ConsoleKey.NumPad3: selectedIndex = 2; break;
-                case ConsoleKey.D4:
-                case ConsoleKey.NumPad4: selectedIndex = 3; break;
-                case ConsoleKey.D5:
-                case ConsoleKey.NumPad5: selectedIndex = 4; break;
-            }
-
-            if (selectedIndex >= 0)
+            if (TryGetSelectedIndex(input.Key, out var selectedIndex))
             {
                 if (selectedIndex < games.Count)
                 {
@@ -86,14 +70,48 @@ public class ReplayMenu
                 else
                 {
                     GameLogger.Warning($"User selected game {selectedIndex + 1} for replay, but it is not available.");
-                    currentErrorMessage = "Invalid selection. That game is not available.";
+                    currentErrorMessage = InvalidSelectionMessage;
                 }
             }
             else
             {
                 GameLogger.Warning($"Invalid menu input: '{input.Key}'");
-                currentErrorMessage = "Invalid input. Please use numbers 1-5 or Q.";
+                currentErrorMessage = InvalidInputMessage;
             }
         }
+    }
+
+    /// <summary>
+    /// Creates display labels for replayable games and limits output to the configured maximum.
+    /// </summary>
+    /// <param name="games">The full list of recent games.</param>
+    /// <returns>Formatted labels shown in the replay menu.</returns>
+    private List<string> BuildGameDisplayStrings(IReadOnlyList<Shared.Dtos.PlayedGame> games)
+    {
+        var visibleCount = Math.Min(DisplayLimit, games.Count);
+        return games.Take(visibleCount)
+            .Select(g => $"{g.WhitePlayerUsername} vs {g.BlackPlayerUsername}")
+            .ToList();
+    }
+
+    /// <summary>
+    /// Maps numeric key input to a zero-based replay selection index.
+    /// </summary>
+    /// <param name="key">The pressed menu key.</param>
+    /// <param name="selectedIndex">The resolved zero-based index when parsing succeeds.</param>
+    /// <returns><c>true</c> when a supported numeric selection key was pressed.</returns>
+    private bool TryGetSelectedIndex(ConsoleKey key, out int selectedIndex)
+    {
+        selectedIndex = key switch
+        {
+            ConsoleKey.D1 or ConsoleKey.NumPad1 => 0,
+            ConsoleKey.D2 or ConsoleKey.NumPad2 => 1,
+            ConsoleKey.D3 or ConsoleKey.NumPad3 => 2,
+            ConsoleKey.D4 or ConsoleKey.NumPad4 => 3,
+            ConsoleKey.D5 or ConsoleKey.NumPad5 => 4,
+            _ => -1
+        };
+
+        return selectedIndex >= 0;
     }
 }

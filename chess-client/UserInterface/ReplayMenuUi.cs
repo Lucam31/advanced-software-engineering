@@ -5,7 +5,7 @@ namespace chess_client.UserInterface;
 /// </summary>
 public class ReplayMenuUi : BaseMenuUi
 {
-    private const string Header = "    === REPLAY MENU ===";
+    private const string Header = "   === REPLAY MENU ===";
     private const string NoGamesMessage = "   No games found.";
     private const string SelectInstruction = "   Select a game to replay:";
     private const string QuitInstruction = "   [Q] Return to main menu";
@@ -15,7 +15,7 @@ public class ReplayMenuUi : BaseMenuUi
     /// </summary>
     /// <param name="gameDisplays">Formatted game labels shown as numbered options.</param>
     /// <param name="errorMessage">Optional error message shown above the input prompt.</param>
-    public static void DrawMenu(List<string> gameDisplays, string? errorMessage = null)
+    public void DrawMenu(IReadOnlyList<string> gameDisplays, string? errorMessage = null)
     {
         ConsoleHelper.ClearTerminal();
         DrawSectionHeader(Header);
