@@ -55,7 +55,8 @@ public class ReplayUi : BaseMenuUi
             ConsoleHelper.ResetColor();
         }
 
-        // Console.SetCursorPosition(0, statusRow + 1);
+        Console.SetCursorPosition(0, statusRow);
+        ConsoleHelper.WriteEmptyLine();
 
         ConsoleHelper.PrintConsole("   Command: ");
     }
