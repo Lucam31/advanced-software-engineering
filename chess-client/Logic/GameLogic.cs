@@ -3,6 +3,8 @@ using chess_client.UserInterface;
 using Shared;
 using Shared.Logger;
 using Shared.WebSocketMessages;
+using static Shared.MoveValidator;
+using static Shared.MoveValidatorHelper;
 
 namespace chess_client.Logic;
 
@@ -75,13 +77,13 @@ public class GameLogic
             {
                 var currentIsWhite = test ? _isWhiteTurn : _isWhite;
 
-                if (MoveValidator.IsKingInCheck(currentIsWhite, _gameboard))
+                if (IsKingInCheck(currentIsWhite, _gameboard))
                 {
                     _gameUi.StatusMessage = "CHECK! Protect your King!";
                 }
 
                 Move move;
-                MoveValidator.MoveValidationResult validationResult;
+                MoveValidationResult validationResult;
 
                 _gameUi.PromptMessage = "Enter your move (e.g. E2E4): ";
                 _gameUi.ErrorMessage = ""; // Alten Fehler löschen
@@ -122,17 +124,17 @@ public class GameLogic
                         continue;
                     }
 
-                    MoveValidator.WhitePlayer = test ? _isWhiteTurn : _isWhite;
-                    validationResult = MoveValidator.ValidateMove(move, _gameboard);
+                    WhitePlayer = test ? _isWhiteTurn : _isWhite;
+                    validationResult = ValidateMove(move, _gameboard);
 
-                    if (validationResult == MoveValidator.MoveValidationResult.Invalid)
+                    if (validationResult == MoveValidationResult.Invalid)
                     {
                         _gameUi.ErrorMessage = "Your move is invalid. Try again.";
                         DrawBoard();
                         continue;
                     }
 
-                    if (!MoveValidator.TryMoveEscapesCheck(move, validationResult, currentIsWhite, _gameboard))
+                    if (!TryMoveEscapesCheck(move, validationResult, currentIsWhite, _gameboard))
                     {
                         _gameUi.ErrorMessage = "This move leaves your king in check. Try again.";
                         DrawBoard();
@@ -150,7 +152,7 @@ public class GameLogic
                 ExecuteMove(move, validationResult);
 
                 var opponentIsWhite = test ? !_isWhiteTurn : !_isWhite;
-                if (MoveValidator.IsCheckmate(opponentIsWhite, _gameboard))
+                if (IsCheckmate(opponentIsWhite, _gameboard))
                 {
                     var gameFinishedMessage = new WebSocketMessage
                     {
@@ -245,23 +247,23 @@ public class GameLogic
         _gameUi.DrawGameScreen(_gameboard, _isWhite);
     }
 
-    private void ExecuteMove(Move move, MoveValidator.MoveValidationResult result)
+    private void ExecuteMove(Move move, MoveValidationResult result)
     {
         switch (result)
         {
-            case MoveValidator.MoveValidationResult.Valid:
-            case MoveValidator.MoveValidationResult.Check:
-            case MoveValidator.MoveValidationResult.Checkmate:
+            case MoveValidationResult.Valid:
+            case MoveValidationResult.Check:
+            case MoveValidationResult.Checkmate:
                 _gameboard.Move(move);
                 GameLogger.Info($"Move executed: {move}");
                 break;
 
-            case MoveValidator.MoveValidationResult.EnPassant:
+            case MoveValidationResult.EnPassant:
                 _gameboard.Move(move, enPassant: true);
                 GameLogger.Info($"En passant executed: {move}");
                 break;
 
-            case MoveValidator.MoveValidationResult.Castling:
+            case MoveValidationResult.Castling:
                 _gameboard.Move(move, castling: true);
                 GameLogger.Info($"Castling executed: {move}");
                 break;

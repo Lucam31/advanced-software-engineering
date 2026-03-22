@@ -1,5 +1,6 @@
 using Shared;
 using static Shared.MoveValidator;
+using static Shared.MoveValidatorHelper;
 
 namespace UnitTesting.chess_client;
 
