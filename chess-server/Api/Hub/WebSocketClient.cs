@@ -11,7 +11,12 @@ namespace chess_server.Api.Hub;
 public interface IWebSocketClient
 {
     Guid Id { get; }
+    bool IsActive { get; }
+    DateTime LastPongUtc { get; }
     Task SendAsync(WebSocketMessage message);
+    void MarkPongReceived();
+    void MarkInactive();
+    Task CloseAsync(string reason);
 }
 
 /// <summary>
@@ -26,6 +31,16 @@ public class WebSocketClient : IWebSocketClient
     public Guid Id { get; set; }
 
     /// <summary>
+    /// Indicates whether the client is currently considered active by heartbeat checks.
+    /// </summary>
+    public bool IsActive { get; private set; } = true;
+
+    /// <summary>
+    /// Stores the UTC timestamp of the last received Pong.
+    /// </summary>
+    public DateTime LastPongUtc => new(Interlocked.Read(ref _lastPongTicks), DateTimeKind.Utc);
+
+    /// <summary>
     /// The underlying <see cref="WebSocket"/> connection instance.
     /// </summary>
     private WebSocket Conn { get; set; }
@@ -36,6 +51,9 @@ public class WebSocketClient : IWebSocketClient
     
     private readonly Channel<WebSocketMessage> _sendChan = Channel.CreateUnbounded<WebSocketMessage>();
     private readonly JsonParser _jsonParser = new();
+    private readonly CancellationTokenSource _lifecycleCts = new();
+    private long _lastPongTicks = DateTime.UtcNow.Ticks;
+    private int _closed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WebSocketClient"/> class.
@@ -57,23 +75,97 @@ public class WebSocketClient : IWebSocketClient
     /// <returns>A task that represents the asynchronous send operation.</returns>
     public async Task SendAsync(WebSocketMessage message)
     {
-        await _sendChan.Writer.WriteAsync(message);
+        await _sendChan.Writer.WriteAsync(message, _lifecycleCts.Token);
+    }
+
+    /// <summary>
+    /// Updates heartbeat state after a Pong was received.
+    /// </summary>
+    public void MarkPongReceived()
+    {
+        Interlocked.Exchange(ref _lastPongTicks, DateTime.UtcNow.Ticks);
+        IsActive = true;
+    }
+
+    /// <summary>
+    /// Marks the client as inactive without forcefully closing the socket.
+    /// </summary>
+    public void MarkInactive()
+    {
+        IsActive = false;
+    }
+
+    /// <summary>
+    /// Closes the client connection and completes background loops.
+    /// </summary>
+    /// <param name="reason">Close reason for the websocket close frame.</param>
+    public async Task CloseAsync(string reason)
+    {
+        if (Interlocked.Exchange(ref _closed, 1) == 1)
+        {
+            return;
+        }
+
+        _sendChan.Writer.TryComplete();
+
+        if (!_lifecycleCts.IsCancellationRequested)
+        {
+            await _lifecycleCts.CancelAsync();
+        }
+
+        try
+        {
+            if (Conn.State is WebSocketState.Open or WebSocketState.CloseReceived)
+            {
+                await Conn.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, reason, CancellationToken.None);
+            }
+        }
+        catch (Exception ex) when (IsExpectedCloseException(ex))
+        {
+            GameLogger.Debug($"Ignored expected close race for client {Id}: {ex.Message}");
+        }
+        finally
+        {
+            if (Conn.State is not WebSocketState.Closed and not WebSocketState.None and not WebSocketState.Aborted)
+            {
+                try
+                {
+                    Conn.Abort();
+                }
+                catch (Exception ex) when (IsExpectedCloseException(ex))
+                {
+                    GameLogger.Debug($"Ignored expected abort race for client {Id}: {ex.Message}");
+                }
+            }
+        }
     }
     
     private async Task ProcessSend()
     {
-        await foreach (var msg in _sendChan.Reader.ReadAllAsync())
+        try
         {
-            var messageBuffer = _jsonParser.SerializeToBytes(msg);
-            var segment = new ArraySegment<byte>(messageBuffer);
-            try
+            await foreach (var msg in _sendChan.Reader.ReadAllAsync(_lifecycleCts.Token))
             {
-                await Conn.SendAsync(segment, WebSocketMessageType.Text, true, CancellationToken.None);
+                var messageBuffer = _jsonParser.SerializeToBytes(msg);
+                var segment = new ArraySegment<byte>(messageBuffer);
+                try
+                {
+                    await Conn.SendAsync(segment, WebSocketMessageType.Text, true, CancellationToken.None);
+                }
+                catch (Exception ex) when (IsExpectedCloseException(ex))
+                {
+                    GameLogger.Debug($"Stopped sending for closing client {Id}: {ex.Message}");
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    GameLogger.Error($"Failed to send message to client {Id}: {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                GameLogger.Error($"Failed to send message to client {Id}: {ex.Message}");
-            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected during shutdown.
         }
     }
     
@@ -96,7 +188,7 @@ public class WebSocketClient : IWebSocketClient
 
                 do
                 {
-                    result = await Conn.ReceiveAsync(segment, CancellationToken.None);
+                    result = await Conn.ReceiveAsync(segment, _lifecycleCts.Token);
                     ms.Write(buffer, 0, result.Count);
                 } while (!result.EndOfMessage);
 
@@ -105,8 +197,7 @@ public class WebSocketClient : IWebSocketClient
                     if (ClientDisconnected != null)
                         await ClientDisconnected.Invoke(Id);
 
-                    await Conn.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
-                    _sendChan.Writer.TryComplete();
+                    await CloseAsync(string.Empty);
                     break;
                 }
 
@@ -120,11 +211,31 @@ public class WebSocketClient : IWebSocketClient
                         await MessageReceived.Invoke(message.Type, message.Payload, Id);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
             catch (Exception ex)
             {
                 GameLogger.Error($"Failed to parse message: {ex.Message}");
             }
         }
+    }
+
+    private static bool IsExpectedCloseException(Exception ex)
+    {
+        if (ex is OperationCanceledException or ObjectDisposedException)
+        {
+            return true;
+        }
+
+        if (ex is WebSocketException wsEx)
+        {
+            return wsEx.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely
+                   || wsEx.WebSocketErrorCode == WebSocketError.InvalidState;
+        }
+
+        return false;
     }
 
 }

@@ -58,13 +58,11 @@ internal static class Program
 
                 GameLogger.Info("User logged in successfully.");
 
-                if (!webSocketService.IsConnected)
-                {
-                    var wsUri = $"ws://localhost:8080/ws?userId={userContainer.Id}";
-                    var connected = await webSocketService.ConnectAsync(wsUri);
-                    if (!connected)
-                        GameLogger.Warning("WebSocket-Verbindung fehlgeschlagen. Läuft ohne Echtzeit-Updates.");
-                }
+                
+                var wsUri = $"ws://localhost:8080/ws?userId={userContainer.Id}";
+                var connected = await webSocketService.ConnectAsync(wsUri);
+                if (!connected)
+                    GameLogger.Warning("WebSocket-Verbindung fehlgeschlagen. Läuft ohne Echtzeit-Updates.");
 
                 var menuResult = await gameMenu.DisplayMainMenu();
 

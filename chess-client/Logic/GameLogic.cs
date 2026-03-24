@@ -161,6 +161,8 @@ public class GameLogic
                         {
                             GameId = gameId,
                             Winner = _isWhite ? "White" : "Black",
+                            LastMove = $"{move.From}{move.To}",
+                            CurrentBoard = _gameboard.ToDto()
                         })
                     };
 
@@ -215,6 +217,12 @@ public class GameLogic
                 if (completedTask == gameOverTask)
                 {
                     var gameOverMessage = await gameOverTask;
+                    
+                    _gameboard = Gameboard.FromDto(gameOverMessage.CurrentBoard);
+
+                    var fromMoveGameOver = gameOverMessage.LastMove[..2];
+                    var toMoveGameOver = gameOverMessage.LastMove.Substring(2, 2);
+                    _gameUi.AddMoveToHistory(fromMoveGameOver, toMoveGameOver, !_isWhite);
                     _gameUi.StatusMessage = $"CHECKMATE! {gameOverMessage.Winner} wins!";
                     GameLogger.Info($"Opponent caused checkmate. {gameOverMessage.Winner} wins.");
 
@@ -229,9 +237,9 @@ public class GameLogic
                 var opponentTurn = await opponentTurnTask;
                 _gameboard = Gameboard.FromDto(opponentTurn.CurrentBoard);
 
-                var fromMove = opponentTurn.LastMove[..2];
-                var toMove = opponentTurn.LastMove.Substring(2, 2);
-                _gameUi.AddMoveToHistory(fromMove, toMove, !_isWhite);
+                var fromMoveOpponentTurn = opponentTurn.LastMove[..2];
+                var toMoveOpponentTurn = opponentTurn.LastMove.Substring(2, 2);
+                _gameUi.AddMoveToHistory(fromMoveOpponentTurn, toMoveOpponentTurn, !_isWhite);
 
                 GameLogger.Info($"Received opponent move: {opponentTurn.LastMove}");
 

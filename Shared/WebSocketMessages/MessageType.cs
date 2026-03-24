@@ -5,6 +5,11 @@ namespace Shared.WebSocketMessages;
 /// </summary>
 public static class MessageType
 {
+    // connection/session related messages
+    public const string Logout = "LOGOUT";
+    public const string Ping = "PING";
+    public const string Pong = "PONG";
+
     // game related messages
     public const string ResyncGame = "RESYNC_GAME";
     public const string CreateGame = "CREATE_GAME";
