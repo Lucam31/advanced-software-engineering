@@ -27,6 +27,19 @@ public interface IDatabase
 }
 
 /// <summary>
+/// Config class to encapsulate the connection string
+/// </summary>
+public class DatabaseConfig
+{
+    public string ConnectionString { get; set; }
+    
+    public DatabaseConfig(string connectionString)
+    {
+        ConnectionString = connectionString;
+    }
+}
+
+/// <summary>
 /// Provides methods for interacting with a PostgreSQL database.
 /// </summary>
 public class Database : IDatabase
@@ -36,10 +49,10 @@ public class Database : IDatabase
     /// <summary>
     /// Initializes a new instance of the <see cref="Database"/> class.
     /// </summary>
-    /// <param name="connectionString">The connection string for the database.</param>
-    public Database(string connectionString)
+    /// <param name="config">The config object for the database.</param>
+    public Database(DatabaseConfig config)  
     {
-        _connectionString = connectionString;
+        _connectionString = config.ConnectionString;
     }
 
     /// <inheritdoc/>
