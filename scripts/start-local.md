@@ -1,6 +1,7 @@
 # Local Startup Guide
 
 This guide shows both ways to start locally:
+
 - with the script (`scripts/start-local-mac.sh`)
 - manually (without the script)
 
@@ -29,6 +30,7 @@ Optional check (no windows opened):
 ### Windows
 
 `scripts/start-local-mac.sh` is a Bash script. Use one of these:
+
 - Git Bash
 - WSL
 
