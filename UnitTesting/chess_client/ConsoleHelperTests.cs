@@ -55,8 +55,10 @@ public class ConsoleHelperTest
     [TestMethod]
     public void TestPrintConsole_OutputEqualsInput()
     {
+        // Act
         ConsoleHelper.PrintConsole("Test");
 
+        // Assert
         Assert.AreEqual("Test", _output.ToString());
     }
 
@@ -67,8 +69,10 @@ public class ConsoleHelperTest
     [TestMethod]
     public void TestPrintConsoleNewline_OutputEqualsNewlineInput()
     {
+        // Act
         ConsoleHelper.PrintConsoleNewline("TestNewline");
-        
+
+        // Assert
         Assert.AreEqual("\nTestNewline", _output.ToString());
     }
     
@@ -78,9 +82,14 @@ public class ConsoleHelperTest
     [TestMethod]
     public void TestClearCurrentConsoleLine_OutputClearsLine()
     {
+        // Arrange
         ConsoleHelper.SetConsole(_mockOutput);
         ConsoleHelper.PrintConsole("TestLine");
+
+        // Act
         ConsoleHelper.ClearCurrentConsoleLine();
+
+        // Assert
         // Assert.AreEqual(string.Empty, _mockOutput.GetLine(_mockOutput.CursorTop));
         Assert.AreEqual(string.Empty, _mockOutput.GetLine(0));
     }
@@ -92,9 +101,14 @@ public class ConsoleHelperTest
     [TestMethod]
     public void TestOverwriteLine_OutputEqualsInput()
     {
+        // Arrange
         ConsoleHelper.SetConsole(_mockOutput);
         ConsoleHelper.PrintConsole("OldLine");
+
+        // Act
         ConsoleHelper.OverwriteLine("NewLine");
+
+        // Assert
         Assert.AreEqual("NewLine", _mockOutput.GetLine(_mockOutput.CursorTop));
     }
     
@@ -105,9 +119,14 @@ public class ConsoleHelperTest
     [TestMethod]
     public void TestWriteErrorMessage_OutputEqualsInput()
     {
+        // Arrange
         ConsoleHelper.SetConsole(_mockOutput);
         ConsoleHelper.PrintConsoleNewline("SomeMessage");
+
+        // Act
         ConsoleHelper.WriteErrorMessage("ErrorMessage");
+
+        // Assert
         Assert.AreEqual("ErrorMessage", _mockOutput.GetLine(0));
     }
 

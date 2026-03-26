@@ -54,9 +54,13 @@ public sealed class LoggerTests
     [TestMethod]
     public void TestGameLogger_DebugLevelOutput()
     {
+        // Arrange
         var test = "Test debug message";
+
+        // Act
         GameLogger.Debug(test);
-        
+
+        // Assert
         var levelString = "[DEBUG] ";
         var filteredLevel = _output.ToString().Substring(_output.ToString().Length - test.Length - 1 - levelString.Length, levelString.Length);
         Assert.AreEqual(levelString, filteredLevel);
@@ -72,9 +76,13 @@ public sealed class LoggerTests
     [TestMethod]
     public void TestGameLogger_InfoLevelOutput()
     {
+        // Arrange
         var test = "Test info message";
+
+        // Act
         GameLogger.Info(test);
-        
+
+        // Assert
         var levelString = "[INFO] ";
         var filteredLevel = _output.ToString().Substring(_output.ToString().Length - test.Length - 1 - levelString.Length, levelString.Length);
         Assert.AreEqual(levelString, filteredLevel);
@@ -90,9 +98,13 @@ public sealed class LoggerTests
     [TestMethod]
     public void TestGameLogger_WarningLevelOutput()
     {
+        // Arrange
         var test = "Test warning message";
+
+        // Act
         GameLogger.Warning(test);
-        
+
+        // Assert
         var levelString = "[WARNING] ";
         var filteredLevel = _output.ToString().Substring(_output.ToString().Length - test.Length - 1 - levelString.Length, levelString.Length);
         Assert.AreEqual(levelString, filteredLevel);
@@ -108,9 +120,13 @@ public sealed class LoggerTests
     [TestMethod]
     public void TestGameLogger_ErrorLevelOutput()
     {
+        // Arrange
         var test = "Test error message";
+
+        // Act
         GameLogger.Error(test);
-        
+
+        // Assert
         var levelString = "[ERROR] ";
         var filteredLevel = _output.ToString().Substring(_output.ToString().Length - test.Length - 1 - levelString.Length, levelString.Length);
         Assert.AreEqual(levelString, filteredLevel);
@@ -126,9 +142,13 @@ public sealed class LoggerTests
     [TestMethod]
     public void TestGameLogger_FatalLevelOutput()
     {
+        // Arrange
         var test = "Test fatal message";
+
+        // Act
         GameLogger.Fatal(test);
-        
+
+        // Assert
         var levelString = "[FATAL] ";
         var filteredLevel = _output.ToString().Substring(_output.ToString().Length - test.Length - 1 - levelString.Length, levelString.Length);
         Assert.AreEqual(levelString, filteredLevel);
@@ -144,11 +164,15 @@ public sealed class LoggerTests
     [TestMethod]
     public void TestGameLogger_DebugLevelNoOutput()
     {
+        // Arrange
         GameLogger.Configure(LogLevel.Fatal, true, false);
         
         var test = "Test debug message";
+
+        // Act
         GameLogger.Debug(test);
 
+        // Assert
         Assert.AreEqual("", _output.ToString());
     }
 }
