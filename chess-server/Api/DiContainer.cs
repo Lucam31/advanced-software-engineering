@@ -36,7 +36,7 @@ public class DiContainer : IDiContainer
     /// <typeparam name="T">The type of the service to register.</typeparam>
     public void Register<T>() where T : class
     {
-        _services[typeof(T)] = () => CreateInstance<T>();
+        _services[typeof(T)] = CreateInstance<T>;
         GameLogger.Debug($"Service registered: {typeof(T).Name}");
     }
 
@@ -53,7 +53,7 @@ public class DiContainer : IDiContainer
     public void Register<TInterface, TImplementation>()
         where TImplementation : class, TInterface
     {
-        _services[typeof(TInterface)] = () => CreateInstance<TImplementation>();
+        _services[typeof(TInterface)] = CreateInstance<TImplementation>;
         GameLogger.Debug($"Service registered: {typeof(TInterface).Name} -> {typeof(TImplementation).Name}");
     }
 
