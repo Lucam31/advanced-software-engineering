@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using chess_client.Menus;
 using chess_client.Services;
+using chess_server.Models;
 using Shared.Logger;
 using LogLevel = Shared.Logger.LogLevel;
 
