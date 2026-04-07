@@ -18,18 +18,18 @@ All commands below are relative to the project root directory (`advanced-softwar
 ### macOS / Linux
 
 ```bash
-./scripts/start-local-mac.sh
+./scripts/start-local.sh
 ```
 
 Optional check (no windows opened):
 
 ```bash
-./scripts/start-local-mac.sh --dry-run
+./scripts/start-local.sh --dry-run
 ```
 
 ### Windows
 
-`scripts/start-local-mac.sh` is a Bash script. Use one of these:
+`scripts/start-local.sh` is a Bash script. Use one of these:
 
 - Git Bash
 - WSL
@@ -37,7 +37,7 @@ Optional check (no windows opened):
 Example (Git Bash / WSL):
 
 ```bash
-./scripts/start-local-mac.sh
+./scripts/start-local.sh
 ```
 
 If you use plain PowerShell/CMD, use Option B (manual).
@@ -49,14 +49,12 @@ If you use plain PowerShell/CMD, use Option B (manual).
 #### macOS / Linux (bash or zsh)
 
 ```bash
-FILE_LOG=false CONSOLE_LOG=true docker compose -f compose.yaml up --build -d
+docker compose -f compose.yaml up --build -d
 ```
 
 #### Windows PowerShell
 
 ```powershell
-$env:FILE_LOG="false"
-$env:CONSOLE_LOG="true"
 docker compose -f compose.yaml up --build -d
 ```
 
@@ -65,14 +63,12 @@ docker compose -f compose.yaml up --build -d
 #### macOS / Linux (bash or zsh)
 
 ```bash
-FILE_LOG=false CONSOLE_LOG=false dotnet run --project chess-client/chess-client.csproj
+dotnet run --project chess-client/chess-client.csproj
 ```
 
 #### Windows PowerShell
 
 ```powershell
-$env:FILE_LOG="false"
-$env:CONSOLE_LOG="false"
 dotnet run --project chess-client/chess-client.csproj
 ```
 

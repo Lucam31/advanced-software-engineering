@@ -22,15 +22,10 @@ internal static class Program
     {
         Console.OutputEncoding = Encoding.UTF8;
 
-        var enableConsoleLog = !string.Equals(Environment.GetEnvironmentVariable("CONSOLE_LOG"), "false",
-            StringComparison.OrdinalIgnoreCase);
-        var enableFileLog = !string.Equals(Environment.GetEnvironmentVariable("FILE_LOG"), "false",
-            StringComparison.OrdinalIgnoreCase);
-
         GameLogger.Configure(
             minLevel: LogLevel.Debug,
-            logToConsole: enableConsoleLog,
-            logToFile: enableFileLog,
+            logToConsole: true,
+            logToFile: true,
             logFilePath: "logs/server.log"
         );
 
@@ -51,10 +46,10 @@ internal static class Program
 
             GameLogger.Debug("Initializing Dependency Injection container...");
             var container = new DiContainer();
-            
+
             var dbConfig = new DatabaseConfig(connectionString);
 
-            container.Register<DatabaseConfig>(() => dbConfig); 
+            container.Register<DatabaseConfig>(() => dbConfig);
             container.Register<IDatabase, Database>();
             container.Register<IUserRepository, UserRepository>();
             container.Register<IGameRepository, GameRepository>();
