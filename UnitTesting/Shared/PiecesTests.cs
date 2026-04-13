@@ -50,11 +50,17 @@ public class PiecesTests
     [TestMethod]
     public void TestMove_UpdatedVariables()
     {
+        // Arrange
         Piece piece = new Pawn("E2", true);
+
+        // Assert
         Assert.AreEqual("E2", piece.Position);
         Assert.IsFalse(piece.Moved);
-        
+
+        // Act
         piece.Move("E4");
+
+        // Assert
         Assert.AreEqual("E4", piece.Position);
         Assert.IsTrue(piece.Moved);
     }
@@ -66,6 +72,7 @@ public class PiecesTests
     [TestMethod]
     public void TestToString_ReturnsCorrectSymbol()
     {
+        // Arrange
         var pawn = new Pawn("E2", true);
         var rook = new Rook("A1", true);
         var knight = new Knight("B1", true);
@@ -73,6 +80,7 @@ public class PiecesTests
         var queen = new Queen("D1", true);
         var king = new King("E1", true);
         
+        // Act & Assert
         Assert.AreEqual("♟", pawn.ToString());
         Assert.AreEqual("♜", rook.ToString());
         Assert.AreEqual("♞", knight.ToString());
@@ -80,5 +88,4 @@ public class PiecesTests
         Assert.AreEqual("♛", queen.ToString());
         Assert.AreEqual("♚", king.ToString());
     }
-    
 }

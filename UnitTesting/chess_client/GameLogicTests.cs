@@ -23,8 +23,10 @@ public class GameLogicTests
     [TestMethod]
     public void FoolsMate_CheckmateIsDetected()
     {
+        // Arrange
         var board = new Gameboard();
 
+        // Act
         // 1. f3
         board.Move(new Move("F2", "F3"));
         // 1... e5
@@ -34,6 +36,7 @@ public class GameLogicTests
         // 2... Qh4#
         board.Move(new Move("D8", "H4"));
 
+        // Assert
         Assert.IsTrue(IsKingInCheck(true, board), "White king should be in check");
         Assert.IsTrue(IsCheckmate(true, board), "White king should be in checkmate");
     }
@@ -44,8 +47,10 @@ public class GameLogicTests
     [TestMethod]
     public void ShortestStalemate_StalemateIsDetected()
     {
+        // Arrange
         var board = new Gameboard();
 
+        // Act
         // 1. e3 a5
         board.Move(new Move("E2", "E3"));
         board.Move(new Move("A7", "A5"));
@@ -77,6 +82,7 @@ public class GameLogicTests
         board.Move(new Move("C8", "E6"));
 
 
+        // Assert
         Assert.IsFalse(IsKingInCheck(false, board), "Black king should not be in check");
         Assert.IsTrue(IsStalemate(false, board), "Black should be in stalemate");
     }

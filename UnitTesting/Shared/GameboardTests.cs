@@ -53,6 +53,7 @@ public class GameboardTests
     [TestMethod]
     public void TestGameboard_Construction()
     {
+        // Assert
         Assert.IsNotNull(_gameboard);
     }
 
@@ -62,6 +63,7 @@ public class GameboardTests
     [TestMethod]
     public void TestPrintBoard()
     {
+        // Act
         _gameboard.PrintBoard();
         var gameboardExpected = @"    A  B  C  D  E  F  G  H 
  8  ♜  ♞  ♝  ♛  ♚  ♝  ♞  ♜  8
@@ -75,24 +77,27 @@ public class GameboardTests
     A  B  C  D  E  F  G  H ";
         // var gameboardOutput = _output.ToString().Substring(0, gameboardExpected.Length);
         var gameboardOutput = _output.ToString();
-        
+
+        // Assert
         Assert.AreEqual(gameboardExpected, gameboardOutput);
     }
-    
+
     /// <summary>
     /// Verifies that <see cref="Gameboard.GetPieceAtPosition(string)"/> can be constructed successfully
     /// </summary>
     [TestMethod]
     public void TestGameboard_GetPieceAtPosition_NullAndPiece()
     {
+        // Act
         var pieceAtE2 = _gameboard.GetPieceAtPosition("E2");
         var pieceAtE4 = _gameboard.GetPieceAtPosition("E4");
-        
+
+        // Assert
         Assert.IsNotNull(pieceAtE2);
         Assert.AreEqual("Pawn", pieceAtE2?.GetType().Name);
         Assert.IsNull(pieceAtE4);
     }
-    
+
     /// <summary>
     /// Verifies that <see cref="Gameboard.Move(Move)"/> returns true
     /// the move will be valid in the main code so it won't be validated here
@@ -100,26 +105,33 @@ public class GameboardTests
     [TestMethod]
     public void TestGameboard_Move_ReturnsTrue()
     {
+        // Arrange
         var move = new Move("E2", "E4");
+
+        // Act
         var moveResult = _gameboard.Move(move);
-        
+
+        // Assert
         Assert.IsTrue(moveResult);
     }
-    
+
     /// <summary>
     /// Verifies that <see cref="Gameboard.GetPieceAtPosition(string)"/> can be constructed successfully
     /// </summary>
     [TestMethod]
     public void TestGameboard_GetPieceAtPosition_AfterMove()
     {
+        // Arrange
         var pieceAtE2Before = _gameboard.GetPieceAtPosition("E2");
         Assert.IsNotNull(pieceAtE2Before);
         var pieceAtE4Before = _gameboard.GetPieceAtPosition("E4");
         Assert.IsNull(pieceAtE4Before);
         
+        // Act
         var move = new Move("E2", "E4");
         _gameboard.Move(move);
         
+        // Assert
         var pieceAtE2After = _gameboard.GetPieceAtPosition("E2");
         Assert.IsNull(pieceAtE2After);
         var pieceAtE4After = _gameboard.GetPieceAtPosition("E4");

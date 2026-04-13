@@ -22,15 +22,10 @@ internal static class Program
     {
         Console.OutputEncoding = Encoding.UTF8;
 
-        var enableConsoleLog = !string.Equals(Environment.GetEnvironmentVariable("CONSOLE_LOG"), "false",
-            StringComparison.OrdinalIgnoreCase);
-        var enableFileLog = !string.Equals(Environment.GetEnvironmentVariable("FILE_LOG"), "false",
-            StringComparison.OrdinalIgnoreCase);
-
         GameLogger.Configure(
             minLevel: LogLevel.Debug,
-            logToConsole: enableConsoleLog,
-            logToFile: enableFileLog,
+            logToConsole: true,
+            logToFile: true,
             logFilePath: "logs/server.log"
         );
 
@@ -52,21 +47,19 @@ internal static class Program
             GameLogger.Debug("Initializing Dependency Injection container...");
             var container = new DiContainer();
 
-            container.Register<IDatabase, Database>(() => new Database(connectionString));
-            container.Register<IUserRepository, UserRepository>(() => new UserRepository(container.Resolve<IDatabase>()));
-            container.Register<IGameRepository, GameRepository>(() => new GameRepository(container.Resolve<IDatabase>()));
-            container.Register<IFriendsRepository, FriendsRepository>(() => new FriendsRepository(container.Resolve<IDatabase>()));
-            container.Register<IUserService, UserService>(() => new UserService(container.Resolve<IUserRepository>()));
-            container.Register<IGameService, GameService>(() => new GameService(
-                container.Resolve<IGameRepository>(),
-                container.Resolve<IUserRepository>()));
-            container.Register<IFriendsService, FriendsService>(() => new FriendsService(
-                container.Resolve<IFriendsRepository>(),
-                container.Resolve<IUserRepository>(),
-                container.Resolve<INotificationSender>()));
-            container.Register<UserController>(() => new UserController(container.Resolve<IUserService>()));
-            container.Register<GameController>(() => new GameController(container.Resolve<IGameService>()));
-            container.Register<FriendsController>(() => new FriendsController(container.Resolve<IFriendsService>()));
+            var dbConfig = new DatabaseConfig(connectionString);
+
+            container.Register<DatabaseConfig>(() => dbConfig);
+            container.Register<IDatabase, Database>();
+            container.Register<IUserRepository, UserRepository>();
+            container.Register<IGameRepository, GameRepository>();
+            container.Register<IFriendsRepository, FriendsRepository>();
+            container.Register<IUserService, UserService>();
+            container.Register<IGameService, GameService>();
+            container.Register<IFriendsService, FriendsService>();
+            container.Register<UserController>();
+            container.Register<GameController>();
+            container.Register<FriendsController>();
             GameLogger.Debug("DI container configured.");
 
             var router = new Router(container, new ExceptionMiddleware());

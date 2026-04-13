@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using chess_client.Menus;
 using chess_client.Services;
+using chess_server.Models;
 using Shared.Logger;
 using LogLevel = Shared.Logger.LogLevel;
 
@@ -18,16 +19,11 @@ internal static class Program
     {
         Console.OutputEncoding = Encoding.UTF8;
 
-        var enableConsoleLog = !string.Equals(Environment.GetEnvironmentVariable("CONSOLE_LOG"), "false",
-            StringComparison.OrdinalIgnoreCase);
-        var enableFileLog = !string.Equals(Environment.GetEnvironmentVariable("FILE_LOG"), "false",
-            StringComparison.OrdinalIgnoreCase);
-
         GameLogger.Configure(
             minLevel: LogLevel.Debug,
-            logToConsole: enableConsoleLog,
-            logToFile: enableFileLog,
-            logFilePath: "logs/client_log.txt"
+            logToConsole: false,
+            logToFile: true,
+            logFilePath: "logs/client.log"
         );
 
         try

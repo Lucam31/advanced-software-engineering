@@ -53,11 +53,14 @@ public sealed class InputParserTest
     [TestMethod]
     public void TestReadInput_SingleValidEntry_ReturnsValue()
     {
+        // Arrange
         // simulate user input B (\n represents pressing Enter)
         Console.SetIn(new StringReader("B\n")); 
 
+        // Act
         var result = InputParser.ReadInput("Test input: ", false, "A", "B", "C");
 
+        // Assert
         Assert.AreEqual("B", result);
     }
 
@@ -68,12 +71,15 @@ public sealed class InputParserTest
     [TestMethod]
     public void TestReadInput_InvalidThenValid_ReturnsSecondValue()
     {
+        // Arrange
         // simulate user input: first invalid (x), then valid (C) (\n represents Enter)
         Console.SetIn(new StringReader("x\nC\n"));
         const string prompt = "Test input: ";
 
+        // Act
         var result = InputParser.ReadInput(prompt, false, "A", "B", "C");
-        
+
+        // Assert
         Assert.AreEqual("C", result);
     }
 
@@ -84,11 +90,14 @@ public sealed class InputParserTest
     [TestMethod]
     public void TestReadInput_PromptIsPrintedToConsole()
     {
+        // Arrange
         Console.SetIn(new StringReader("C\n"));
         const string prompt = "Test input: ";
-        
+
+        // Act
         var result = InputParser.ReadInput(prompt, false, "A", "B", "C");
         
+        // Assert
         var promptOutput = _output.ToString().Substring(0, prompt.Length);
         Assert.AreEqual(promptOutput, prompt);
     }
@@ -100,6 +109,7 @@ public sealed class InputParserTest
     [TestMethod]
     public void TestReadInput_NoValidInputs_ThrowsException()
     {
+        // Act & Assert
         Assert.ThrowsExactly<ArgumentException>(() => InputParser.ReadInput("Test input: ", false, []));
     }
     
@@ -110,11 +120,14 @@ public sealed class InputParserTest
     [TestMethod]
     public void TestReadMove_ValidMove_ReturnsMoveObject()
     {
+        // Arrange
         // simulate user input e2e4 (\n represents Enter)
         Console.SetIn(new StringReader("e2e4\n"));
 
+        // Act
         var move = InputParser.ReadMove();
 
+        // Assert
         Assert.IsNotNull(move);
         Assert.AreEqual("E2", move.From);
         Assert.AreEqual("E4", move.To);
@@ -127,8 +140,11 @@ public sealed class InputParserTest
     [TestMethod]
     public void TestReadMove_InvalidMove_ThrowsException()
     {
+        // Arrange
         // simulate user input x2x4 (\n represents Enter)
         Console.SetIn(new StringReader("x2x4\n"));
+
+        // Act & Assert
         Assert.ThrowsExactly<ArgumentException>(() => InputParser.ReadMove());
     }
 }
