@@ -1,9 +1,6 @@
-﻿services:
+services:
   chess-server:
-    image: chess-server
-    build:
-      context: .
-      dockerfile: chess-server/Dockerfile
+    image: ghcr.io/lucam31/advanced-software-engineering:latest
     ports:
       - "8080:8080"
     environment:
@@ -22,7 +19,6 @@
       POSTGRES_DB: chessdb
     volumes:
       - db-data:/var/lib/postgresql/data
-      - ./chess-server/Migrations:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     networks:

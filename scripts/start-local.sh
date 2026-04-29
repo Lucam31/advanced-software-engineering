@@ -9,13 +9,13 @@ WORK_ROOT=""
 COMPOSE_FILE=""
 CLIENT_COMMAND=""
 
-if [[ -f "$REPO_ROOT/compose.yaml" && -f "$REPO_ROOT/chess-client/chess-client.csproj" ]]; then
+if [[ -f "$REPO_ROOT/compose.dev.yaml" && -f "$REPO_ROOT/chess-client/chess-client.csproj" ]]; then
   WORK_ROOT="$REPO_ROOT"
-  COMPOSE_FILE="$WORK_ROOT/compose.yaml"
+  COMPOSE_FILE="$WORK_ROOT/compose.dev.yaml"
   CLIENT_COMMAND="dotnet run --project chess-client/chess-client.csproj"
-elif [[ -f "$SCRIPT_DIR/compose.yaml" ]]; then
+elif [[ -f "$SCRIPT_DIR/compose.release.yaml" ]]; then
   WORK_ROOT="$SCRIPT_DIR"
-  COMPOSE_FILE="$WORK_ROOT/compose.yaml"
+  COMPOSE_FILE="$WORK_ROOT/compose.release.yaml"
 
   if [[ -f "$WORK_ROOT/chess-client" ]]; then
     chmod +x "$WORK_ROOT/chess-client" >/dev/null 2>&1 || true
@@ -26,7 +26,7 @@ elif [[ -f "$SCRIPT_DIR/compose.yaml" ]]; then
   fi
 else
   echo "Error: could not detect project layout." >&2
-  echo "Expected either repo files in $REPO_ROOT or release files in $SCRIPT_DIR." >&2
+  echo "Expected repo files ($REPO_ROOT/compose.dev.yaml) or release files ($SCRIPT_DIR/compose.release.yaml)." >&2
   exit 1
 fi
 

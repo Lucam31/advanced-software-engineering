@@ -27,23 +27,6 @@ jobs:
         run: dotnet build ./advanced-software-engineering.sln --no-restore
       - name: Test
         run: dotnet test ./UnitTesting/UnitTesting.csproj --no-build --verbosity normal
-      - name: Publish Windows (x64)
-        run: |
-          dotnet publish ./chess-client/chess-client.csproj \
-            -c Release \
-            -r win-x64 \
-            --self-contained true \
-            -p:PublishSingleFile=true \
-            -o ./release-artifacts/windows
-      - name: Publish Windows (arm64)
-        run: |
-          dotnet publish ./chess-client/chess-client.csproj \
-            -c Release \
-            -r win-arm64 \
-            --self-contained true \
-            -p:PublishSingleFile=true \
-            -o ./release-artifacts/windows-arm64
-
       - name: Publish Linux (x64)
         run: |
           dotnet publish ./chess-client/chess-client.csproj \
@@ -78,26 +61,18 @@ jobs:
             -o ./release-artifacts/macos-x64
       - name: Copy Distribution Files
         run: |
-          cp compose.yaml ./release-artifacts/windows/
-          cp compose.yaml ./release-artifacts/windows-arm64/
-          cp compose.yaml ./release-artifacts/linux/
-          cp compose.yaml ./release-artifacts/linux-arm64/
-          cp compose.yaml ./release-artifacts/macos-arm64/
-          cp compose.yaml ./release-artifacts/macos-x64/
-          cp scripts/start-local.sh ./release-artifacts/windows/
-          cp scripts/start-local.sh ./release-artifacts/windows-arm64/
+          cp compose.release.yaml ./release-artifacts/linux/
+          cp compose.release.yaml ./release-artifacts/linux-arm64/
+          cp compose.release.yaml ./release-artifacts/macos-arm64/
+          cp compose.release.yaml ./release-artifacts/macos-x64/
           cp scripts/start-local.sh ./release-artifacts/linux/
           cp scripts/start-local.sh ./release-artifacts/linux-arm64/
           cp scripts/start-local.sh ./release-artifacts/macos-arm64/
           cp scripts/start-local.sh ./release-artifacts/macos-x64/
-          chmod +x ./release-artifacts/windows/start-local.sh ./release-artifacts/windows-arm64/start-local.sh ./release-artifacts/linux/start-local.sh ./release-artifacts/linux-arm64/start-local.sh ./release-artifacts/macos-arm64/start-local.sh ./release-artifacts/macos-x64/start-local.sh
+          chmod +x ./release-artifacts/linux/start-local.sh ./release-artifacts/linux-arm64/start-local.sh ./release-artifacts/macos-arm64/start-local.sh ./release-artifacts/macos-x64/start-local.sh
       - name: Create Archives
         run: |
-          cd release-artifacts/windows
-          zip -r ../../chess-client-windows-x64.zip *
-          cd ../windows-arm64
-          zip -r ../../chess-client-windows-arm64.zip *
-          cd ../linux
+          cd release-artifacts/linux
           tar -czvf ../../chess-client-linux-x64.tar.gz *
           cd ../linux-arm64
           tar -czvf ../../chess-client-linux-arm64.tar.gz *
