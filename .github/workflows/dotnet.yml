@@ -1,0 +1,163 @@
+name: .NET and Docker
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/advanced-software-engineering
+
+jobs:
+  dotnet-build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      - name: Restore dependencies
+        run: dotnet restore ./advanced-software-engineering.sln
+      - name: Build
+        run: dotnet build ./advanced-software-engineering.sln --no-restore
+      - name: Test
+        run: dotnet test ./UnitTesting/UnitTesting.csproj --no-build --verbosity normal
+      - name: Publish Windows (x64)
+        run: |
+          dotnet publish ./chess-client/chess-client.csproj \
+            -c Release \
+            -r win-x64 \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -o ./release-artifacts/windows
+      - name: Publish Windows (arm64)
+        run: |
+          dotnet publish ./chess-client/chess-client.csproj \
+            -c Release \
+            -r win-arm64 \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -o ./release-artifacts/windows-arm64
+
+      - name: Publish Linux (x64)
+        run: |
+          dotnet publish ./chess-client/chess-client.csproj \
+            -c Release \
+            -r linux-x64 \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -o ./release-artifacts/linux
+      - name: Publish Linux (arm64)
+        run: |
+          dotnet publish ./chess-client/chess-client.csproj \
+            -c Release \
+            -r linux-arm64 \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -o ./release-artifacts/linux-arm64
+      - name: Publish macOS (arm64)
+        run: |
+          dotnet publish ./chess-client/chess-client.csproj \
+            -c Release \
+            -r osx-arm64 \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -o ./release-artifacts/macos-arm64
+      - name: Publish macOS (x64)
+        run: |
+          dotnet publish ./chess-client/chess-client.csproj \
+            -c Release \
+            -r osx-x64 \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -o ./release-artifacts/macos-x64
+      - name: Copy Distribution Files
+        run: |
+          cp compose.yaml ./release-artifacts/windows/
+          cp compose.yaml ./release-artifacts/windows-arm64/
+          cp compose.yaml ./release-artifacts/linux/
+          cp compose.yaml ./release-artifacts/linux-arm64/
+          cp compose.yaml ./release-artifacts/macos-arm64/
+          cp compose.yaml ./release-artifacts/macos-x64/
+          cp scripts/start-local.sh ./release-artifacts/windows/
+          cp scripts/start-local.sh ./release-artifacts/windows-arm64/
+          cp scripts/start-local.sh ./release-artifacts/linux/
+          cp scripts/start-local.sh ./release-artifacts/linux-arm64/
+          cp scripts/start-local.sh ./release-artifacts/macos-arm64/
+          cp scripts/start-local.sh ./release-artifacts/macos-x64/
+          chmod +x ./release-artifacts/windows/start-local.sh ./release-artifacts/windows-arm64/start-local.sh ./release-artifacts/linux/start-local.sh ./release-artifacts/linux-arm64/start-local.sh ./release-artifacts/macos-arm64/start-local.sh ./release-artifacts/macos-x64/start-local.sh
+      - name: Create Archives
+        run: |
+          cd release-artifacts/windows
+          zip -r ../../chess-client-windows-x64.zip *
+          cd ../windows-arm64
+          zip -r ../../chess-client-windows-arm64.zip *
+          cd ../linux
+          tar -czvf ../../chess-client-linux-x64.tar.gz *
+          cd ../linux-arm64
+          tar -czvf ../../chess-client-linux-arm64.tar.gz *
+          cd ../macos-arm64
+          zip -r ../../chess-client-macos-arm64.zip *
+          cd ../macos-x64
+          zip -r ../../chess-client-macos-x64.zip *
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: chess-client-release
+          path: |
+            *.zip
+            *.tar.gz
+  
+  
+  docker-build-push:
+    needs: dotnet-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./chess-server/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+  
+  create-release:
+    needs: dotnet-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Archives
+        uses: actions/download-artifact@v4
+        with:
+          name: chess-client-release
+          path: ./assets
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Release v1.0.${{ github.run_number }}
+          files: ./assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
