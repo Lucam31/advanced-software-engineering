@@ -64,20 +64,23 @@ launch_terminal_linux() {
   fi
 
   printf -v full_command 'cd %q && %s; exec bash' "$REPO_ROOT" "$command"
-
-  if command -v x-terminal-emulator >/dev/null 2>&1; then
-    x-terminal-emulator -e bash -lc "$full_command"
+  if command -v kitty >/dev/null 2>&1; then
+    setsid kitty --detach bash -lc "$full_command" >/dev/null 2>&1 &
+  elif command -v alacritty >/dev/null 2>&1; then
+    setsid alacritty -e bash -lc "$full_command" >/dev/null 2>&1 &
+  elif command -v x-terminal-emulator >/dev/null 2>&1; then
+    setsid x-terminal-emulator -e bash -lc "$full_command" >/dev/null 2>&1 &
   elif command -v gnome-terminal >/dev/null 2>&1; then
-    gnome-terminal -- bash -lc "$full_command"
+    setsid gnome-terminal -- bash -lc "$full_command" >/dev/null 2>&1 &
   elif command -v konsole >/dev/null 2>&1; then
-    konsole -e bash -lc "$full_command"
+    setsid konsole -e bash -lc "$full_command" >/dev/null 2>&1 &
   elif command -v xfce4-terminal >/dev/null 2>&1; then
-    xfce4-terminal --command="bash -lc \"$full_command\""
+    setsid xfce4-terminal --command="bash -lc \"$full_command\"" >/dev/null 2>&1 &
   elif command -v xterm >/dev/null 2>&1; then
-    xterm -e bash -lc "$full_command"
+    setsid xterm -e bash -lc "$full_command" >/dev/null 2>&1 &
   else
     echo "Error: no supported Linux terminal found." >&2
-    echo "Install one of: x-terminal-emulator, gnome-terminal, konsole, xfce4-terminal, or xterm." >&2
+    echo "Install one of: kitty, alacritty, x-terminal-emulator, gnome-terminal, konsole, xfce4-terminal, or xterm." >&2
     exit 1
   fi
 }
