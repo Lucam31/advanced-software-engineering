@@ -125,6 +125,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Normalize image name to lowercase
+        run: echo "IMAGE_NAME_LOWER=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -138,7 +141,7 @@ jobs:
           context: .
           file: ./chess-server/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}:latest
   
   create-release:
     needs: dotnet-build
