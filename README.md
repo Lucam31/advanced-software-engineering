@@ -1,77 +1,38 @@
-# Quickstart Guide
+# Quickstart
 
 ## Requirements
 
-- .NET 9.0 SDK
 - Docker and Docker Compose
+- .NET 9.0 SDK for local development
 
-## Running Tests
+> Make sure Docker is running before starting the project.
+
+## Start from a GitHub Release
+
+1. Download and unzip the release archive.
+2. Open the extracted folder.
+3. Run:
 
 ```bash
-dotnet test
+chmod +x ./start-local.sh
+./start-local.sh
 ```
 
-## Local Startup Guide
+## Start from the Repository
 
-This guide shows both ways to start locally:
+Use this when developing locally. It builds the server from the source code.
 
-- with the script (`scripts/start-local.sh`)
-- manually (without the script)
-
-All commands below are relative to the project root directory (`advanced-software-engineering`).
-
-> **Important:** Docker must be running before you start the project locally.
-
-
-### Option A: Start with script
-
-#### Prerequisites
-- Docker + Docker Compose
-- .NET SDK
-
-#### macOS / Linux
+### One-command start
 
 ```bash
 ./scripts/start-local.sh
 ```
 
-### Option B: Start manually
-
-#### Prerequisites
-- Docker + Docker Compose
-- .NET SDK
-- 3 terminal windows (1x server, 2x clients)
-
-#### 1) Start server (Docker Compose)
-
-##### macOS / Linux (bash or zsh)
+### Manual start
 
 ```bash
-docker compose -f compose.yaml up --build -d
-```
-
-#### 2) Start client #1
-
-##### macOS / Linux (bash or zsh)
-
-```bash
+docker compose -f compose.dev.yaml up --build -d
 dotnet run --project chess-client/chess-client.csproj
 ```
 
-#### 3) Start client #2
-
-Run the same client command from step 2 in a second terminal.
-
-## Useful Commands
-
-### Check containers
-
-```bash
-docker compose -f compose.yaml ps
-```
-
-### Stop server containers
-
-```bash
-docker compose -f compose.yaml down
-```
+Run the client command twice to open two client instances.

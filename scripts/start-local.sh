@@ -9,6 +9,7 @@ WORK_ROOT=""
 COMPOSE_FILE=""
 CLIENT_COMMAND=""
 COMPOSE_UP_COMMAND=""
+MACOS_TERMINAL_APP="Terminal"
 
 if [[ -f "$REPO_ROOT/compose.dev.yaml" && -f "$REPO_ROOT/chess-client/chess-client.csproj" ]]; then
   WORK_ROOT="$REPO_ROOT"
@@ -21,7 +22,6 @@ elif [[ -f "$SCRIPT_DIR/compose.release.yaml" ]]; then
 
   if [[ -f "$WORK_ROOT/chess-client" ]]; then
     chmod +x "$WORK_ROOT/chess-client" >/dev/null 2>&1 || true
-    # Remove macOS Gatekeeper quarantine flag so the binary can run without interaction.
     if [[ "$OS_NAME" == "Darwin" ]]; then
       xattr -d com.apple.quarantine "$WORK_ROOT/chess-client" >/dev/null 2>&1 || true
     fi
@@ -35,6 +35,17 @@ else
   echo "Error: could not detect project layout." >&2
   echo "Expected repo files ($REPO_ROOT/compose.dev.yaml) or release files ($SCRIPT_DIR/compose.release.yaml)." >&2
   exit 1
+fi
+
+if [[ "$OS_NAME" == "Darwin" ]]; then
+  case "${TERM_PROGRAM:-}" in
+    Apple_Terminal)
+      MACOS_TERMINAL_APP="Terminal"
+      ;;
+    iTerm|iTerm.app|iTerm2)
+      MACOS_TERMINAL_APP="iTerm"
+      ;;
+  esac
 fi
 
 if [[ ! -f "$COMPOSE_FILE" ]]; then
@@ -59,11 +70,11 @@ launch_terminal_window() {
   esac
 }
 
-# macOS prefers iTerm2; fall back to Terminal.app when iTerm2 is unavailable.
+# macOS follows the terminal app that launched this script (Terminal.app or iTerm2).
 launch_terminal_macos() {
   local command="$1"
 
-  if osascript -e 'id of application "iTerm"' >/dev/null 2>&1; then
+  if [[ "$MACOS_TERMINAL_APP" == "iTerm" ]] && osascript -e 'id of application "iTerm"' >/dev/null 2>&1; then
     osascript - "$WORK_ROOT" "$command" <<'APPLESCRIPT'
 on run argv
   set repoRoot to item 1 of argv
