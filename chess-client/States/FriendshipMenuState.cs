@@ -47,7 +47,7 @@ public class FriendshipMenuState : IGameState
             case MessageType.StartGame:
                 GameLogger.Info("Received start game while in FriendshipMenu.");
                 var startGamePayload = _jsonParser.DeserializeJsonElement<StartGamePayload>(message.Payload!.Value);
-                OnStartGame?.Invoke(startGamePayload);
+                OnStartGame?.Invoke(startGamePayload!);
                 break;
             default:
                 GameLogger.Error($"Unknown message type {message.Type}");

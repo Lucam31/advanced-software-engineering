@@ -104,7 +104,7 @@ public class GameService : IGameService
             Guid = dto.Id,
             WhitePlayerId = dto.WhitePlayerId,
             BlackPlayerId = dto.BlackPlayerId,
-            Moves = dto.Moves
+            Moves = dto.Moves!
         };
 
         await _gameRepository.InsertGameAsync(game);

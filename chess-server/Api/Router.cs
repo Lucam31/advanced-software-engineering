@@ -78,7 +78,7 @@ public class Router : IRouter
         foreach (var method in methods)
         {
             var routeAttribute = method.GetCustomAttribute<RouteAttribute>();
-            var fullPath = basePath + routeAttribute.Path;
+            var fullPath = basePath + routeAttribute!.Path;
 
             var httpMethodAttr = method.GetCustomAttribute<HttpMethodAttribute>();
             var httpMethod = httpMethodAttr?.Method ??
@@ -100,15 +100,8 @@ public class Router : IRouter
                     if (task.GetType().IsGenericType &&
                         task.GetType().GetGenericArguments()[0].IsAssignableTo(typeof(IActionResult)))
                     {
-                        
-                        var actionResult = (IActionResult)task.GetType().GetProperty("Result")?.GetValue(task);
-                        if (actionResult != null)
-                        {
-                            await actionResult.ExecuteResultAsync(context);
-                        }else
-                        {
-                            GameLogger.Warning($"Action {controller.Name}.{method.Name} returned null IActionResult.");
-                        }
+                        var actionResult = (IActionResult)task.GetType().GetProperty("Result")?.GetValue(task)!;
+                        await actionResult.ExecuteResultAsync(context);
                     }
                 }
             };
@@ -151,10 +144,10 @@ public class Router : IRouter
     /// <param name="method">The controller method to extract parameters for.</param>
     /// <param name="context">The HTTP listener context.</param>
     /// <returns>An array of objects representing the method's arguments.</returns>
-    private async Task<object[]> GetMethodParameters(MethodInfo method, HttpListenerContext context)
+    private async Task<object?[]> GetMethodParameters(MethodInfo method, HttpListenerContext context)
     {
         var parameters = method.GetParameters();
-        var args = new object[parameters.Length];
+        var args = new object?[parameters.Length];
 
         for (int i = 0; i < parameters.Length; i++)
         {
@@ -178,7 +171,7 @@ public class Router : IRouter
                     $"Deserializing body for parameter '{param.Name}' to type {param.ParameterType.Name}.");
                 try
                 {
-                    args[i] = JsonSerializer.Deserialize(json, param.ParameterType);
+                    args[i] = JsonSerializer.Deserialize(json, param.ParameterType)!;
                 }
                 catch (Exception ex)
                 {
@@ -211,7 +204,7 @@ public class Router : IRouter
         await _exceptionMiddleware.HandleWithExceptionCatch(context, async () =>
         {
             var path = context.Request.Url?.AbsolutePath;
-            var method = context.Request.HttpMethod?.ToUpperInvariant() ?? "GET";
+            var method = context.Request.HttpMethod.ToUpperInvariant();
 
             GameLogger.Info($"Dispatching request {method} {path}");
 
@@ -228,7 +221,7 @@ public class Router : IRouter
         });
     }
     
-    private static object? ConvertQueryParameter(string value, Type targetType)
+    private static object ConvertQueryParameter(string value, Type targetType)
     {
         if (targetType == typeof(Guid) || targetType == typeof(Guid?))
             return Guid.Parse(value);

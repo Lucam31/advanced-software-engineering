@@ -42,12 +42,12 @@ public class GameMenuState : IGameState
             case MessageType.GameInvitation:
                 GameLogger.Info("Received game invitation while in MainMenu state.");
                 var payload = _jsonParser.DeserializeJsonElement<GameInvitationPayload>(message.Payload!.Value);
-                OnGameInvitation?.Invoke(payload);
+                OnGameInvitation?.Invoke(payload!);
                 break;
             case MessageType.StartGame:
                 GameLogger.Info("Received start game while in MainMenuState.");
                 var startGamePayload = _jsonParser.DeserializeJsonElement<StartGamePayload>(message.Payload!.Value);
-                OnStartGame?.Invoke(startGamePayload);
+                OnStartGame?.Invoke(startGamePayload!);
                 break;
             default:
                 GameLogger.Debug($"GameMenuState received unhandled message type: {message.Type}");

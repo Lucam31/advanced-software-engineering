@@ -37,9 +37,7 @@ public class FriendshipMenu(
     WebSocketService webSocketService)
 {
     private readonly FriendshipMenuUi _ui = new();
-
-    private volatile bool _refreshRequested = false;
-
+    
     /// <summary>
     /// Displays the friendship menu and routes user actions to search or list flows.
     /// </summary>
@@ -53,7 +51,6 @@ public class FriendshipMenu(
         state.OnFriendsRefreshRequested += () =>
         {
             GameLogger.Info("Friends-Refresh angefordert (via WebSocket).");
-            _refreshRequested = true;
         };
         webSocketService.TransitionTo(state);
 
@@ -184,7 +181,6 @@ public class FriendshipMenu(
 
             if (string.IsNullOrEmpty(input))
             {
-                _refreshRequested = false;
                 GameLogger.Info("Reloading friends list.");
                 friends = await friendshipServices.ListFriends(userContainer.Id);
                 continue;

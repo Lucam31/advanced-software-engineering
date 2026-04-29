@@ -62,7 +62,7 @@ public class GameRepository : IGameRepository
             { "@Id", game.Guid },
             { "@WhitePlayerId", game.WhitePlayerId },
             { "@BlackPlayerId", game.BlackPlayerId },
-            { "@Moves", game.Moves.ToArray() }
+            { "@Moves", game.Moves!.ToArray() }
         };
 
         await _database.ExecuteNonQueryWithTransactionAsync(sql, parameters);
