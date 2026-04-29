@@ -1,27 +1,43 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-COMPOSE_FILE="$REPO_ROOT/compose.yaml"
-CLIENT_PROJECT="$REPO_ROOT/chess-client/chess-client.csproj"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 OS_NAME="$(uname -s)"
 
-# Ensure the expected project files are present before starting anything.
+WORK_ROOT=""
+COMPOSE_FILE=""
+CLIENT_COMMAND=""
+
+if [[ -f "$REPO_ROOT/compose.yaml" && -f "$REPO_ROOT/chess-client/chess-client.csproj" ]]; then
+  WORK_ROOT="$REPO_ROOT"
+  COMPOSE_FILE="$WORK_ROOT/compose.yaml"
+  CLIENT_COMMAND="dotnet run --project chess-client/chess-client.csproj"
+elif [[ -f "$SCRIPT_DIR/compose.yaml" ]]; then
+  WORK_ROOT="$SCRIPT_DIR"
+  COMPOSE_FILE="$WORK_ROOT/compose.yaml"
+
+  if [[ -f "$WORK_ROOT/chess-client" ]]; then
+    chmod +x "$WORK_ROOT/chess-client" >/dev/null 2>&1 || true
+    CLIENT_COMMAND="./chess-client"
+  else
+    echo "Error: client binary not found in release folder: $WORK_ROOT/chess-client" >&2
+    exit 1
+  fi
+else
+  echo "Error: could not detect project layout." >&2
+  echo "Expected either repo files in $REPO_ROOT or release files in $SCRIPT_DIR." >&2
+  exit 1
+fi
+
 if [[ ! -f "$COMPOSE_FILE" ]]; then
   echo "Error: compose file not found: $COMPOSE_FILE" >&2
   exit 1
 fi
 
-if [[ ! -f "$CLIENT_PROJECT" ]]; then
-  echo "Error: chess-client project not found: $CLIENT_PROJECT" >&2
-  exit 1
-fi
-
-# Open the requested command in a new terminal window.
 launch_terminal_window() {
   local command="$1"
 
-  # Pick the correct launcher for the current operating system.
   case "$OS_NAME" in
     Darwin)
       launch_terminal_macos "$command"
@@ -36,11 +52,34 @@ launch_terminal_window() {
   esac
 }
 
-# macOS uses Terminal.app to open a new shell with the requested command.
+# macOS prefers iTerm2; fall back to Terminal.app when iTerm2 is unavailable.
 launch_terminal_macos() {
   local command="$1"
 
-  osascript - "$REPO_ROOT" "$command" <<'APPLESCRIPT'
+  if osascript -e 'id of application "iTerm"' >/dev/null 2>&1; then
+    osascript - "$WORK_ROOT" "$command" <<'APPLESCRIPT'
+on run argv
+  set repoRoot to item 1 of argv
+  set terminalCommand to item 2 of argv
+  tell application "iTerm"
+    activate
+    if (count of windows) is 0 then
+      create window with default profile
+    else
+      tell current window
+        create tab with default profile
+      end tell
+    end if
+    tell current session of current tab of current window
+      write text "cd " & quoted form of repoRoot & " && " & terminalCommand
+    end tell
+  end tell
+end run
+APPLESCRIPT
+    return
+  fi
+
+  osascript - "$WORK_ROOT" "$command" <<'APPLESCRIPT'
 on run argv
   set repoRoot to item 1 of argv
   set terminalCommand to item 2 of argv
@@ -52,7 +91,6 @@ end run
 APPLESCRIPT
 }
 
-# Linux uses the first available graphical terminal emulator.
 launch_terminal_linux() {
   local command="$1"
   local full_command
@@ -63,7 +101,7 @@ launch_terminal_linux() {
     exit 1
   fi
 
-  printf -v full_command 'cd %q && %s; exec bash' "$REPO_ROOT" "$command"
+  printf -v full_command 'cd %q && %s; exec bash' "$WORK_ROOT" "$command"
   if command -v kitty >/dev/null 2>&1; then
     setsid kitty --detach bash -lc "$full_command" >/dev/null 2>&1 &
   elif command -v alacritty >/dev/null 2>&1; then
@@ -85,15 +123,13 @@ launch_terminal_linux() {
   fi
 }
 
-# Start the backend services first so the clients can connect afterwards.
 echo "Starting Docker Compose services..."
 
 launch_terminal_window "docker compose -f '$COMPOSE_FILE' up --build -d"
 
-# Launch two client instances so the local multiplayer flow can be tested.
 echo "Starting two chess-client instances in separate terminal windows..."
-launch_terminal_window "dotnet run --project chess-client/chess-client.csproj"
-launch_terminal_window "dotnet run --project chess-client/chess-client.csproj"
+launch_terminal_window "$CLIENT_COMMAND"
+launch_terminal_window "$CLIENT_COMMAND"
 
 echo "Done. Started one Docker terminal and two client terminals."
 
