@@ -19,6 +19,10 @@ elif [[ -f "$SCRIPT_DIR/compose.release.yaml" ]]; then
 
   if [[ -f "$WORK_ROOT/chess-client" ]]; then
     chmod +x "$WORK_ROOT/chess-client" >/dev/null 2>&1 || true
+    # Remove macOS Gatekeeper quarantine flag so the binary can run without interaction.
+    if [[ "$OS_NAME" == "Darwin" ]]; then
+      xattr -d com.apple.quarantine "$WORK_ROOT/chess-client" >/dev/null 2>&1 || true
+    fi
     CLIENT_COMMAND="./chess-client"
   else
     echo "Error: client binary not found in release folder: $WORK_ROOT/chess-client" >&2
