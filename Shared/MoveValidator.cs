@@ -322,6 +322,12 @@ public static class MoveValidator
     {
         var pawn = gameboard.GetPieceAtPosition($"{startCol}{startRow}");
         var enemyPawn = gameboard.GetPieceAtPosition($"{endCol}{startRow}");
+        if (pawn is null || enemyPawn is null)
+        {
+            GameLogger.Warning("Pawn or enemyPawn is null");
+            return false;
+        }
+        
         if (enemyPawn is Pawn && pawn.IsWhite != enemyPawn.IsWhite && enemyPawn is Pawn { EnPassantEligible: true })
         {
             return true;

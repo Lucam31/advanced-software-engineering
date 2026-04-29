@@ -99,7 +99,7 @@ public sealed class InputParserTest
         
         // Assert
         var promptOutput = _output.ToString().Substring(0, prompt.Length);
-        Assert.AreEqual(promptOutput, prompt);
+        Assert.AreEqual(prompt, promptOutput);
     }
     
     /// <summary>
@@ -128,7 +128,6 @@ public sealed class InputParserTest
         var move = InputParser.ReadMove();
 
         // Assert
-        Assert.IsNotNull(move);
         Assert.AreEqual("E2", move.From);
         Assert.AreEqual("E4", move.To);
     }
