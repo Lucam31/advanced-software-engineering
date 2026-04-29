@@ -26,7 +26,7 @@ elif [[ -f "$SCRIPT_DIR/compose.release.yaml" ]]; then
       xattr -d com.apple.quarantine "$WORK_ROOT/chess-client" >/dev/null 2>&1 || true
     fi
     CLIENT_COMMAND="./chess-client"
-    COMPOSE_UP_COMMAND="docker compose -f '$COMPOSE_FILE' pull && docker compose -f '$COMPOSE_FILE' up -d"
+    COMPOSE_UP_COMMAND="docker compose -f '$COMPOSE_FILE' down -v --remove-orphans >/dev/null 2>&1 || true && docker compose -f '$COMPOSE_FILE' pull && docker compose -f '$COMPOSE_FILE' up -d"
   else
     echo "Error: client binary not found in release folder: $WORK_ROOT/chess-client" >&2
     exit 1
