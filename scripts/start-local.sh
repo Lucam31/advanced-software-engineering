@@ -8,11 +8,13 @@ OS_NAME="$(uname -s)"
 WORK_ROOT=""
 COMPOSE_FILE=""
 CLIENT_COMMAND=""
+COMPOSE_UP_COMMAND=""
 
 if [[ -f "$REPO_ROOT/compose.dev.yaml" && -f "$REPO_ROOT/chess-client/chess-client.csproj" ]]; then
   WORK_ROOT="$REPO_ROOT"
   COMPOSE_FILE="$WORK_ROOT/compose.dev.yaml"
   CLIENT_COMMAND="dotnet run --project chess-client/chess-client.csproj"
+  COMPOSE_UP_COMMAND="docker compose -f '$COMPOSE_FILE' up --build -d"
 elif [[ -f "$SCRIPT_DIR/compose.release.yaml" ]]; then
   WORK_ROOT="$SCRIPT_DIR"
   COMPOSE_FILE="$WORK_ROOT/compose.release.yaml"
@@ -24,6 +26,7 @@ elif [[ -f "$SCRIPT_DIR/compose.release.yaml" ]]; then
       xattr -d com.apple.quarantine "$WORK_ROOT/chess-client" >/dev/null 2>&1 || true
     fi
     CLIENT_COMMAND="./chess-client"
+    COMPOSE_UP_COMMAND="docker compose -f '$COMPOSE_FILE' pull && docker compose -f '$COMPOSE_FILE' up -d"
   else
     echo "Error: client binary not found in release folder: $WORK_ROOT/chess-client" >&2
     exit 1
@@ -129,7 +132,7 @@ launch_terminal_linux() {
 
 echo "Starting Docker Compose services..."
 
-launch_terminal_window "docker compose -f '$COMPOSE_FILE' up --build -d"
+launch_terminal_window "$COMPOSE_UP_COMMAND"
 
 echo "Starting two chess-client instances in separate terminal windows..."
 launch_terminal_window "$CLIENT_COMMAND"

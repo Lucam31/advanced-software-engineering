@@ -65,6 +65,10 @@ jobs:
           cp compose.release.yaml ./release-artifacts/linux-arm64/
           cp compose.release.yaml ./release-artifacts/macos-arm64/
           cp compose.release.yaml ./release-artifacts/macos-x64/
+          cp -R chess-server/Migrations ./release-artifacts/linux/
+          cp -R chess-server/Migrations ./release-artifacts/linux-arm64/
+          cp -R chess-server/Migrations ./release-artifacts/macos-arm64/
+          cp -R chess-server/Migrations ./release-artifacts/macos-x64/
           cp scripts/start-local.sh ./release-artifacts/linux/
           cp scripts/start-local.sh ./release-artifacts/linux-arm64/
           cp scripts/start-local.sh ./release-artifacts/macos-arm64/

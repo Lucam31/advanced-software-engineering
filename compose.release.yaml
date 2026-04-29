@@ -19,6 +19,7 @@ services:
       POSTGRES_DB: chessdb
     volumes:
       - db-data:/var/lib/postgresql/data
+      - ./Migrations:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     networks:
