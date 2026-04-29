@@ -50,7 +50,7 @@ internal static class Program
             var dbConfig = new DatabaseConfig(connectionString);
 
             container.Register<DatabaseConfig>(() => dbConfig);
-            container.Register<IDatabase, Database>();
+            container.RegisterSingleton<IDatabase, Database>();
             container.Register<IUserRepository, UserRepository>();
             container.Register<IGameRepository, GameRepository>();
             container.Register<IFriendsRepository, FriendsRepository>();
