@@ -4,11 +4,9 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE_FILE="$REPO_ROOT/compose.yaml"
 CLIENT_PROJECT="$REPO_ROOT/chess-client/chess-client.csproj"
-DRY_RUN="${1:-}"
-SERVER_LOG_ENV="FILE_LOG=false CONSOLE_LOG=true"
-CLIENT_LOG_ENV="FILE_LOG=false CONSOLE_LOG=false"
 OS_NAME="$(uname -s)"
 
+# Ensure the expected project files are present before starting anything.
 if [[ ! -f "$COMPOSE_FILE" ]]; then
   echo "Error: compose file not found: $COMPOSE_FILE" >&2
   exit 1
@@ -19,14 +17,11 @@ if [[ ! -f "$CLIENT_PROJECT" ]]; then
   exit 1
 fi
 
+# Open the requested command in a new terminal window.
 launch_terminal_window() {
   local command="$1"
 
-  if [[ "$DRY_RUN" == "--dry-run" ]]; then
-    echo "[dry-run] Open terminal window: $command"
-    return
-  fi
-
+  # Pick the correct launcher for the current operating system.
   case "$OS_NAME" in
     Darwin)
       launch_terminal_macos "$command"
@@ -41,6 +36,7 @@ launch_terminal_window() {
   esac
 }
 
+# macOS uses Terminal.app to open a new shell with the requested command.
 launch_terminal_macos() {
   local command="$1"
 
@@ -56,6 +52,7 @@ end run
 APPLESCRIPT
 }
 
+# Linux uses the first available graphical terminal emulator.
 launch_terminal_linux() {
   local command="$1"
   local full_command
@@ -85,13 +82,15 @@ launch_terminal_linux() {
   fi
 }
 
+# Start the backend services first so the clients can connect afterwards.
 echo "Starting Docker Compose services..."
 
-launch_terminal_window "$SERVER_LOG_ENV docker compose -f '$COMPOSE_FILE' up --build -d"
+launch_terminal_window "docker compose -f '$COMPOSE_FILE' up --build -d"
 
+# Launch two client instances so the local multiplayer flow can be tested.
 echo "Starting two chess-client instances in separate terminal windows..."
-launch_terminal_window "$CLIENT_LOG_ENV dotnet run --project chess-client/chess-client.csproj"
-launch_terminal_window "$CLIENT_LOG_ENV dotnet run --project chess-client/chess-client.csproj"
+launch_terminal_window "dotnet run --project chess-client/chess-client.csproj"
+launch_terminal_window "dotnet run --project chess-client/chess-client.csproj"
 
 echo "Done. Started one Docker terminal and two client terminals."
 
