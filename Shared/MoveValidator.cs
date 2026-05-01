@@ -153,7 +153,9 @@ public static class MoveValidator
                 var colDiff = Math.Abs(endCol - startCol);
                 var rowDiff = Math.Abs(endRow - startRow);
                 if (rowDiff is < 2 && colDiff is < 2) return true; // adjacent move
-                return QueenCheck(startRow, startCol, endRow, endCol, gameboard);
+                if (colDiff == rowDiff) return BishopCheck(startRow, startCol, endRow, endCol, gameboard);
+                if (colDiff == 0 || rowDiff == 0) return RookCheck(startRow, startCol, endRow, endCol, gameboard);
+                return false;
             }
             case King:
                 // Kings can only move one square, so there are no tiles between start and end to check
@@ -275,106 +277,6 @@ public static class MoveValidator
         }
     }
 
-    private static bool QueenCheck(int startRow, char startCol, int endRow, char endCol, Gameboard gameboard)
-    {
-        var colDiff = Math.Abs(endCol - startCol);
-        var rowDiff = Math.Abs(endRow - startRow);
-        if (colDiff == rowDiff)
-        {
-            if (startRow < endRow && startCol < endCol)
-            {
-                var col = Convert.ToChar(startCol + 1);
-                for (var row = startRow + 1; row < endRow; row++)
-                {
-                    if (gameboard.GetPieceAtPosition($"{col}{row}") is not null) return false;
-                    col++;
-                }
-
-                return true;
-            }
-
-            if (startRow < endRow && startCol > endCol)
-            {
-                var col = Convert.ToChar(startCol - 1);
-                for (var row = startRow + 1; row < endRow; row++)
-                {
-                    if (gameboard.GetPieceAtPosition($"{col}{row}") is not null) return false;
-                    col--;
-                }
-
-                return true;
-            }
-
-            if (startRow > endRow && startCol < endCol)
-            {
-                var col = Convert.ToChar(startCol + 1);
-                for (var row = startRow - 1; row > endRow; row--)
-                {
-                    if (gameboard.GetPieceAtPosition($"{col}{row}") is not null) return false;
-                    col++;
-                }
-
-                return true;
-            }
-
-            if (startRow <= endRow || startCol <= endCol) return false;
-            {
-                var col = Convert.ToChar(startCol - 1);
-                for (var row = startRow - 1; row > endRow; row--)
-                {
-                    if (gameboard.GetPieceAtPosition($"{col}{row}") is not null) return false;
-                    col--;
-                }
-
-                return true;
-            }
-        }
-
-        if (colDiff == 0 || rowDiff == 0)
-        {
-            if (startRow < endRow)
-            {
-                for (var row = startRow + 1; row < endRow; row++)
-                {
-                    if (gameboard.GetPieceAtPosition($"{startCol}{row}") is not null) return false;
-                }
-
-                return true;
-            }
-
-            if (startRow > endRow)
-            {
-                for (var row = startRow - 1; row > endRow; row--)
-                {
-                    if (gameboard.GetPieceAtPosition($"{startCol}{row}") is not null) return false;
-                }
-
-                return true;
-            }
-
-            if (startCol < endCol)
-            {
-                for (var col = Convert.ToChar(startCol + 1); col < endCol; col++)
-                {
-                    if (gameboard.GetPieceAtPosition($"{col}{startRow}") is not null) return false;
-                }
-
-                return true;
-            }
-
-            if (startCol <= endCol) return false;
-            {
-                for (var col = Convert.ToChar(startCol - 1); col > endCol; col--)
-                {
-                    if (gameboard.GetPieceAtPosition($"{col}{startRow}") is not null) return false;
-                }
-
-                return true;
-            }
-        }
-
-        return false;
-    }
     
     
     // ===================
