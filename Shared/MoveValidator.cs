@@ -150,7 +150,6 @@ public static class MoveValidator
                 return true; // Knights are Sigma males and can jump over the other Beta pieces
             case Queen:
             {
-                // Slayy Queen
                 var colDiff = Math.Abs(endCol - startCol);
                 var rowDiff = Math.Abs(endRow - startRow);
                 if (rowDiff is < 2 && colDiff is < 2) return true; // adjacent move

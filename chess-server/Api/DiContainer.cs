@@ -16,6 +16,14 @@ public interface IDiContainer
         where TImplementation : class, TInterface;
 
     /// <summary>
+    /// Registers a service as a singleton
+    /// </summary>
+    /// <typeparam name="TService"></typeparam>
+    /// <typeparam name="TImplementation"></typeparam>
+    void RegisterSingleton<TService, TImplementation>()
+        where TImplementation : class, TService;
+
+    /// <summary>
     /// Resolves a service to get an instance of it.
     /// </summary>
     /// <typeparam name="TService">The type of the service to resolve.</typeparam>
@@ -28,7 +36,9 @@ public interface IDiContainer
 /// </summary>
 public class DiContainer : IDiContainer
 {
-    private readonly Dictionary<Type, Func<object>> _services = new();
+    private readonly Dictionary<Type, Func<object>> _instances = new();
+    
+    private readonly Dictionary<Type, object> _singletonInstances = new();
 
     /// <summary>
     /// Registers a service with a factory function.
@@ -36,9 +46,11 @@ public class DiContainer : IDiContainer
     /// <typeparam name="T">The type of the service to register.</typeparam>
     public void Register<T>() where T : class
     {
-        _services[typeof(T)] = CreateInstance<T>;
+        _instances[typeof(T)] = CreateInstance<T>;
         GameLogger.Debug($"Service registered: {typeof(T).Name}");
     }
+    
+    
 
     /// <summary>
     /// For certain objects it may be necessary to pass a factory function
@@ -46,21 +58,39 @@ public class DiContainer : IDiContainer
     /// <param name="factory">Function to create an instance</param>
     public void Register<T>(Func<T> factory) where T : class
     {
-        _services[typeof(T)] = () => factory();
+        _instances[typeof(T)] = () => factory();
     }
 
     /// <inheritdoc/>
     public void Register<TInterface, TImplementation>()
         where TImplementation : class, TInterface
     {
-        _services[typeof(TInterface)] = CreateInstance<TImplementation>;
+        _instances[typeof(TInterface)] = CreateInstance<TImplementation>;
         GameLogger.Debug($"Service registered: {typeof(TInterface).Name} -> {typeof(TImplementation).Name}");
+    }
+
+    /// <inheritdoc/>
+    public void RegisterSingleton<TService, TImplementation>()
+        where TImplementation : class, TService
+    {
+        _instances[typeof(TService)] = () =>
+        {
+            if (!_singletonInstances.TryGetValue(typeof(TService), out var instance))
+            {
+                instance = CreateInstance<TImplementation>();
+                _singletonInstances[typeof(TService)] = instance;
+            }
+
+            return instance;
+        };
+
+        GameLogger.Debug($"Singleton service registered: {typeof(TService).Name} -> {typeof(TImplementation).Name}");
     }
 
     /// <inheritdoc/>
     public TService Resolve<TService>()
     {
-        if (_services.TryGetValue(typeof(TService), out var factory))
+        if (_instances.TryGetValue(typeof(TService), out var factory))
         {
             var instance = (TService)factory();
             GameLogger.Debug($"Service resolved: {typeof(TService).Name}");
